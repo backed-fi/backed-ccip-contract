@@ -57,37 +57,68 @@ export declare namespace Client {
   };
 }
 
-export interface ProgrammableTokenTransfersInterface extends Interface {
+export interface BackedCCIPReceiverInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "acceptOwnership"
+      | "allowlistDestinationChain"
+      | "allowlistSender"
+      | "allowlistSourceChain"
+      | "allowlistedDestinationChains"
+      | "allowlistedSenders"
+      | "allowlistedSourceChains"
       | "ccipReceive"
       | "getLastReceivedMessageDetails"
-      | "getNumberOfReceivedMessages"
-      | "getReceivedMessageAt"
-      | "getReceivedMessageDetails"
       | "getRouter"
-      | "messageDetail"
       | "owner"
-      | "receivedMessages"
-      | "sendMessage"
+      | "registerToken"
+      | "send"
       | "supportsInterface"
+      | "tokenIds"
+      | "tokens"
       | "transferOwnership"
+      | "updateCustodyWallet"
       | "withdraw"
       | "withdrawToken"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
+      | "CustodyWalletUpdated"
       | "MessageReceived"
       | "MessageSent"
       | "OwnershipTransferRequested"
       | "OwnershipTransferred"
+      | "TokenRegistered"
   ): EventFragment;
 
   encodeFunctionData(
     functionFragment: "acceptOwnership",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistDestinationChain",
+    values: [BigNumberish, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistSender",
+    values: [AddressLike, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistSourceChain",
+    values: [BigNumberish, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistedDestinationChains",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistedSenders",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistedSourceChains",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "ccipReceive",
@@ -97,38 +128,34 @@ export interface ProgrammableTokenTransfersInterface extends Interface {
     functionFragment: "getLastReceivedMessageDetails",
     values?: undefined
   ): string;
-  encodeFunctionData(
-    functionFragment: "getNumberOfReceivedMessages",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getReceivedMessageAt",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getReceivedMessageDetails",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "messageDetail",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "receivedMessages",
-    values: [BigNumberish]
+    functionFragment: "registerToken",
+    values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "sendMessage",
-    values: [BigNumberish, AddressLike, string, AddressLike, BigNumberish]
+    functionFragment: "send",
+    values: [BigNumberish, AddressLike, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
     values: [BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "tokenIds",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "tokens",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "transferOwnership",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "updateCustodyWallet",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
@@ -145,6 +172,30 @@ export interface ProgrammableTokenTransfersInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "allowlistDestinationChain",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistSender",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistSourceChain",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistedDestinationChains",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistedSenders",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistedSourceChains",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "ccipReceive",
     data: BytesLike
   ): Result;
@@ -152,38 +203,25 @@ export interface ProgrammableTokenTransfersInterface extends Interface {
     functionFragment: "getLastReceivedMessageDetails",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "getNumberOfReceivedMessages",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "getReceivedMessageAt",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "getReceivedMessageDetails",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "getRouter", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "messageDetail",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "receivedMessages",
+    functionFragment: "registerToken",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "sendMessage",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "send", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "tokenIds", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "tokens", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateCustodyWallet",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
@@ -193,27 +231,39 @@ export interface ProgrammableTokenTransfersInterface extends Interface {
   ): Result;
 }
 
+export namespace CustodyWalletUpdatedEvent {
+  export type InputTuple = [newCustodywallet: AddressLike];
+  export type OutputTuple = [newCustodywallet: string];
+  export interface OutputObject {
+    newCustodywallet: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace MessageReceivedEvent {
   export type InputTuple = [
     messageId: BytesLike,
     sourceChainSelector: BigNumberish,
     sender: AddressLike,
-    message: string,
-    tokenAmount: Client.EVMTokenAmountStruct
+    tokenId: BigNumberish,
+    amount: BigNumberish
   ];
   export type OutputTuple = [
     messageId: string,
     sourceChainSelector: bigint,
     sender: string,
-    message: string,
-    tokenAmount: Client.EVMTokenAmountStructOutput
+    tokenId: bigint,
+    amount: bigint
   ];
   export interface OutputObject {
     messageId: string;
     sourceChainSelector: bigint;
     sender: string;
-    message: string;
-    tokenAmount: Client.EVMTokenAmountStructOutput;
+    tokenId: bigint;
+    amount: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -226,24 +276,24 @@ export namespace MessageSentEvent {
     messageId: BytesLike,
     destinationChainSelector: BigNumberish,
     receiver: AddressLike,
-    message: string,
-    tokenAmount: Client.EVMTokenAmountStruct,
+    tokenId: BigNumberish,
+    amount: BigNumberish,
     fees: BigNumberish
   ];
   export type OutputTuple = [
     messageId: string,
     destinationChainSelector: bigint,
     receiver: string,
-    message: string,
-    tokenAmount: Client.EVMTokenAmountStructOutput,
+    tokenId: bigint,
+    amount: bigint,
     fees: bigint
   ];
   export interface OutputObject {
     messageId: string;
     destinationChainSelector: bigint;
     receiver: string;
-    message: string;
-    tokenAmount: Client.EVMTokenAmountStructOutput;
+    tokenId: bigint;
+    amount: bigint;
     fees: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -278,11 +328,24 @@ export namespace OwnershipTransferredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export interface ProgrammableTokenTransfers extends BaseContract {
-  connect(runner?: ContractRunner | null): ProgrammableTokenTransfers;
+export namespace TokenRegisteredEvent {
+  export type InputTuple = [token: AddressLike, tokenId: BigNumberish];
+  export type OutputTuple = [token: string, tokenId: bigint];
+  export interface OutputObject {
+    token: string;
+    tokenId: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export interface BackedCCIPReceiver extends BaseContract {
+  connect(runner?: ContractRunner | null): BackedCCIPReceiver;
   waitForDeployment(): Promise<this>;
 
-  interface: ProgrammableTokenTransfersInterface;
+  interface: BackedCCIPReceiverInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -323,6 +386,42 @@ export interface ProgrammableTokenTransfers extends BaseContract {
 
   acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
+  allowlistDestinationChain: TypedContractMethod<
+    [_destinationChainSelector: BigNumberish, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+
+  allowlistSender: TypedContractMethod<
+    [_sender: AddressLike, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+
+  allowlistSourceChain: TypedContractMethod<
+    [_sourceChainSelector: BigNumberish, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+
+  allowlistedDestinationChains: TypedContractMethod<
+    [arg0: BigNumberish],
+    [boolean],
+    "view"
+  >;
+
+  allowlistedSenders: TypedContractMethod<
+    [arg0: AddressLike],
+    [boolean],
+    "view"
+  >;
+
+  allowlistedSourceChains: TypedContractMethod<
+    [arg0: BigNumberish],
+    [boolean],
+    "view"
+  >;
+
   ccipReceive: TypedContractMethod<
     [message: Client.Any2EVMMessageStruct],
     [void],
@@ -332,42 +431,8 @@ export interface ProgrammableTokenTransfers extends BaseContract {
   getLastReceivedMessageDetails: TypedContractMethod<
     [],
     [
-      [string, bigint, string, string, string, bigint] & {
+      [string, string, bigint] & {
         messageId: string;
-        sourceChainSelector: bigint;
-        sender: string;
-        message: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
-    "view"
-  >;
-
-  getNumberOfReceivedMessages: TypedContractMethod<[], [bigint], "view">;
-
-  getReceivedMessageAt: TypedContractMethod<
-    [index: BigNumberish],
-    [
-      [string, bigint, string, string, string, bigint] & {
-        messageId: string;
-        sourceChainSelector: bigint;
-        sender: string;
-        message: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
-    "view"
-  >;
-
-  getReceivedMessageDetails: TypedContractMethod<
-    [messageId: BytesLike],
-    [
-      [bigint, string, string, string, bigint] & {
-        sourceChainSelector: bigint;
-        sender: string;
-        message: string;
         token: string;
         amount: bigint;
       }
@@ -377,31 +442,20 @@ export interface ProgrammableTokenTransfers extends BaseContract {
 
   getRouter: TypedContractMethod<[], [string], "view">;
 
-  messageDetail: TypedContractMethod<
-    [arg0: BytesLike],
-    [
-      [bigint, string, string, string, bigint] & {
-        sourceChainSelector: bigint;
-        sender: string;
-        message: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
-    "view"
-  >;
-
   owner: TypedContractMethod<[], [string], "view">;
 
-  receivedMessages: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+  registerToken: TypedContractMethod<
+    [_token: AddressLike, _tokenId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
 
-  sendMessage: TypedContractMethod<
+  send: TypedContractMethod<
     [
-      destinationChainSelector: BigNumberish,
-      receiver: AddressLike,
-      message: string,
-      token: AddressLike,
-      amount: BigNumberish
+      _destinationChainSelector: BigNumberish,
+      _receiver: AddressLike,
+      _token: AddressLike,
+      _amount: BigNumberish
     ],
     [string],
     "nonpayable"
@@ -413,20 +467,30 @@ export interface ProgrammableTokenTransfers extends BaseContract {
     "view"
   >;
 
+  tokenIds: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
+
+  tokens: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+
   transferOwnership: TypedContractMethod<
     [to: AddressLike],
     [void],
     "nonpayable"
   >;
 
+  updateCustodyWallet: TypedContractMethod<
+    [_custodyWallet: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   withdraw: TypedContractMethod<
-    [beneficiary: AddressLike],
+    [_beneficiary: AddressLike],
     [void],
     "nonpayable"
   >;
 
   withdrawToken: TypedContractMethod<
-    [beneficiary: AddressLike, token: AddressLike],
+    [_beneficiary: AddressLike, _token: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -439,6 +503,36 @@ export interface ProgrammableTokenTransfers extends BaseContract {
     nameOrSignature: "acceptOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "allowlistDestinationChain"
+  ): TypedContractMethod<
+    [_destinationChainSelector: BigNumberish, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "allowlistSender"
+  ): TypedContractMethod<
+    [_sender: AddressLike, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "allowlistSourceChain"
+  ): TypedContractMethod<
+    [_sourceChainSelector: BigNumberish, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "allowlistedDestinationChains"
+  ): TypedContractMethod<[arg0: BigNumberish], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "allowlistedSenders"
+  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "allowlistedSourceChains"
+  ): TypedContractMethod<[arg0: BigNumberish], [boolean], "view">;
+  getFunction(
     nameOrSignature: "ccipReceive"
   ): TypedContractMethod<
     [message: Client.Any2EVMMessageStruct],
@@ -450,45 +544,8 @@ export interface ProgrammableTokenTransfers extends BaseContract {
   ): TypedContractMethod<
     [],
     [
-      [string, bigint, string, string, string, bigint] & {
+      [string, string, bigint] & {
         messageId: string;
-        sourceChainSelector: bigint;
-        sender: string;
-        message: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "getNumberOfReceivedMessages"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "getReceivedMessageAt"
-  ): TypedContractMethod<
-    [index: BigNumberish],
-    [
-      [string, bigint, string, string, string, bigint] & {
-        messageId: string;
-        sourceChainSelector: bigint;
-        sender: string;
-        message: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "getReceivedMessageDetails"
-  ): TypedContractMethod<
-    [messageId: BytesLike],
-    [
-      [bigint, string, string, string, bigint] & {
-        sourceChainSelector: bigint;
-        sender: string;
-        message: string;
         token: string;
         amount: bigint;
       }
@@ -499,35 +556,23 @@ export interface ProgrammableTokenTransfers extends BaseContract {
     nameOrSignature: "getRouter"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "messageDetail"
-  ): TypedContractMethod<
-    [arg0: BytesLike],
-    [
-      [bigint, string, string, string, bigint] & {
-        sourceChainSelector: bigint;
-        sender: string;
-        message: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
-    "view"
-  >;
-  getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "receivedMessages"
-  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+    nameOrSignature: "registerToken"
+  ): TypedContractMethod<
+    [_token: AddressLike, _tokenId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
-    nameOrSignature: "sendMessage"
+    nameOrSignature: "send"
   ): TypedContractMethod<
     [
-      destinationChainSelector: BigNumberish,
-      receiver: AddressLike,
-      message: string,
-      token: AddressLike,
-      amount: BigNumberish
+      _destinationChainSelector: BigNumberish,
+      _receiver: AddressLike,
+      _token: AddressLike,
+      _amount: BigNumberish
     ],
     [string],
     "nonpayable"
@@ -536,19 +581,35 @@ export interface ProgrammableTokenTransfers extends BaseContract {
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
   getFunction(
+    nameOrSignature: "tokenIds"
+  ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "tokens"
+  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+  getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[to: AddressLike], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "updateCustodyWallet"
+  ): TypedContractMethod<[_custodyWallet: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "withdraw"
-  ): TypedContractMethod<[beneficiary: AddressLike], [void], "nonpayable">;
+  ): TypedContractMethod<[_beneficiary: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "withdrawToken"
   ): TypedContractMethod<
-    [beneficiary: AddressLike, token: AddressLike],
+    [_beneficiary: AddressLike, _token: AddressLike],
     [void],
     "nonpayable"
   >;
 
+  getEvent(
+    key: "CustodyWalletUpdated"
+  ): TypedContractEvent<
+    CustodyWalletUpdatedEvent.InputTuple,
+    CustodyWalletUpdatedEvent.OutputTuple,
+    CustodyWalletUpdatedEvent.OutputObject
+  >;
   getEvent(
     key: "MessageReceived"
   ): TypedContractEvent<
@@ -577,9 +638,27 @@ export interface ProgrammableTokenTransfers extends BaseContract {
     OwnershipTransferredEvent.OutputTuple,
     OwnershipTransferredEvent.OutputObject
   >;
+  getEvent(
+    key: "TokenRegistered"
+  ): TypedContractEvent<
+    TokenRegisteredEvent.InputTuple,
+    TokenRegisteredEvent.OutputTuple,
+    TokenRegisteredEvent.OutputObject
+  >;
 
   filters: {
-    "MessageReceived(bytes32,uint64,address,string,tuple)": TypedContractEvent<
+    "CustodyWalletUpdated(address)": TypedContractEvent<
+      CustodyWalletUpdatedEvent.InputTuple,
+      CustodyWalletUpdatedEvent.OutputTuple,
+      CustodyWalletUpdatedEvent.OutputObject
+    >;
+    CustodyWalletUpdated: TypedContractEvent<
+      CustodyWalletUpdatedEvent.InputTuple,
+      CustodyWalletUpdatedEvent.OutputTuple,
+      CustodyWalletUpdatedEvent.OutputObject
+    >;
+
+    "MessageReceived(bytes32,uint64,address,uint64,uint256)": TypedContractEvent<
       MessageReceivedEvent.InputTuple,
       MessageReceivedEvent.OutputTuple,
       MessageReceivedEvent.OutputObject
@@ -590,7 +669,7 @@ export interface ProgrammableTokenTransfers extends BaseContract {
       MessageReceivedEvent.OutputObject
     >;
 
-    "MessageSent(bytes32,uint64,address,string,tuple,uint256)": TypedContractEvent<
+    "MessageSent(bytes32,uint64,address,uint64,uint256,uint256)": TypedContractEvent<
       MessageSentEvent.InputTuple,
       MessageSentEvent.OutputTuple,
       MessageSentEvent.OutputObject
@@ -621,6 +700,17 @@ export interface ProgrammableTokenTransfers extends BaseContract {
       OwnershipTransferredEvent.InputTuple,
       OwnershipTransferredEvent.OutputTuple,
       OwnershipTransferredEvent.OutputObject
+    >;
+
+    "TokenRegistered(address,uint64)": TypedContractEvent<
+      TokenRegisteredEvent.InputTuple,
+      TokenRegisteredEvent.OutputTuple,
+      TokenRegisteredEvent.OutputObject
+    >;
+    TokenRegistered: TypedContractEvent<
+      TokenRegisteredEvent.InputTuple,
+      TokenRegisteredEvent.OutputTuple,
+      TokenRegisteredEvent.OutputObject
     >;
   };
 }

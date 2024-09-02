@@ -2,3 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export { BackedCCIPReceiver__factory } from "./BackedCCIPReceiver__factory";
+export { Messenger__factory } from "./Messenger__factory";

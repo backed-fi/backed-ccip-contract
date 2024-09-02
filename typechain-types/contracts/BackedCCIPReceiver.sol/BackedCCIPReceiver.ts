@@ -21,7 +21,7 @@ import type {
   TypedLogDescription,
   TypedListener,
   TypedContractMethod,
-} from "../common";
+} from "../../common";
 
 export declare namespace Client {
   export type EVMTokenAmountStruct = {
@@ -57,23 +57,35 @@ export declare namespace Client {
   };
 }
 
-export interface BasicMessageReceiverInterface extends Interface {
+export interface BackedCCIPReceiverInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "acceptOwnership"
+      | "allowlistDestinationChain"
+      | "allowlistSender"
+      | "allowlistSourceChain"
+      | "allowlistToken"
+      | "allowlistedDestinationChains"
+      | "allowlistedSenders"
+      | "allowlistedSourceChains"
+      | "allowlistedTokens"
       | "ccipReceive"
-      | "getLatestMessageDetails"
+      | "getLastReceivedMessageDetails"
       | "getRouter"
       | "owner"
+      | "send"
       | "supportsInterface"
       | "transferOwnership"
+      | "updateCustodyWallet"
       | "withdraw"
       | "withdrawToken"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
+      | "CustodyWalletUpdated"
       | "MessageReceived"
+      | "MessageSent"
       | "OwnershipTransferRequested"
       | "OwnershipTransferred"
   ): EventFragment;
@@ -83,21 +95,61 @@ export interface BasicMessageReceiverInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "allowlistDestinationChain",
+    values: [BigNumberish, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistSender",
+    values: [AddressLike, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistSourceChain",
+    values: [BigNumberish, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistToken",
+    values: [AddressLike, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistedDestinationChains",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistedSenders",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistedSourceChains",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "allowlistedTokens",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "ccipReceive",
     values: [Client.Any2EVMMessageStruct]
   ): string;
   encodeFunctionData(
-    functionFragment: "getLatestMessageDetails",
+    functionFragment: "getLastReceivedMessageDetails",
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "send",
+    values: [BigNumberish, AddressLike, AddressLike, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
     values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "updateCustodyWallet",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
@@ -114,21 +166,58 @@ export interface BasicMessageReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "allowlistDestinationChain",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistSender",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistSourceChain",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistedDestinationChains",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistedSenders",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistedSourceChains",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "allowlistedTokens",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "ccipReceive",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getLatestMessageDetails",
+    functionFragment: "getLastReceivedMessageDetails",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getRouter", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "send", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateCustodyWallet",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
@@ -138,24 +227,70 @@ export interface BasicMessageReceiverInterface extends Interface {
   ): Result;
 }
 
+export namespace CustodyWalletUpdatedEvent {
+  export type InputTuple = [newCustodywallet: AddressLike];
+  export type OutputTuple = [newCustodywallet: string];
+  export interface OutputObject {
+    newCustodywallet: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace MessageReceivedEvent {
   export type InputTuple = [
-    latestMessageId: BytesLike,
-    latestSourceChainSelector: BigNumberish,
-    latestSender: AddressLike,
-    latestMessage: string
+    messageId: BytesLike,
+    sourceChainSelector: BigNumberish,
+    sender: AddressLike,
+    token: AddressLike,
+    amount: BigNumberish
   ];
   export type OutputTuple = [
-    latestMessageId: string,
-    latestSourceChainSelector: bigint,
-    latestSender: string,
-    latestMessage: string
+    messageId: string,
+    sourceChainSelector: bigint,
+    sender: string,
+    token: string,
+    amount: bigint
   ];
   export interface OutputObject {
-    latestMessageId: string;
-    latestSourceChainSelector: bigint;
-    latestSender: string;
-    latestMessage: string;
+    messageId: string;
+    sourceChainSelector: bigint;
+    sender: string;
+    token: string;
+    amount: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace MessageSentEvent {
+  export type InputTuple = [
+    messageId: BytesLike,
+    destinationChainSelector: BigNumberish,
+    receiver: AddressLike,
+    token: AddressLike,
+    amount: BigNumberish,
+    fees: BigNumberish
+  ];
+  export type OutputTuple = [
+    messageId: string,
+    destinationChainSelector: bigint,
+    receiver: string,
+    token: string,
+    amount: bigint,
+    fees: bigint
+  ];
+  export interface OutputObject {
+    messageId: string;
+    destinationChainSelector: bigint;
+    receiver: string;
+    token: string;
+    amount: bigint;
+    fees: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -189,11 +324,11 @@ export namespace OwnershipTransferredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export interface BasicMessageReceiver extends BaseContract {
-  connect(runner?: ContractRunner | null): BasicMessageReceiver;
+export interface BackedCCIPReceiver extends BaseContract {
+  connect(runner?: ContractRunner | null): BackedCCIPReceiver;
   waitForDeployment(): Promise<this>;
 
-  interface: BasicMessageReceiverInterface;
+  interface: BackedCCIPReceiverInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -234,21 +369,80 @@ export interface BasicMessageReceiver extends BaseContract {
 
   acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
+  allowlistDestinationChain: TypedContractMethod<
+    [_destinationChainSelector: BigNumberish, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+
+  allowlistSender: TypedContractMethod<
+    [_sender: AddressLike, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+
+  allowlistSourceChain: TypedContractMethod<
+    [_sourceChainSelector: BigNumberish, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+
+  allowlistToken: TypedContractMethod<
+    [_token: AddressLike, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+
+  allowlistedDestinationChains: TypedContractMethod<
+    [arg0: BigNumberish],
+    [boolean],
+    "view"
+  >;
+
+  allowlistedSenders: TypedContractMethod<
+    [arg0: AddressLike],
+    [boolean],
+    "view"
+  >;
+
+  allowlistedSourceChains: TypedContractMethod<
+    [arg0: BigNumberish],
+    [boolean],
+    "view"
+  >;
+
+  allowlistedTokens: TypedContractMethod<
+    [arg0: AddressLike],
+    [boolean],
+    "view"
+  >;
+
   ccipReceive: TypedContractMethod<
     [message: Client.Any2EVMMessageStruct],
     [void],
     "nonpayable"
   >;
 
-  getLatestMessageDetails: TypedContractMethod<
+  getLastReceivedMessageDetails: TypedContractMethod<
     [],
-    [[string, bigint, string, string]],
+    [[string, string] & { messageId: string; text: string }],
     "view"
   >;
 
   getRouter: TypedContractMethod<[], [string], "view">;
 
   owner: TypedContractMethod<[], [string], "view">;
+
+  send: TypedContractMethod<
+    [
+      _destinationChainSelector: BigNumberish,
+      _receiver: AddressLike,
+      _token: AddressLike,
+      _amount: BigNumberish
+    ],
+    [string],
+    "nonpayable"
+  >;
 
   supportsInterface: TypedContractMethod<
     [interfaceId: BytesLike],
@@ -262,14 +456,20 @@ export interface BasicMessageReceiver extends BaseContract {
     "nonpayable"
   >;
 
+  updateCustodyWallet: TypedContractMethod<
+    [_custodyWallet: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   withdraw: TypedContractMethod<
-    [beneficiary: AddressLike],
+    [_beneficiary: AddressLike],
     [void],
     "nonpayable"
   >;
 
   withdrawToken: TypedContractMethod<
-    [beneficiary: AddressLike, token: AddressLike],
+    [_beneficiary: AddressLike, _token: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -282,6 +482,46 @@ export interface BasicMessageReceiver extends BaseContract {
     nameOrSignature: "acceptOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "allowlistDestinationChain"
+  ): TypedContractMethod<
+    [_destinationChainSelector: BigNumberish, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "allowlistSender"
+  ): TypedContractMethod<
+    [_sender: AddressLike, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "allowlistSourceChain"
+  ): TypedContractMethod<
+    [_sourceChainSelector: BigNumberish, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "allowlistToken"
+  ): TypedContractMethod<
+    [_token: AddressLike, allowed: boolean],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "allowlistedDestinationChains"
+  ): TypedContractMethod<[arg0: BigNumberish], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "allowlistedSenders"
+  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "allowlistedSourceChains"
+  ): TypedContractMethod<[arg0: BigNumberish], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "allowlistedTokens"
+  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+  getFunction(
     nameOrSignature: "ccipReceive"
   ): TypedContractMethod<
     [message: Client.Any2EVMMessageStruct],
@@ -289,8 +529,12 @@ export interface BasicMessageReceiver extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "getLatestMessageDetails"
-  ): TypedContractMethod<[], [[string, bigint, string, string]], "view">;
+    nameOrSignature: "getLastReceivedMessageDetails"
+  ): TypedContractMethod<
+    [],
+    [[string, string] & { messageId: string; text: string }],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getRouter"
   ): TypedContractMethod<[], [string], "view">;
@@ -298,28 +542,57 @@ export interface BasicMessageReceiver extends BaseContract {
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "send"
+  ): TypedContractMethod<
+    [
+      _destinationChainSelector: BigNumberish,
+      _receiver: AddressLike,
+      _token: AddressLike,
+      _amount: BigNumberish
+    ],
+    [string],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[to: AddressLike], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "updateCustodyWallet"
+  ): TypedContractMethod<[_custodyWallet: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "withdraw"
-  ): TypedContractMethod<[beneficiary: AddressLike], [void], "nonpayable">;
+  ): TypedContractMethod<[_beneficiary: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "withdrawToken"
   ): TypedContractMethod<
-    [beneficiary: AddressLike, token: AddressLike],
+    [_beneficiary: AddressLike, _token: AddressLike],
     [void],
     "nonpayable"
   >;
 
+  getEvent(
+    key: "CustodyWalletUpdated"
+  ): TypedContractEvent<
+    CustodyWalletUpdatedEvent.InputTuple,
+    CustodyWalletUpdatedEvent.OutputTuple,
+    CustodyWalletUpdatedEvent.OutputObject
+  >;
   getEvent(
     key: "MessageReceived"
   ): TypedContractEvent<
     MessageReceivedEvent.InputTuple,
     MessageReceivedEvent.OutputTuple,
     MessageReceivedEvent.OutputObject
+  >;
+  getEvent(
+    key: "MessageSent"
+  ): TypedContractEvent<
+    MessageSentEvent.InputTuple,
+    MessageSentEvent.OutputTuple,
+    MessageSentEvent.OutputObject
   >;
   getEvent(
     key: "OwnershipTransferRequested"
@@ -337,7 +610,18 @@ export interface BasicMessageReceiver extends BaseContract {
   >;
 
   filters: {
-    "MessageReceived(bytes32,uint64,address,string)": TypedContractEvent<
+    "CustodyWalletUpdated(address)": TypedContractEvent<
+      CustodyWalletUpdatedEvent.InputTuple,
+      CustodyWalletUpdatedEvent.OutputTuple,
+      CustodyWalletUpdatedEvent.OutputObject
+    >;
+    CustodyWalletUpdated: TypedContractEvent<
+      CustodyWalletUpdatedEvent.InputTuple,
+      CustodyWalletUpdatedEvent.OutputTuple,
+      CustodyWalletUpdatedEvent.OutputObject
+    >;
+
+    "MessageReceived(bytes32,uint64,address,address,uint256)": TypedContractEvent<
       MessageReceivedEvent.InputTuple,
       MessageReceivedEvent.OutputTuple,
       MessageReceivedEvent.OutputObject
@@ -346,6 +630,17 @@ export interface BasicMessageReceiver extends BaseContract {
       MessageReceivedEvent.InputTuple,
       MessageReceivedEvent.OutputTuple,
       MessageReceivedEvent.OutputObject
+    >;
+
+    "MessageSent(bytes32,uint64,address,address,uint256,uint256)": TypedContractEvent<
+      MessageSentEvent.InputTuple,
+      MessageSentEvent.OutputTuple,
+      MessageSentEvent.OutputObject
+    >;
+    MessageSent: TypedContractEvent<
+      MessageSentEvent.InputTuple,
+      MessageSentEvent.OutputTuple,
+      MessageSentEvent.OutputObject
     >;
 
     "OwnershipTransferRequested(address,address)": TypedContractEvent<

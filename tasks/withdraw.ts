@@ -2,9 +2,8 @@ import { task } from "hardhat/config";
 import { TaskArguments } from "hardhat/types";
 import { getPrivateKey, getProviderRpcUrl } from "../helpers/utils";
 import { Wallet, JsonRpcProvider } from "ethers";
-import { Withdraw } from "../typechain-types/contracts/utils";
-import { Withdraw__factory } from "../typechain-types/factories/contracts/utils";
 import { Spinner } from "../helpers/spinner";
+import { BackedCCIPReceiver, BackedCCIPReceiver__factory } from "../typechain-types";
 
 task(
   `withdraw`,
@@ -30,7 +29,7 @@ task(
     const wallet = new Wallet(privateKey);
     const signer = wallet.connect(provider);
 
-    const withdraw: Withdraw = Withdraw__factory.connect(from, signer);
+    const backedCCIPReceiver: BackedCCIPReceiver = BackedCCIPReceiver__factory.connect(from, signer);
 
     const spinner: Spinner = new Spinner();
 
@@ -40,7 +39,7 @@ task(
       );
       spinner.start();
 
-      const withdrawalTx = await withdraw.withdrawToken(
+      const withdrawalTx = await backedCCIPReceiver.withdrawToken(
         beneficiary,
         tokenAddress
       );
@@ -56,7 +55,7 @@ task(
       );
       spinner.start();
 
-      const withdrawalTx = await withdraw.withdraw(beneficiary);
+      const withdrawalTx = await backedCCIPReceiver.withdraw(beneficiary);
       await withdrawalTx.wait();
 
       spinner.stop();

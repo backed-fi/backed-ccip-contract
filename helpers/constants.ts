@@ -23,6 +23,22 @@ export const supportedNetworks = [
     `zksyncSepolia`
 ];
 
+export const CUSTODY_ADDRESS: AddressMap = {
+    [`ethereumSepolia`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`polygonAmoy`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`optimismSepolia`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`arbitrumSepolia`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`avalancheFuji`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`bnbChainTestnet`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`baseSepolia`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`kromaSepolia`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`wemixTestnet`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`gnosisChiado`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`celoAlfajores`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`metisSepolia`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`zksyncSepolia`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`
+};
+
 export const LINK_ADDRESSES: AddressMap = {
     [`ethereumSepolia`]: `0x779877A7B0D9E8603169DdbD7836e478b4624789`,
     [`polygonAmoy`]: `0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904`,
