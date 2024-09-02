@@ -26,6 +26,7 @@ contract Messenger is CCIPReceiver, OwnerIsCreator {
     error SourceChainNotAllowlisted(uint64 sourceChainSelector); // Used when the source chain has not been allowlisted by the contract owner.
     error SenderNotAllowlisted(address sender); // Used when the sender has not been allowlisted by the contract owner.
     error InvalidReceiverAddress(); // Used when the receiver address is 0.
+    error TokenNotAllowlisted(address token); // Used when the token has not been allowlisted by the contract owner.
 
     // Event emitted when a message is sent to another chain.
     event MessageSent(
@@ -45,8 +46,13 @@ contract Messenger is CCIPReceiver, OwnerIsCreator {
         string text // The text that was received.
     );
 
+    event CustodyWalletUpdated(
+        address newCustodywallet // The address of new custody wallet.
+    );
+
     bytes32 private s_lastReceivedMessageId; // Store the last received messageId.
     string private s_lastReceivedText; // Store the last received text.
+    address private custodyWallet; // Custody wallet.
 
     // Mapping to keep track of allowlisted destination chains.
     mapping(uint64 => bool) public allowlistedDestinationChains;
@@ -57,13 +63,14 @@ contract Messenger is CCIPReceiver, OwnerIsCreator {
     // Mapping to keep track of allowlisted senders.
     mapping(address => bool) public allowlistedSenders;
 
-    IERC20 private s_linkToken;
+    // Mapping to keep track of allowlisted tokens.
+    mapping(address => bool) public allowlistedTokens;
 
     /// @notice Constructor initializes the contract with the router address.
     /// @param _router The address of the router contract.
-    /// @param _link The address of the link contract.
-    constructor(address _router, address _link) CCIPReceiver(_router) {
-        s_linkToken = IERC20(_link);
+    /// @param _custodyWallet The address of the custody wallet.
+    constructor(address _router, address _custodyWallet) CCIPReceiver(_router) {
+        custodyWallet = _custodyWallet;
     }
 
     /// @dev Modifier that checks if the chain with the given destinationChainSelector is allowlisted.
@@ -81,6 +88,14 @@ contract Messenger is CCIPReceiver, OwnerIsCreator {
         if (!allowlistedSourceChains[_sourceChainSelector])
             revert SourceChainNotAllowlisted(_sourceChainSelector);
         if (!allowlistedSenders[_sender]) revert SenderNotAllowlisted(_sender);
+        _;
+    }
+
+    /// @dev Modifier that checks if token is allowlisted
+    /// @param _token The address of the sender.
+    modifier onlyAllowlistedToken(address _token) {
+        if (!allowlistedTokens[_token])
+            revert TokenNotAllowlisted(_token);
         _;
     }
 
@@ -110,6 +125,21 @@ contract Messenger is CCIPReceiver, OwnerIsCreator {
     /// @dev Updates the allowlist status of a sender for transactions.
     function allowlistSender(address _sender, bool allowed) external onlyOwner {
         allowlistedSenders[_sender] = allowed;
+    }
+
+    /// @dev Updates the allowlist status of a sender for transactions.
+    function allowlistToken(address _token, bool allowed) external onlyOwner {
+        allowlistTokens[_token] = allowed;
+    }
+
+    /// @dev Updates the custody wallet.
+    /// @param _custodyWallet new custody wallet address
+    function updateCustodyWallet(
+        address _custodyWallet
+    ) external onlyOwner {
+        custodyWallet = _custodyWallet;
+
+        emit CustodyWalletUpdated(_custodyWallet);
     }
 
     /// @notice Sends data to receiver on the destination chain.
