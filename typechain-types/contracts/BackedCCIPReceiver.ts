@@ -61,7 +61,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "acceptOwnership"
-      | "allowlistDestinationChain"
       | "allowlistSender"
       | "allowlistSourceChain"
       | "allowlistedDestinationChains"
@@ -71,6 +70,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "getLastReceivedMessageDetails"
       | "getRouter"
       | "owner"
+      | "registerDestinationChain"
       | "registerToken"
       | "send"
       | "supportsInterface"
@@ -95,10 +95,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
   encodeFunctionData(
     functionFragment: "acceptOwnership",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "allowlistDestinationChain",
-    values: [BigNumberish, boolean]
   ): string;
   encodeFunctionData(
     functionFragment: "allowlistSender",
@@ -131,12 +127,16 @@ export interface BackedCCIPReceiverInterface extends Interface {
   encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "registerDestinationChain",
+    values: [BigNumberish, AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "registerToken",
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "send",
-    values: [BigNumberish, AddressLike, AddressLike, BigNumberish]
+    values: [BigNumberish, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -172,10 +172,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "allowlistDestinationChain",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "allowlistSender",
     data: BytesLike
   ): Result;
@@ -205,6 +201,10 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "getRouter", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "registerDestinationChain",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "registerToken",
     data: BytesLike
@@ -386,12 +386,6 @@ export interface BackedCCIPReceiver extends BaseContract {
 
   acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
-  allowlistDestinationChain: TypedContractMethod<
-    [_destinationChainSelector: BigNumberish, allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
-
   allowlistSender: TypedContractMethod<
     [_sender: AddressLike, allowed: boolean],
     [void],
@@ -406,7 +400,7 @@ export interface BackedCCIPReceiver extends BaseContract {
 
   allowlistedDestinationChains: TypedContractMethod<
     [arg0: BigNumberish],
-    [boolean],
+    [string],
     "view"
   >;
 
@@ -431,8 +425,9 @@ export interface BackedCCIPReceiver extends BaseContract {
   getLastReceivedMessageDetails: TypedContractMethod<
     [],
     [
-      [string, string, bigint] & {
+      [string, string, string, bigint] & {
         messageId: string;
+        receiver: string;
         token: string;
         amount: bigint;
       }
@@ -444,6 +439,12 @@ export interface BackedCCIPReceiver extends BaseContract {
 
   owner: TypedContractMethod<[], [string], "view">;
 
+  registerDestinationChain: TypedContractMethod<
+    [_destinationChainSelector: BigNumberish, receiver: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   registerToken: TypedContractMethod<
     [_token: AddressLike, _tokenId: BigNumberish],
     [void],
@@ -453,7 +454,6 @@ export interface BackedCCIPReceiver extends BaseContract {
   send: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
-      _receiver: AddressLike,
       _token: AddressLike,
       _amount: BigNumberish
     ],
@@ -503,13 +503,6 @@ export interface BackedCCIPReceiver extends BaseContract {
     nameOrSignature: "acceptOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "allowlistDestinationChain"
-  ): TypedContractMethod<
-    [_destinationChainSelector: BigNumberish, allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
     nameOrSignature: "allowlistSender"
   ): TypedContractMethod<
     [_sender: AddressLike, allowed: boolean],
@@ -525,7 +518,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "allowlistedDestinationChains"
-  ): TypedContractMethod<[arg0: BigNumberish], [boolean], "view">;
+  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
   getFunction(
     nameOrSignature: "allowlistedSenders"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
@@ -544,8 +537,9 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): TypedContractMethod<
     [],
     [
-      [string, string, bigint] & {
+      [string, string, string, bigint] & {
         messageId: string;
+        receiver: string;
         token: string;
         amount: bigint;
       }
@@ -559,6 +553,13 @@ export interface BackedCCIPReceiver extends BaseContract {
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "registerDestinationChain"
+  ): TypedContractMethod<
+    [_destinationChainSelector: BigNumberish, receiver: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "registerToken"
   ): TypedContractMethod<
     [_token: AddressLike, _tokenId: BigNumberish],
@@ -570,7 +571,6 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
-      _receiver: AddressLike,
       _token: AddressLike,
       _amount: BigNumberish
     ],

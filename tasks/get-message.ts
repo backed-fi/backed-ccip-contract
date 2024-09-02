@@ -37,9 +37,8 @@ task(`get-message`, `Gets BackedCCIPReceiver latest received message details`)
       spinner.stop();
       console.log(`ℹ️ Latest Message Details:`);
       console.log(`- Message Id: ${latestMessageDetails[0]}`);
-      console.log(`- Source Chain Selector: ${latestMessageDetails[1]}`);
-      console.log(`- Sender: ${latestMessageDetails[2]}`);
-      console.log(`- Token: ${latestMessageDetails[3]}`);
-      console.log(`- Amount: ${latestMessageDetails[4]}`);
+      console.log(`- Receiver: ${latestMessageDetails[1]}`);
+      console.log(`- Token: ${latestMessageDetails[2]}`);
+      console.log(`- Amount: ${latestMessageDetails[3]}`);
     }
   );
