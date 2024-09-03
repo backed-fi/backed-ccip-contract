@@ -3,6 +3,8 @@
 /* eslint-disable */
 import type * as chainlink from "./@chainlink";
 export type { chainlink };
+import type * as openzeppelin from "./@openzeppelin";
+export type { openzeppelin };
 import type * as contracts from "./contracts";
 export type { contracts };
 export * as factories from "./factories";
@@ -64,3 +66,5 @@ export type { WETH9 } from "./@chainlink/local/src/shared/WETH9";
 export { WETH9__factory } from "./factories/@chainlink/local/src/shared/WETH9__factory";
 export type { BackedCCIPReceiver } from "./contracts/BackedCCIPReceiver";
 export { BackedCCIPReceiver__factory } from "./factories/contracts/BackedCCIPReceiver__factory";
+export type { ERC20Mock } from "./contracts/test/ERC20Mock";
+export { ERC20Mock__factory } from "./factories/contracts/test/ERC20Mock__factory";

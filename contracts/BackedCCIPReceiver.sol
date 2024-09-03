@@ -187,7 +187,8 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     /// @notice Pay for fees in native gas.
     /// @dev Assumes your contract has sufficient native gas tokens.
     /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
-    /// @param _receiver The address of the recipient on the destination blockchain.
+    /// @param _receiver The address of the recipient of the message on the destination blockchain.
+    /// @param _tokenReceiver The address of the recipient of the token on the destination blockchain.
     /// @param _tokenId The arbitrary id of the token to be received on the destination blockchain.
     /// @param _amount The amount to be received on the destination blockchain.
     /// @return messageId The ID of the CCIP message that was sent.
