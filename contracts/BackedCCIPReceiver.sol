@@ -21,7 +21,7 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     using SafeERC20 for IERC20;
 
     // Custom errors to provide more descriptive revert messages.
-    error NotEnoughBalance(uint256 currentBalance, uint256 calculatedFees); // Used to make sure contract has enough balance.
+    error InsufficientMessageValue(uint256 value, uint256 calculatedFees); // Used to make sure client has sent enough to cover the fees.
     error NothingToWithdraw(); // Used when trying to withdraw Ether but there's nothing to withdraw.
     error FailedToWithdrawEth(address owner, address target, uint256 value); // Used when the withdrawal of Ether fails.
     error DestinationChainNotAllowlisted(uint64 destinationChainSelector); // Used when the destination chain has not been allowlisted by the contract owner.
@@ -168,6 +168,7 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
         uint256 _amount
     )
         external
+        payable
         onlyAllowlistedDestinationChain(_destinationChainSelector)
         onlyAllowRegisteredTokens(_token)
         returns (bytes32 messageId)
@@ -181,6 +182,32 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
         if (receiver == address(0)) revert InvalidReceiverAddress();
 
         return _sendMessagePayNative(_destinationChainSelector, receiver, msg.sender, tokenId, _amount);
+    }
+
+    /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector`
+    /// @param _destinationChainSelector: The identifier (aka selector) for the destination blockchain.
+    /// @param _token The address of the token to sent.
+    /// @param _amount The amount to be sent.
+    /// @return The calculated delivery fee cost
+    function getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount) public view returns (uint256) {
+        address receiver = allowlistedDestinationChains[_destinationChainSelector];
+        uint64 tokenId = tokenIds[_token];
+
+        Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
+            receiver,
+            msg.sender,
+            tokenId,
+            _amount
+        );
+
+        return getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
+    }
+
+    function getDeliveryCost(uint64 _destinationChainSelector, Client.EVM2AnyMessage memory _evm2AnyMessage) internal view returns (uint256) {
+        IRouterClient router = IRouterClient(this.getRouter());
+
+        // Get the fee required to send the CCIP message
+        return router.getFee(_destinationChainSelector, _evm2AnyMessage);
     }
 
     /// @notice Sends data to receiver on the destination chain.
@@ -210,15 +237,14 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
             _amount
         );
 
-        // Initialize a router client instance to interact with cross-chain router
+        uint256 fees = getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
+
+        if (fees > msg.value)
+            revert InsufficientMessageValue(msg.value, fees);
+
+       // Initialize a router client instance to interact with cross-chain router
         IRouterClient router = IRouterClient(this.getRouter());
-
-        // Get the fee required to send the CCIP message
-        uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);
-
-        if (fees > address(this).balance)
-            revert NotEnoughBalance(address(this).balance, fees);
-
+        
         // Send the CCIP message through the router and store the returned CCIP message ID
         messageId = router.ccipSend{value: fees}(
             _destinationChainSelector,

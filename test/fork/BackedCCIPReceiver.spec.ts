@@ -80,9 +80,11 @@ describe("Integration", function () {
     expect(custodyBalanceOnSourceChain).to.deep.equal(0n)
     expect(clientBalanceOnSourceChain).to.deep.equal(10_000_000_000_000_000_000n)
 
+    const feeCosts = await backedCCIPReceiverOnSourceChain.connect(client).getDeliveryFeeCost(destinationChainSelector, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n)
+
     console.log(`Custody balance on source chain: ${custodyBalanceOnSourceChain}`);
     console.log(`Client balance on source chain: ${clientBalanceOnSourceChain}`);
-    const tx = await backedCCIPReceiverOnSourceChain.connect(client).send(destinationChainSelector, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n);
+    const tx = await backedCCIPReceiverOnSourceChain.connect(client).send(destinationChainSelector, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n, { value: feeCosts });
     const receipt = await tx.wait();
 
     custodyBalanceOnSourceChain = await tokenOnSourceChain.balanceOf(systemWallet.address);

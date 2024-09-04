@@ -67,6 +67,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "allowlistedSenders"
       | "allowlistedSourceChains"
       | "ccipReceive"
+      | "getDeliveryFeeCost"
       | "getLastReceivedMessageDetails"
       | "getRouter"
       | "owner"
@@ -119,6 +120,10 @@ export interface BackedCCIPReceiverInterface extends Interface {
   encodeFunctionData(
     functionFragment: "ccipReceive",
     values: [Client.Any2EVMMessageStruct]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDeliveryFeeCost",
+    values: [BigNumberish, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "getLastReceivedMessageDetails",
@@ -193,6 +198,10 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "ccipReceive",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getDeliveryFeeCost",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -422,6 +431,16 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
 
+  getDeliveryFeeCost: TypedContractMethod<
+    [
+      _destinationChainSelector: BigNumberish,
+      _token: AddressLike,
+      _amount: BigNumberish
+    ],
+    [bigint],
+    "view"
+  >;
+
   getLastReceivedMessageDetails: TypedContractMethod<
     [],
     [
@@ -458,7 +477,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       _amount: BigNumberish
     ],
     [string],
-    "nonpayable"
+    "payable"
   >;
 
   supportsInterface: TypedContractMethod<
@@ -533,6 +552,17 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "getDeliveryFeeCost"
+  ): TypedContractMethod<
+    [
+      _destinationChainSelector: BigNumberish,
+      _token: AddressLike,
+      _amount: BigNumberish
+    ],
+    [bigint],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "getLastReceivedMessageDetails"
   ): TypedContractMethod<
     [],
@@ -575,7 +605,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       _amount: BigNumberish
     ],
     [string],
-    "nonpayable"
+    "payable"
   >;
   getFunction(
     nameOrSignature: "supportsInterface"
