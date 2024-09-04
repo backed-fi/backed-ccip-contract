@@ -67,18 +67,21 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "allowlistedSenders"
       | "allowlistedSourceChains"
       | "ccipReceive"
-      | "getDeliveryFeeCost"
+      | "getDeliveryFeeCost(uint64,address,uint256)"
+      | "getDeliveryFeeCost(uint64,address,uint256,uint256)"
       | "getLastReceivedMessageDetails"
       | "getRouter"
       | "owner"
       | "registerDestinationChain"
       | "registerToken"
-      | "send"
+      | "send(uint64,address,uint256,uint256)"
+      | "send(uint64,address,uint256)"
       | "supportsInterface"
       | "tokenIds"
       | "tokens"
       | "transferOwnership"
       | "updateCustodyWallet"
+      | "updateGasLimit"
       | "withdraw"
       | "withdrawToken"
   ): FunctionFragment;
@@ -86,6 +89,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
   getEvent(
     nameOrSignatureOrTopic:
       | "CustodyWalletUpdated"
+      | "GasLimitUpdated"
       | "MessageReceived"
       | "MessageSent"
       | "OwnershipTransferRequested"
@@ -122,8 +126,12 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [Client.Any2EVMMessageStruct]
   ): string;
   encodeFunctionData(
-    functionFragment: "getDeliveryFeeCost",
+    functionFragment: "getDeliveryFeeCost(uint64,address,uint256)",
     values: [BigNumberish, AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDeliveryFeeCost(uint64,address,uint256,uint256)",
+    values: [BigNumberish, AddressLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "getLastReceivedMessageDetails",
@@ -140,7 +148,11 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "send",
+    functionFragment: "send(uint64,address,uint256,uint256)",
+    values: [BigNumberish, AddressLike, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "send(uint64,address,uint256)",
     values: [BigNumberish, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
@@ -162,6 +174,10 @@ export interface BackedCCIPReceiverInterface extends Interface {
   encodeFunctionData(
     functionFragment: "updateCustodyWallet",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "updateGasLimit",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "withdraw",
@@ -201,7 +217,11 @@ export interface BackedCCIPReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getDeliveryFeeCost",
+    functionFragment: "getDeliveryFeeCost(uint64,address,uint256)",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getDeliveryFeeCost(uint64,address,uint256,uint256)",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -218,7 +238,14 @@ export interface BackedCCIPReceiverInterface extends Interface {
     functionFragment: "registerToken",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "send", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "send(uint64,address,uint256,uint256)",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "send(uint64,address,uint256)",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
@@ -233,6 +260,10 @@ export interface BackedCCIPReceiverInterface extends Interface {
     functionFragment: "updateCustodyWallet",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateGasLimit",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "withdrawToken",
@@ -245,6 +276,18 @@ export namespace CustodyWalletUpdatedEvent {
   export type OutputTuple = [newCustodywallet: string];
   export interface OutputObject {
     newCustodywallet: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace GasLimitUpdatedEvent {
+  export type InputTuple = [newGasLimit: BigNumberish];
+  export type OutputTuple = [newGasLimit: bigint];
+  export interface OutputObject {
+    newGasLimit: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -431,11 +474,22 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
 
-  getDeliveryFeeCost: TypedContractMethod<
+  "getDeliveryFeeCost(uint64,address,uint256)": TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
       _amount: BigNumberish
+    ],
+    [bigint],
+    "view"
+  >;
+
+  "getDeliveryFeeCost(uint64,address,uint256,uint256)": TypedContractMethod<
+    [
+      _destinationChainSelector: BigNumberish,
+      _token: AddressLike,
+      _amount: BigNumberish,
+      _customGasLimit: BigNumberish
     ],
     [bigint],
     "view"
@@ -470,7 +524,18 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
 
-  send: TypedContractMethod<
+  "send(uint64,address,uint256,uint256)": TypedContractMethod<
+    [
+      _destinationChainSelector: BigNumberish,
+      _token: AddressLike,
+      _amount: BigNumberish,
+      _customGasLimit: BigNumberish
+    ],
+    [string],
+    "payable"
+  >;
+
+  "send(uint64,address,uint256)": TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
@@ -498,6 +563,12 @@ export interface BackedCCIPReceiver extends BaseContract {
 
   updateCustodyWallet: TypedContractMethod<
     [_custodyWallet: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  updateGasLimit: TypedContractMethod<
+    [_gasLimit: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -552,12 +623,24 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "getDeliveryFeeCost"
+    nameOrSignature: "getDeliveryFeeCost(uint64,address,uint256)"
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
       _amount: BigNumberish
+    ],
+    [bigint],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "getDeliveryFeeCost(uint64,address,uint256,uint256)"
+  ): TypedContractMethod<
+    [
+      _destinationChainSelector: BigNumberish,
+      _token: AddressLike,
+      _amount: BigNumberish,
+      _customGasLimit: BigNumberish
     ],
     [bigint],
     "view"
@@ -597,7 +680,19 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "send"
+    nameOrSignature: "send(uint64,address,uint256,uint256)"
+  ): TypedContractMethod<
+    [
+      _destinationChainSelector: BigNumberish,
+      _token: AddressLike,
+      _amount: BigNumberish,
+      _customGasLimit: BigNumberish
+    ],
+    [string],
+    "payable"
+  >;
+  getFunction(
+    nameOrSignature: "send(uint64,address,uint256)"
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
@@ -623,6 +718,9 @@ export interface BackedCCIPReceiver extends BaseContract {
     nameOrSignature: "updateCustodyWallet"
   ): TypedContractMethod<[_custodyWallet: AddressLike], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "updateGasLimit"
+  ): TypedContractMethod<[_gasLimit: BigNumberish], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "withdraw"
   ): TypedContractMethod<[_beneficiary: AddressLike], [void], "nonpayable">;
   getFunction(
@@ -639,6 +737,13 @@ export interface BackedCCIPReceiver extends BaseContract {
     CustodyWalletUpdatedEvent.InputTuple,
     CustodyWalletUpdatedEvent.OutputTuple,
     CustodyWalletUpdatedEvent.OutputObject
+  >;
+  getEvent(
+    key: "GasLimitUpdated"
+  ): TypedContractEvent<
+    GasLimitUpdatedEvent.InputTuple,
+    GasLimitUpdatedEvent.OutputTuple,
+    GasLimitUpdatedEvent.OutputObject
   >;
   getEvent(
     key: "MessageReceived"
@@ -686,6 +791,17 @@ export interface BackedCCIPReceiver extends BaseContract {
       CustodyWalletUpdatedEvent.InputTuple,
       CustodyWalletUpdatedEvent.OutputTuple,
       CustodyWalletUpdatedEvent.OutputObject
+    >;
+
+    "GasLimitUpdated(uint256)": TypedContractEvent<
+      GasLimitUpdatedEvent.InputTuple,
+      GasLimitUpdatedEvent.OutputTuple,
+      GasLimitUpdatedEvent.OutputObject
+    >;
+    GasLimitUpdated: TypedContractEvent<
+      GasLimitUpdatedEvent.InputTuple,
+      GasLimitUpdatedEvent.OutputTuple,
+      GasLimitUpdatedEvent.OutputObject
     >;
 
     "MessageReceived(bytes32,uint64,address,uint64,uint256)": TypedContractEvent<

@@ -54,6 +54,10 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
         address newCustodywallet // The address of new custody wallet.
     );
 
+    event GasLimitUpdated(
+        uint256 newGasLimit // CCIP gas limit
+    );
+
     event TokenRegistered(
         address token, // The address of the token
         uint64 tokenId
@@ -62,6 +66,7 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     BackedStructs.BackedTransferMessageStruct private lastReceivedMessage;
 
     address private custodyWallet; // Custody wallet.
+    uint256 private defaultGasLimit; // Gas limit for CCIP 
 
     // Mapping to keep track of allowlisted destination chains.
     mapping(uint64 => address) public allowlistedDestinationChains;
@@ -80,8 +85,10 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     /// @notice Constructor initializes the contract with the router address.
     /// @param _router The address of the router contract.
     /// @param _custodyWallet The address of the custody wallet.
-    constructor(address _router, address _custodyWallet) CCIPReceiver(_router) {
+    /// @param _gasLimit Initial value for CCIP default gas limit.
+    constructor(address _router, address _custodyWallet, uint256 _gasLimit) CCIPReceiver(_router) {
         custodyWallet = _custodyWallet;
+        defaultGasLimit = _gasLimit;
     }
 
     /// @dev Modifier that checks if the chain with the given destinationChainSelector is allowlisted.
@@ -158,6 +165,16 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
         emit CustodyWalletUpdated(_custodyWallet);
     }
 
+    /// @dev Updates default gas limit for CCIP.
+    /// @param _gasLimit New default gas limit
+    function updateGasLimit(
+        uint256 _gasLimit
+    ) external onlyOwner {
+        defaultGasLimit = _gasLimit;
+
+        emit GasLimitUpdated(_gasLimit);
+    }
+
     /// @notice Sends tokens to custody wallet and sends information to destination chain.
     /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
     /// @param _token The address of the token to sent.
@@ -173,15 +190,27 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
         onlyAllowRegisteredTokens(_token)
         returns (bytes32 messageId)
     {
-        IERC20(_token).safeTransferFrom(
-            msg.sender, custodyWallet, _amount
-        );
+       return _send(_destinationChainSelector, _token, _amount, defaultGasLimit);
+    }
 
-        uint64 tokenId = tokenIds[_token];
-        address receiver = allowlistedDestinationChains[_destinationChainSelector];
-        if (receiver == address(0)) revert InvalidReceiverAddress();
-
-        return _sendMessagePayNative(_destinationChainSelector, receiver, msg.sender, tokenId, _amount);
+    /// @notice Sends tokens to custody wallet and sends information to destination chain.
+    /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
+    /// @param _token The address of the token to sent.
+    /// @param _amount The amount to be sent.
+    /// @param _customGasLimit Custom gas limit for CCIP
+    function send(
+        uint64 _destinationChainSelector,
+        address _token,
+        uint256 _amount,
+        uint256 _customGasLimit
+    )
+        external
+        payable
+        onlyAllowlistedDestinationChain(_destinationChainSelector)
+        onlyAllowRegisteredTokens(_token)
+        returns (bytes32 messageId)
+    {
+        return _send(_destinationChainSelector, _token, _amount, _customGasLimit);
     }
 
     /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector`
@@ -190,6 +219,20 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     /// @param _amount The amount to be sent.
     /// @return The calculated delivery fee cost
     function getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount) public view returns (uint256) {
+        return _getDeliveryFeeCost(_destinationChainSelector, _token, _amount, defaultGasLimit);
+    }
+
+    /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector` and using `_customGasLimit`
+    /// @param _destinationChainSelector: The identifier (aka selector) for the destination blockchain.
+    /// @param _token The address of the token to sent.
+    /// @param _amount The amount to be sent.
+    /// @param _customGasLimit Custom CCIP gas limit
+    /// @return The calculated delivery fee cost
+    function getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount, uint256 _customGasLimit) public view returns (uint256) {
+        return _getDeliveryFeeCost(_destinationChainSelector, _token, _amount, _customGasLimit);
+    }
+
+    function _getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount, uint256 _gasLimit) internal view returns (uint256) {
         address receiver = allowlistedDestinationChains[_destinationChainSelector];
         uint64 tokenId = tokenIds[_token];
 
@@ -197,7 +240,8 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
             receiver,
             msg.sender,
             tokenId,
-            _amount
+            _amount,
+            _gasLimit
         );
 
         return getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
@@ -208,6 +252,31 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
 
         // Get the fee required to send the CCIP message
         return router.getFee(_destinationChainSelector, _evm2AnyMessage);
+    }
+
+    /// @notice Sends tokens to custody wallet and sends information to destination chain.
+    /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
+    /// @param _token The address of the token to sent.
+    /// @param _amount The amount to be sent.
+    /// @param _gasLimit Gas limit for CCIP
+    function _send(
+        uint64 _destinationChainSelector,
+        address _token,
+        uint256 _amount,
+        uint256 _gasLimit
+    )
+        internal
+        returns (bytes32 messageId) 
+    {
+        IERC20(_token).safeTransferFrom(
+            msg.sender, custodyWallet, _amount
+        );
+
+        uint64 tokenId = tokenIds[_token];
+        address receiver = allowlistedDestinationChains[_destinationChainSelector];
+        if (receiver == address(0)) revert InvalidReceiverAddress();
+
+        return _sendMessagePayNative(_destinationChainSelector, receiver, msg.sender, tokenId, _amount, _gasLimit);
     }
 
     /// @notice Sends data to receiver on the destination chain.
@@ -224,7 +293,8 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
         address _receiver,
         address _tokenReceiver,
         uint64 _tokenId,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _gasLimit
     )
         internal
         returns (bytes32 messageId)
@@ -234,7 +304,8 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
             _receiver,
             _tokenReceiver,
             _tokenId,
-            _amount
+            _amount,
+            _gasLimit
         );
 
         uint256 fees = getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
@@ -280,7 +351,9 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
 
         address token = tokens[tokenId];
         
-        IERC20(token).transfer(tokenReceiver, amount);
+        IERC20(token).safeTransferFrom(
+            custodyWallet, tokenReceiver, amount
+        );
 
         lastReceivedMessage.messageId = any2EvmMessage.messageId;
         lastReceivedMessage.receiver = tokenReceiver;
@@ -307,7 +380,8 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
         address _receiver,
         address _tokenReceiver,
         uint64 _tokenId,
-        uint256 _amount 
+        uint256 _amount,
+        uint256 _gasLimit
     ) private pure returns (Client.EVM2AnyMessage memory) {
         // Create an EVM2AnyMessage struct in memory with necessary information for sending a cross-chain message
         return
@@ -317,7 +391,7 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
                 tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array aas no tokens are transferred
                 extraArgs: Client._argsToBytes(
                     // Additional arguments, setting gas limit
-                    Client.EVMExtraArgsV1({gasLimit: 200_000})
+                    Client.EVMExtraArgsV1({gasLimit: _gasLimit})
                 ),
                 feeToken: address(0)
             });

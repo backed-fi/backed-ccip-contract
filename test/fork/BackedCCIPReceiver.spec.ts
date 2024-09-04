@@ -48,7 +48,7 @@ describe("Integration", function () {
       "BackedCCIPReceiver"
     );
     const backedCCIPReceiverOnSourceChain: BackedCCIPReceiver =
-      await factory.deploy(sourceRouterAddress, systemWallet.address);
+      await factory.deploy(sourceRouterAddress, systemWallet.address, 200_000);
     const backedCCIPSourceChainAddress = await backedCCIPReceiverOnSourceChain.getAddress();
 
     // transfer Native coins from sender to the Smart Contract for fees
@@ -80,11 +80,11 @@ describe("Integration", function () {
     expect(custodyBalanceOnSourceChain).to.deep.equal(0n)
     expect(clientBalanceOnSourceChain).to.deep.equal(10_000_000_000_000_000_000n)
 
-    const feeCosts = await backedCCIPReceiverOnSourceChain.connect(client).getDeliveryFeeCost(destinationChainSelector, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n)
+    const feeCosts = await backedCCIPReceiverOnSourceChain.connect(client)["getDeliveryFeeCost(uint64,address,uint256)"](destinationChainSelector, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n)
 
     console.log(`Custody balance on source chain: ${custodyBalanceOnSourceChain}`);
     console.log(`Client balance on source chain: ${clientBalanceOnSourceChain}`);
-    const tx = await backedCCIPReceiverOnSourceChain.connect(client).send(destinationChainSelector, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n, { value: feeCosts });
+    const tx = await backedCCIPReceiverOnSourceChain.connect(client)["send(uint64,address,uint256)"](destinationChainSelector, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n, { value: feeCosts });
     const receipt = await tx.wait();
 
     custodyBalanceOnSourceChain = await tokenOnSourceChain.balanceOf(systemWallet.address);
@@ -113,7 +113,7 @@ describe("Integration", function () {
       "BackedCCIPReceiver"
     );
     const backedCCIPReceiverOnDestinationChain: BackedCCIPReceiver =
-      await factoryOnDestinationChain.deploy(destinationRouterAddress, systemWallet.address);
+      await factoryOnDestinationChain.deploy(destinationRouterAddress, systemWallet.address, 200_000);
     const backedCCIPReceiverAddressOnDestinationChain = await backedCCIPReceiverOnDestinationChain.getAddress();
 
     console.log(`Deployed Backed CCIP receiver on ${destinationChainSelector}: ${backedCCIPReceiverAddressOnDestinationChain}`);
@@ -130,33 +130,31 @@ describe("Integration", function () {
     await backedCCIPReceiverOnDestinationChain.allowlistSender(backedCCIPSourceChainAddress, true);
     await backedCCIPReceiverOnDestinationChain.allowlistSourceChain(sourceChainSelector, true);
 
-    await tokenOnDestinationChain.mint(backedCCIPReceiverAddressOnDestinationChain, 10_000_000_000_000_000_000n);
+    await tokenOnDestinationChain.mint(systemWallet, 10_000_000_000_000_000_000n);
+    await tokenOnDestinationChain.connect(systemWallet).approve(backedCCIPReceiverAddressOnDestinationChain, 10_000_000_000_000_000_000n);
 
 
-    let backedCCIPReceiverBalanceOnDestinationChain = await tokenOnDestinationChain.balanceOf(backedCCIPReceiverAddressOnDestinationChain);
+    let systemWalletBalanceOnDestinationChain = await tokenOnDestinationChain.balanceOf(systemWallet.address);
     let clientBalanceOnDestinationChain = await tokenOnDestinationChain.balanceOf(client.address);
 
 
-    expect(backedCCIPReceiverBalanceOnDestinationChain).to.deep.equal(10_000_000_000_000_000_000n)
+    expect(systemWalletBalanceOnDestinationChain).to.deep.equal(10_000_000_000_000_000_000n)
     expect(clientBalanceOnDestinationChain).to.deep.equal(0n)
 
-    console.log(`Backed CCIP receiver contract balance on destination chain: ${backedCCIPReceiverBalanceOnDestinationChain}`);
+    console.log(`System wallet balance on destination chain: ${systemWalletBalanceOnDestinationChain}`);
     console.log(`Client balance on destination chain: ${clientBalanceOnDestinationChain}`);
-
-    console.log(destinationRouterAddress)
-    console.log(evm2EvmMessage.sender);
 
     await routeMessage(destinationRouterAddress, {
       ...evm2EvmMessage,
       receiver: backedCCIPReceiverAddressOnDestinationChain
     });
 
-    backedCCIPReceiverBalanceOnDestinationChain = await tokenOnDestinationChain.balanceOf(backedCCIPReceiverAddressOnDestinationChain);
+    systemWalletBalanceOnDestinationChain = await tokenOnDestinationChain.balanceOf(systemWallet.address);
     clientBalanceOnDestinationChain = await tokenOnDestinationChain.balanceOf(client.address);
-    console.log(`Backed CCIP receiver contract balance post tx on destination chain: ${backedCCIPReceiverBalanceOnDestinationChain}`);
+    console.log(`System wallet balance post tx on destination chain: ${systemWalletBalanceOnDestinationChain}`);
     console.log(`Client balance post tx on destination chain: ${clientBalanceOnDestinationChain}`);
 
-    expect(backedCCIPReceiverBalanceOnDestinationChain).to.deep.equal(10_000_000_000_000_000_000n - 1_000_000_000_000_000_000n)
+    expect(systemWalletBalanceOnDestinationChain).to.deep.equal(10_000_000_000_000_000_000n - 1_000_000_000_000_000_000n)
     expect(clientBalanceOnDestinationChain).to.deep.equal(1_000_000_000_000_000_000n)
   });
 });
