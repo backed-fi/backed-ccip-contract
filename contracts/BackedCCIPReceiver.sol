@@ -137,24 +137,18 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     }
 
     /// @dev Updates the allowlist status of a destination chain for transactions.
-    function registerDestinationChain(
-        uint64 _destinationChainSelector,
-        address receiver
-    ) external onlyOwner {
-        allowlistedDestinationChains[_destinationChainSelector] = receiver;
+    function registerDestinationChain(uint64 _destinationChainSelector, address _receiver) external onlyOwner {
+        allowlistedDestinationChains[_destinationChainSelector] = _receiver;
     }
 
     /// @dev Updates the allowlist status of a source chain for transactions.
-    function allowlistSourceChain(
-        uint64 _sourceChainSelector,
-        bool allowed
-    ) external onlyOwner {
-        allowlistedSourceChains[_sourceChainSelector] = allowed;
+    function allowlistSourceChain(uint64 _sourceChainSelector, bool _allowed ) external onlyOwner {
+        allowlistedSourceChains[_sourceChainSelector] = _allowed;
     }
 
     /// @dev Updates the allowlist status of a sender for transactions.
-    function allowlistSender(address _sender, bool allowed) external onlyOwner {
-        allowlistedSenders[_sender] = allowed;
+    function allowlistSender(address _sender, bool _allowed) external onlyOwner {
+        allowlistedSenders[_sender] = _allowed;
     }
 
     /// @dev Updates the allowlist status of a sender for transactions.
@@ -169,9 +163,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
     /// @dev Updates the custody wallet.
     /// @param _custodyWallet new custody wallet address
-    function updateCustodyWallet(
-        address _custodyWallet
-    ) external onlyOwner {
+    function updateCustodyWallet(address _custodyWallet) external onlyOwner {
         custodyWallet = _custodyWallet;
 
         emit CustodyWalletUpdated(_custodyWallet);
@@ -179,9 +171,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
     /// @dev Updates default gas limit for CCIP.
     /// @param _gasLimit New default gas limit
-    function updateGasLimit(
-        uint256 _gasLimit
-    ) external onlyOwner {
+    function updateGasLimit(uint256 _gasLimit) external onlyOwner {
         defaultGasLimitOnDestinationChain = _gasLimit;
 
         emit GasLimitUpdated(_gasLimit);
@@ -191,11 +181,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
     /// @param _token The address of the token to sent.
     /// @param _amount The amount to be sent.
-    function send(
-        uint64 _destinationChainSelector,
-        address _token,
-        uint256 _amount
-    )
+    function send(uint64 _destinationChainSelector, address _token, uint256 _amount)
         external
         payable
         onlyAllowlistedDestinationChain(_destinationChainSelector)
@@ -210,11 +196,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     /// @param _token The address of the token to sent.
     /// @param _amount The amount to be sent.
     /// @param _customGasLimit Custom gas limit for CCIP
-    function sendWithCustomDestinationGasLimit(
-        uint64 _destinationChainSelector,
-        address _token,
-        uint256 _amount,
-        uint256 _customGasLimit
+    function sendWithCustomDestinationGasLimit(uint64 _destinationChainSelector, address _token, uint256 _amount,uint256 _customGasLimit
     )
         external
         payable
@@ -271,12 +253,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     /// @param _token The address of the token to sent.
     /// @param _amount The amount to be sent.
     /// @param _gasLimit Gas limit for CCIP
-    function _send(
-        uint64 _destinationChainSelector,
-        address _token,
-        uint256 _amount,
-        uint256 _gasLimit
-    )
+    function _send(uint64 _destinationChainSelector, address _token, uint256 _amount, uint256 _gasLimit)
         internal
         returns (bytes32 messageId) 
     {
@@ -349,9 +326,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     }
 
     /// handle a received message
-    function _ccipReceive(
-        Client.Any2EVMMessage memory any2EvmMessage
-    )
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
         internal
         override
         onlyAllowlisted(
