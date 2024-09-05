@@ -19,7 +19,7 @@ const token = {
   symbol: 'bIBTA'
 }
 
-describe("Integration", function () {
+describe("CCIP Integration", function () {
   it("Should transfer tokens through CCIP from EOA to EOA", async function () {
     const [client, systemWallet] = await hre.ethers.getSigners();
     const [source, destination] = ["ethereumSepolia", "arbitrumSepolia"];

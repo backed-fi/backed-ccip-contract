@@ -15,6 +15,7 @@ task(
 )
   .addOptionalParam(`router`, `The address of the Router contract`)
   .addOptionalParam(`custodyWallet`, `The address of the custody wallet`)
+  .addOptionalParam(`gasLimit`, `Initial value for default CCIP execution gas limit on destination chain`)
   .setAction(
     async (taskArguments: TaskArguments, hre: HardhatRuntimeEnvironment) => {
       const routerAddress = taskArguments.router
@@ -23,6 +24,9 @@ task(
       const custodyWallet = taskArguments.custodyWallet
         ? taskArguments.custodyWallet
         : CUSTODY_ADDRESS[hre.network.name];
+      const gasLimit = taskArguments.gasLimit
+        ? taskArguments.gasLimit
+        : 200_000;
 
       const privateKey = getPrivateKey();
       const rpcProviderUrl = getProviderRpcUrl(hre.network.name);
@@ -38,19 +42,21 @@ task(
       );
       spinner.start();
 
-      const backedCCIPReceiverFactory: BackedCCIPReceiver__factory =
+      const factory: BackedCCIPReceiver__factory =
         (await hre.ethers.getContractFactory(
           "BackedCCIPReceiver"
         )) as BackedCCIPReceiver__factory;
-      const backedCCIPReceiver: BackedCCIPReceiver =
-        await backedCCIPReceiverFactory.deploy(routerAddress, custodyWallet);
-      await backedCCIPReceiver.waitForDeployment();
-      const backedCCIPReceiverAddress =
-        await backedCCIPReceiver.getAddress();
+
+      const proxy =
+        await hre.upgrades.deployProxy(factory, [routerAddress, custodyWallet, gasLimit]) as unknown as BackedCCIPReceiver;
+      await proxy.waitForDeployment();
+
+      const proxyAddress =
+        await proxy.getAddress();
 
       spinner.stop();
       console.log(
-        `✅ Basic Message Receiver deployed at address ${backedCCIPReceiverAddress} on ${hre.network.name} blockchain`
+        `✅ BackedReceiverCCIP proxy deployed at address ${proxyAddress} on ${hre.network.name} blockchain`
       );
     }
   );
