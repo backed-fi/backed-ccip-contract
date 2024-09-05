@@ -60,22 +60,23 @@ export declare namespace Client {
 export interface BackedCCIPReceiverInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "acceptOwnership"
       | "allowlistSender"
       | "allowlistSourceChain"
       | "allowlistedDestinationChains"
       | "allowlistedSenders"
       | "allowlistedSourceChains"
       | "ccipReceive"
-      | "getDeliveryFeeCost(uint64,address,uint256)"
-      | "getDeliveryFeeCost(uint64,address,uint256,uint256)"
+      | "getDeliveryFeeCost"
+      | "getDeliveryFeeCostWithCustomGasLimit"
       | "getLastReceivedMessageDetails"
       | "getRouter"
+      | "initialize"
       | "owner"
       | "registerDestinationChain"
       | "registerToken"
-      | "send(uint64,address,uint256,uint256)"
-      | "send(uint64,address,uint256)"
+      | "renounceOwnership"
+      | "send"
+      | "sendWithCustomDestinationGasLimit"
       | "supportsInterface"
       | "tokenIds"
       | "tokens"
@@ -90,17 +91,13 @@ export interface BackedCCIPReceiverInterface extends Interface {
     nameOrSignatureOrTopic:
       | "CustodyWalletUpdated"
       | "GasLimitUpdated"
+      | "Initialized"
       | "MessageReceived"
       | "MessageSent"
-      | "OwnershipTransferRequested"
       | "OwnershipTransferred"
       | "TokenRegistered"
   ): EventFragment;
 
-  encodeFunctionData(
-    functionFragment: "acceptOwnership",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "allowlistSender",
     values: [AddressLike, boolean]
@@ -126,11 +123,11 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [Client.Any2EVMMessageStruct]
   ): string;
   encodeFunctionData(
-    functionFragment: "getDeliveryFeeCost(uint64,address,uint256)",
+    functionFragment: "getDeliveryFeeCost",
     values: [BigNumberish, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "getDeliveryFeeCost(uint64,address,uint256,uint256)",
+    functionFragment: "getDeliveryFeeCostWithCustomGasLimit",
     values: [BigNumberish, AddressLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
@@ -138,6 +135,10 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "initialize",
+    values: [AddressLike, AddressLike, BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "registerDestinationChain",
@@ -148,12 +149,16 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "send(uint64,address,uint256,uint256)",
-    values: [BigNumberish, AddressLike, BigNumberish, BigNumberish]
+    functionFragment: "renounceOwnership",
+    values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "send(uint64,address,uint256)",
+    functionFragment: "send",
     values: [BigNumberish, AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "sendWithCustomDestinationGasLimit",
+    values: [BigNumberish, AddressLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -189,10 +194,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "acceptOwnership",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "allowlistSender",
     data: BytesLike
   ): Result;
@@ -217,11 +218,11 @@ export interface BackedCCIPReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getDeliveryFeeCost(uint64,address,uint256)",
+    functionFragment: "getDeliveryFeeCost",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getDeliveryFeeCost(uint64,address,uint256,uint256)",
+    functionFragment: "getDeliveryFeeCostWithCustomGasLimit",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -229,6 +230,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getRouter", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "registerDestinationChain",
@@ -239,11 +241,12 @@ export interface BackedCCIPReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "send(uint64,address,uint256,uint256)",
+    functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "send", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "send(uint64,address,uint256)",
+    functionFragment: "sendWithCustomDestinationGasLimit",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -288,6 +291,18 @@ export namespace GasLimitUpdatedEvent {
   export type OutputTuple = [newGasLimit: bigint];
   export interface OutputObject {
     newGasLimit: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace InitializedEvent {
+  export type InputTuple = [version: BigNumberish];
+  export type OutputTuple = [version: bigint];
+  export interface OutputObject {
+    version: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -354,25 +369,12 @@ export namespace MessageSentEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace OwnershipTransferRequestedEvent {
-  export type InputTuple = [from: AddressLike, to: AddressLike];
-  export type OutputTuple = [from: string, to: string];
-  export interface OutputObject {
-    from: string;
-    to: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
 export namespace OwnershipTransferredEvent {
-  export type InputTuple = [from: AddressLike, to: AddressLike];
-  export type OutputTuple = [from: string, to: string];
+  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [previousOwner: string, newOwner: string];
   export interface OutputObject {
-    from: string;
-    to: string;
+    previousOwner: string;
+    newOwner: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -436,8 +438,6 @@ export interface BackedCCIPReceiver extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
-
   allowlistSender: TypedContractMethod<
     [_sender: AddressLike, allowed: boolean],
     [void],
@@ -474,7 +474,7 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
 
-  "getDeliveryFeeCost(uint64,address,uint256)": TypedContractMethod<
+  getDeliveryFeeCost: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
@@ -484,7 +484,7 @@ export interface BackedCCIPReceiver extends BaseContract {
     "view"
   >;
 
-  "getDeliveryFeeCost(uint64,address,uint256,uint256)": TypedContractMethod<
+  getDeliveryFeeCostWithCustomGasLimit: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
@@ -510,6 +510,16 @@ export interface BackedCCIPReceiver extends BaseContract {
 
   getRouter: TypedContractMethod<[], [string], "view">;
 
+  initialize: TypedContractMethod<
+    [
+      _router: AddressLike,
+      _custodyWallet: AddressLike,
+      _gasLimit: BigNumberish
+    ],
+    [void],
+    "nonpayable"
+  >;
+
   owner: TypedContractMethod<[], [string], "view">;
 
   registerDestinationChain: TypedContractMethod<
@@ -524,22 +534,24 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
 
-  "send(uint64,address,uint256,uint256)": TypedContractMethod<
+  renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
+  send: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
-      _amount: BigNumberish,
-      _customGasLimit: BigNumberish
+      _amount: BigNumberish
     ],
     [string],
     "payable"
   >;
 
-  "send(uint64,address,uint256)": TypedContractMethod<
+  sendWithCustomDestinationGasLimit: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
-      _amount: BigNumberish
+      _amount: BigNumberish,
+      _customGasLimit: BigNumberish
     ],
     [string],
     "payable"
@@ -556,7 +568,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   tokens: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
 
   transferOwnership: TypedContractMethod<
-    [to: AddressLike],
+    [newOwner: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -590,9 +602,6 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "acceptOwnership"
-  ): TypedContractMethod<[], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "allowlistSender"
   ): TypedContractMethod<
     [_sender: AddressLike, allowed: boolean],
@@ -623,7 +632,7 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "getDeliveryFeeCost(uint64,address,uint256)"
+    nameOrSignature: "getDeliveryFeeCost"
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
@@ -634,7 +643,7 @@ export interface BackedCCIPReceiver extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "getDeliveryFeeCost(uint64,address,uint256,uint256)"
+    nameOrSignature: "getDeliveryFeeCostWithCustomGasLimit"
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
@@ -663,6 +672,17 @@ export interface BackedCCIPReceiver extends BaseContract {
     nameOrSignature: "getRouter"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "initialize"
+  ): TypedContractMethod<
+    [
+      _router: AddressLike,
+      _custodyWallet: AddressLike,
+      _gasLimit: BigNumberish
+    ],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -680,24 +700,27 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "send(uint64,address,uint256,uint256)"
+    nameOrSignature: "renounceOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "send"
+  ): TypedContractMethod<
+    [
+      _destinationChainSelector: BigNumberish,
+      _token: AddressLike,
+      _amount: BigNumberish
+    ],
+    [string],
+    "payable"
+  >;
+  getFunction(
+    nameOrSignature: "sendWithCustomDestinationGasLimit"
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
       _amount: BigNumberish,
       _customGasLimit: BigNumberish
-    ],
-    [string],
-    "payable"
-  >;
-  getFunction(
-    nameOrSignature: "send(uint64,address,uint256)"
-  ): TypedContractMethod<
-    [
-      _destinationChainSelector: BigNumberish,
-      _token: AddressLike,
-      _amount: BigNumberish
     ],
     [string],
     "payable"
@@ -713,7 +736,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
   getFunction(
     nameOrSignature: "transferOwnership"
-  ): TypedContractMethod<[to: AddressLike], [void], "nonpayable">;
+  ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "updateCustodyWallet"
   ): TypedContractMethod<[_custodyWallet: AddressLike], [void], "nonpayable">;
@@ -746,6 +769,13 @@ export interface BackedCCIPReceiver extends BaseContract {
     GasLimitUpdatedEvent.OutputObject
   >;
   getEvent(
+    key: "Initialized"
+  ): TypedContractEvent<
+    InitializedEvent.InputTuple,
+    InitializedEvent.OutputTuple,
+    InitializedEvent.OutputObject
+  >;
+  getEvent(
     key: "MessageReceived"
   ): TypedContractEvent<
     MessageReceivedEvent.InputTuple,
@@ -758,13 +788,6 @@ export interface BackedCCIPReceiver extends BaseContract {
     MessageSentEvent.InputTuple,
     MessageSentEvent.OutputTuple,
     MessageSentEvent.OutputObject
-  >;
-  getEvent(
-    key: "OwnershipTransferRequested"
-  ): TypedContractEvent<
-    OwnershipTransferRequestedEvent.InputTuple,
-    OwnershipTransferRequestedEvent.OutputTuple,
-    OwnershipTransferRequestedEvent.OutputObject
   >;
   getEvent(
     key: "OwnershipTransferred"
@@ -804,6 +827,17 @@ export interface BackedCCIPReceiver extends BaseContract {
       GasLimitUpdatedEvent.OutputObject
     >;
 
+    "Initialized(uint8)": TypedContractEvent<
+      InitializedEvent.InputTuple,
+      InitializedEvent.OutputTuple,
+      InitializedEvent.OutputObject
+    >;
+    Initialized: TypedContractEvent<
+      InitializedEvent.InputTuple,
+      InitializedEvent.OutputTuple,
+      InitializedEvent.OutputObject
+    >;
+
     "MessageReceived(bytes32,uint64,address,uint64,uint256)": TypedContractEvent<
       MessageReceivedEvent.InputTuple,
       MessageReceivedEvent.OutputTuple,
@@ -824,17 +858,6 @@ export interface BackedCCIPReceiver extends BaseContract {
       MessageSentEvent.InputTuple,
       MessageSentEvent.OutputTuple,
       MessageSentEvent.OutputObject
-    >;
-
-    "OwnershipTransferRequested(address,address)": TypedContractEvent<
-      OwnershipTransferRequestedEvent.InputTuple,
-      OwnershipTransferRequestedEvent.OutputTuple,
-      OwnershipTransferRequestedEvent.OutputObject
-    >;
-    OwnershipTransferRequested: TypedContractEvent<
-      OwnershipTransferRequestedEvent.InputTuple,
-      OwnershipTransferRequestedEvent.OutputTuple,
-      OwnershipTransferRequestedEvent.OutputObject
     >;
 
     "OwnershipTransferred(address,address)": TypedContractEvent<

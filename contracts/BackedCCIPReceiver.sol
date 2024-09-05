@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import {OwnerIsCreator} from "@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import {CCIPReceiverUpgradeable} from "./ccip-upgradeable/CCIPReceiverUpgradeable.sol";
 
 import "./structs/BackedTransferMessageStruct.sol";
 
@@ -17,7 +20,7 @@ import "./structs/BackedTransferMessageStruct.sol";
  */
 
 /// @title - A simple messenger contract for sending/receving string data across chains.
-contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
+contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
     // Custom errors to provide more descriptive revert messages.
@@ -55,7 +58,7 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     );
 
     event GasLimitUpdated(
-        uint256 newGasLimit // CCIP gas limit
+        uint256 newGasLimit // CCIP exectuion gas limit on destination chain
     );
 
     event TokenRegistered(
@@ -66,7 +69,7 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     BackedStructs.BackedTransferMessageStruct private lastReceivedMessage;
 
     address private custodyWallet; // Custody wallet.
-    uint256 private defaultGasLimit; // Gas limit for CCIP 
+    uint256 private defaultGasLimitOnDestinationChain; // Gas limit for CCIP execution on destination chain
 
     // Mapping to keep track of allowlisted destination chains.
     mapping(uint64 => address) public allowlistedDestinationChains;
@@ -82,13 +85,22 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     // Mapping from tokenId to token address
     mapping(uint64 => address) public tokens;
 
+    /// @notice BackedCCIPReceiver constructor; prevent initialize() from being invoked on the implementation contract
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice Constructor initializes the contract with the router address.
     /// @param _router The address of the router contract.
     /// @param _custodyWallet The address of the custody wallet.
-    /// @param _gasLimit Initial value for CCIP default gas limit.
-    constructor(address _router, address _custodyWallet, uint256 _gasLimit) CCIPReceiver(_router) {
+    /// @param _gasLimit Initial value for default CCIP execution gas limit on destination chain.
+    function initialize(address _router, address _custodyWallet, uint256 _gasLimit) public initializer  {
+        __CCIPReceiverUpgradeable_init(_router);
+        __Ownable_init();
+
         custodyWallet = _custodyWallet;
-        defaultGasLimit = _gasLimit;
+        defaultGasLimitOnDestinationChain = _gasLimit;
     }
 
     /// @dev Modifier that checks if the chain with the given destinationChainSelector is allowlisted.
@@ -170,7 +182,7 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     function updateGasLimit(
         uint256 _gasLimit
     ) external onlyOwner {
-        defaultGasLimit = _gasLimit;
+        defaultGasLimitOnDestinationChain = _gasLimit;
 
         emit GasLimitUpdated(_gasLimit);
     }
@@ -190,15 +202,15 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
         onlyAllowRegisteredTokens(_token)
         returns (bytes32 messageId)
     {
-       return _send(_destinationChainSelector, _token, _amount, defaultGasLimit);
+       return _send(_destinationChainSelector, _token, _amount, defaultGasLimitOnDestinationChain);
     }
 
-    /// @notice Sends tokens to custody wallet and sends information to destination chain.
+    /// @notice Sends tokens to custody wallet and sends information to destination chain with custom gas limit settings.
     /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
     /// @param _token The address of the token to sent.
     /// @param _amount The amount to be sent.
     /// @param _customGasLimit Custom gas limit for CCIP
-    function send(
+    function sendWithCustomDestinationGasLimit(
         uint64 _destinationChainSelector,
         address _token,
         uint256 _amount,
@@ -219,7 +231,7 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     /// @param _amount The amount to be sent.
     /// @return The calculated delivery fee cost
     function getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount) public view returns (uint256) {
-        return _getDeliveryFeeCost(_destinationChainSelector, _token, _amount, defaultGasLimit);
+        return _getDeliveryFeeCost(_destinationChainSelector, _token, _amount, defaultGasLimitOnDestinationChain);
     }
 
     /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector` and using `_customGasLimit`
@@ -228,7 +240,7 @@ contract BackedCCIPReceiver is CCIPReceiver, OwnerIsCreator {
     /// @param _amount The amount to be sent.
     /// @param _customGasLimit Custom CCIP gas limit
     /// @return The calculated delivery fee cost
-    function getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount, uint256 _customGasLimit) public view returns (uint256) {
+    function getDeliveryFeeCostWithCustomGasLimit(uint64 _destinationChainSelector, address _token, uint256 _amount, uint256 _customGasLimit) public view returns (uint256) {
         return _getDeliveryFeeCost(_destinationChainSelector, _token, _amount, _customGasLimit);
     }
 
