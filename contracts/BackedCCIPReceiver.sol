@@ -14,12 +14,12 @@ import {CCIPReceiverUpgradeable} from "./ccip-upgradeable/CCIPReceiverUpgradeabl
 import "./structs/BackedTransferMessageStruct.sol";
 
 /**
- * THIS IS AN EXAMPLE CONTRACT THAT USES HARDCODED VALUES FOR CLARITY.
- * THIS IS AN EXAMPLE CONTRACT THAT USES UN-AUDITED CODE.
- * DO NOT USE THIS CODE IN PRODUCTION.
- */
+* @dev
+* The BackedCCIPReceiver contract is designed to facilitate cross-chain token transfers and messaging using Chainlink's Cross-Chain Interoperability Protocol (CCIP).
+* It allows users to send tokens to a custody wallet on the source chain and receive equivalent tokens on the destination chain, leveraging CCIP to relay messages between chains.
+* This contract assumes that custody wallet approval for this contract to transfer tokens will be managed off-chain.
+*/
 
-/// @title - A simple messenger contract for sending/receving string data across chains.
 contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
@@ -33,6 +33,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     error InvalidReceiverAddress(); // Used when the receiver address is 0.
     error TokenNotRegistered(address token); // Used when the token has not been registered by the contract owner.
     error InvalidTokenId(); // Used when token id is 0.
+    error InvalidTokenAddress(); // Used when token address is 0.
 
     // Event emitted when a message is sent to another chain.
     event MessageSent(
@@ -49,8 +50,9 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         bytes32 indexed messageId, // The unique ID of the CCIP message.
         uint64 indexed sourceChainSelector, // The chain selector of the source chain.
         address sender, // The address of the sender from the source chain.
-        uint64 tokenId, // The token that was received.
-        uint256 amount // The amount that was received.
+        address token, // The token that was received.
+        uint256 amount, // The amount that was received.
+        address receiver // The receiver of the tokens.
     );
 
     event CustodyWalletUpdated(
@@ -58,7 +60,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     );
 
     event GasLimitUpdated(
-        uint256 newGasLimit // CCIP exectuion gas limit on destination chain
+        uint256 newGasLimit // CCIP execution gas limit on destination chain
     );
 
     event TokenRegistered(
@@ -68,8 +70,8 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
     BackedStructs.BackedTransferMessageStruct private lastReceivedMessage;
 
-    address private custodyWallet; // Custody wallet.
-    uint256 private defaultGasLimitOnDestinationChain; // Gas limit for CCIP execution on destination chain
+    address private _custodyWallet; // Custody wallet.
+    uint256 private _defaultGasLimitOnDestinationChain; // Gas limit for CCIP execution on destination chain
 
     // Mapping to keep track of allowlisted destination chains.
     mapping(uint64 => address) public allowlistedDestinationChains;
@@ -93,14 +95,14 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
     /// @notice Constructor initializes the contract with the router address.
     /// @param _router The address of the router contract.
-    /// @param _custodyWallet The address of the custody wallet.
+    /// @param _custody The address of the custody wallet.
     /// @param _gasLimit Initial value for default CCIP execution gas limit on destination chain.
-    function initialize(address _router, address _custodyWallet, uint256 _gasLimit) public initializer  {
+    function initialize(address _router, address _custody, uint256 _gasLimit) public initializer  {
         __CCIPReceiverUpgradeable_init(_router);
         __Ownable_init();
 
-        custodyWallet = _custodyWallet;
-        defaultGasLimitOnDestinationChain = _gasLimit;
+        _custodyWallet = _custody;
+        _defaultGasLimitOnDestinationChain = _gasLimit;
     }
 
     /// @dev Modifier that checks if the chain with the given destinationChainSelector is allowlisted.
@@ -124,6 +126,9 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     /// @dev Modifier that checks if token is registered
     /// @param _token The address of the token.
     modifier onlyAllowRegisteredTokens(address _token) {
+        if (_token == address(0))
+            revert InvalidTokenAddress();
+
         if (tokenIds[_token] == 0)
             revert TokenNotRegistered(_token);
         _;
@@ -134,6 +139,16 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     modifier validateReceiver(address _receiver) {
         if (_receiver == address(0)) revert InvalidReceiverAddress();
         _;
+    }
+
+    /// @dev Returns the address of the current custody wallet.
+    function custodyWallet() public view virtual returns (address) {
+        return _custodyWallet;
+    }
+
+    /// @dev Returns the default gas limit.
+    function gasLimit() public view virtual returns (uint256) {
+        return _defaultGasLimitOnDestinationChain;
     }
 
     /// @dev Updates the allowlist status of a destination chain for transactions.
@@ -162,17 +177,17 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     }
 
     /// @dev Updates the custody wallet.
-    /// @param _custodyWallet new custody wallet address
-    function updateCustodyWallet(address _custodyWallet) external onlyOwner {
-        custodyWallet = _custodyWallet;
+    /// @param _custody new custody wallet address
+    function updateCustodyWallet(address _custody) external onlyOwner {
+        _custodyWallet = _custody;
 
-        emit CustodyWalletUpdated(_custodyWallet);
+        emit CustodyWalletUpdated(_custody);
     }
 
     /// @dev Updates default gas limit for CCIP.
     /// @param _gasLimit New default gas limit
     function updateGasLimit(uint256 _gasLimit) external onlyOwner {
-        defaultGasLimitOnDestinationChain = _gasLimit;
+        _defaultGasLimitOnDestinationChain = _gasLimit;
 
         emit GasLimitUpdated(_gasLimit);
     }
@@ -188,7 +203,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         onlyAllowRegisteredTokens(_token)
         returns (bytes32 messageId)
     {
-       return _send(_destinationChainSelector, _token, _amount, defaultGasLimitOnDestinationChain);
+       return _send(_destinationChainSelector, _token, _amount, _defaultGasLimitOnDestinationChain);
     }
 
     /// @notice Sends tokens to custody wallet and sends information to destination chain with custom gas limit settings.
@@ -213,7 +228,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     /// @param _amount The amount to be sent.
     /// @return The calculated delivery fee cost
     function getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount) public view returns (uint256) {
-        return _getDeliveryFeeCost(_destinationChainSelector, _token, _amount, defaultGasLimitOnDestinationChain);
+        return _getDeliveryFeeCost(_destinationChainSelector, _token, _amount, _defaultGasLimitOnDestinationChain);
     }
 
     /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector` and using `_customGasLimit`
@@ -238,10 +253,10 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
             _gasLimit
         );
 
-        return getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
+        return _getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
     }
 
-    function getDeliveryCost(uint64 _destinationChainSelector, Client.EVM2AnyMessage memory _evm2AnyMessage) internal view returns (uint256) {
+    function _getDeliveryCost(uint64 _destinationChainSelector, Client.EVM2AnyMessage memory _evm2AnyMessage) internal view returns (uint256) {
         IRouterClient router = IRouterClient(this.getRouter());
 
         // Get the fee required to send the CCIP message
@@ -258,7 +273,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         returns (bytes32 messageId) 
     {
         IERC20(_token).safeTransferFrom(
-            msg.sender, custodyWallet, _amount
+            msg.sender, _custodyWallet, _amount
         );
 
         uint64 tokenId = tokenIds[_token];
@@ -297,7 +312,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
             _gasLimit
         );
 
-        uint256 fees = getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
+        uint256 fees = _getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
 
         if (fees > msg.value)
             revert InsufficientMessageValue(msg.value, fees);
@@ -339,7 +354,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         address token = tokens[tokenId];
         
         IERC20(token).safeTransferFrom(
-            custodyWallet, tokenReceiver, amount
+            _custodyWallet, tokenReceiver, amount
         );
 
         lastReceivedMessage.messageId = any2EvmMessage.messageId;
@@ -351,8 +366,9 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
             any2EvmMessage.messageId,
             any2EvmMessage.sourceChainSelector, // fetch the source chain identifier (aka selector)
             abi.decode(any2EvmMessage.sender, (address)), // abi-decoding of the sender address,
-            tokenId,
-            amount
+            token,
+            amount,
+            tokenReceiver
         );
     }
 

@@ -34,7 +34,7 @@ describe("CCIP Integration", function () {
       chainSelector: destinationChainSelector,
     } = getRouterConfig(destination);
 
-    const x = await hre.network.provider.request({
+    await hre.network.provider.request({
       method: "hardhat_reset",
       params: [
         {
@@ -52,12 +52,6 @@ describe("CCIP Integration", function () {
       await hre.upgrades.deployProxy(factory, [sourceRouterAddress, systemWallet.address, 200_000]) as unknown as BackedCCIPReceiver;
 
     const backedCCIPSourceChainAddress = await backedCCIPReceiverOnSourceChain.getAddress();
-
-    // transfer Native coins from sender to the Smart Contract for fees
-    await client.sendTransaction({
-      to: backedCCIPSourceChainAddress,
-      value: 1_000_000_000_000_000_000n,
-    });
 
     console.log(`Deployed Backed CCIP receiver on ${sourceChainSelector}: ${backedCCIPSourceChainAddress}`);
 
