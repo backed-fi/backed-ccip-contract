@@ -105,6 +105,39 @@ export const getRouterConfig = (network: string) => {
   }
 };
 
+export const getCustodywallet = (network: string) => {
+  switch (network) {
+    case "ethereumSepolia":
+      return routerConfig.ethereumSepolia;
+    case "polygonAmoy":
+      return routerConfig.polygonAmoy;
+    case "optimismSepolia":
+      return routerConfig.optimismSepolia;
+    case "arbitrumSepolia":
+      return routerConfig.arbitrumSepolia;
+    case "avalancheFuji":
+      return routerConfig.avalancheFuji;
+    case "bnbChainTestnet":
+      return routerConfig.bnbChainTestnet;
+    case "baseSepolia":
+      return routerConfig.baseSepolia;
+    case "kromaSepolia":
+      return routerConfig.kromaSepolia;
+    case "wemixTestnet":
+      return routerConfig.wemixTestnet;
+    case "gnosisChiado":
+      return routerConfig.gnosisChiado;
+    case "celoAlfajores":
+      return routerConfig.celoAlfajores;
+    case "metisSepolia":
+      return routerConfig.metisSepolia;
+    case "zksyncSepolia":
+      return routerConfig.zksyncSepolia;
+    default:
+      throw new Error("Unknown network: " + network);
+  }
+};
+
 export const getPayFeesIn = (payFeesIn: string) => {
   let fees;
 

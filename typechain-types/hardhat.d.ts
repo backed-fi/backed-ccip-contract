@@ -110,10 +110,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC165__factory>;
     getContractFactory(
-      name: "LinkTokenInterface",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.LinkTokenInterface__factory>;
-    getContractFactory(
       name: "BurnMintERC677Helper",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.BurnMintERC677Helper__factory>;
@@ -130,73 +126,41 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.WETH9__factory>;
     getContractFactory(
-      name: "Ownable",
+      name: "OwnableUpgradeable",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Ownable__factory>;
+    ): Promise<Contracts.OwnableUpgradeable__factory>;
     getContractFactory(
-      name: "IERC4906",
+      name: "Initializable",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC4906__factory>;
+    ): Promise<Contracts.Initializable__factory>;
     getContractFactory(
-      name: "ERC721",
+      name: "ContextUpgradeable",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ERC721__factory>;
+    ): Promise<Contracts.ContextUpgradeable__factory>;
     getContractFactory(
-      name: "ERC721URIStorage",
+      name: "ERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ERC721URIStorage__factory>;
+    ): Promise<Contracts.ERC20__factory>;
     getContractFactory(
-      name: "IERC721Metadata",
+      name: "IERC20Metadata",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC721Metadata__factory>;
+    ): Promise<Contracts.IERC20Metadata__factory>;
     getContractFactory(
-      name: "IERC721",
+      name: "IERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC721__factory>;
+    ): Promise<Contracts.IERC20__factory>;
     getContractFactory(
-      name: "IERC721Receiver",
+      name: "BackedCCIPReceiver",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC721Receiver__factory>;
+    ): Promise<Contracts.BackedCCIPReceiver__factory>;
     getContractFactory(
-      name: "ERC165",
+      name: "CCIPReceiverUpgradeable",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ERC165__factory>;
+    ): Promise<Contracts.CCIPReceiverUpgradeable__factory>;
     getContractFactory(
-      name: "IERC165",
+      name: "ERC20Mock",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC165__factory>;
-    getContractFactory(
-      name: "BasicMessageReceiver",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.BasicMessageReceiver__factory>;
-    getContractFactory(
-      name: "BasicMessageSender",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.BasicMessageSender__factory>;
-    getContractFactory(
-      name: "BasicTokenSender",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.BasicTokenSender__factory>;
-    getContractFactory(
-      name: "DestinationMinter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.DestinationMinter__factory>;
-    getContractFactory(
-      name: "MyNFT",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.MyNFT__factory>;
-    getContractFactory(
-      name: "SourceMinter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.SourceMinter__factory>;
-    getContractFactory(
-      name: "ProgrammableTokenTransfers",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ProgrammableTokenTransfers__factory>;
-    getContractFactory(
-      name: "Withdraw",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Withdraw__factory>;
+    ): Promise<Contracts.ERC20Mock__factory>;
 
     getContractAt(
       name: "CCIPReceiver",
@@ -319,11 +283,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC165>;
     getContractAt(
-      name: "LinkTokenInterface",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.LinkTokenInterface>;
-    getContractAt(
       name: "BurnMintERC677Helper",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -344,90 +303,50 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.WETH9>;
     getContractAt(
-      name: "Ownable",
+      name: "OwnableUpgradeable",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.Ownable>;
+    ): Promise<Contracts.OwnableUpgradeable>;
     getContractAt(
-      name: "IERC4906",
+      name: "Initializable",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.IERC4906>;
+    ): Promise<Contracts.Initializable>;
     getContractAt(
-      name: "ERC721",
+      name: "ContextUpgradeable",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.ERC721>;
+    ): Promise<Contracts.ContextUpgradeable>;
     getContractAt(
-      name: "ERC721URIStorage",
+      name: "ERC20",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.ERC721URIStorage>;
+    ): Promise<Contracts.ERC20>;
     getContractAt(
-      name: "IERC721Metadata",
+      name: "IERC20Metadata",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.IERC721Metadata>;
+    ): Promise<Contracts.IERC20Metadata>;
     getContractAt(
-      name: "IERC721",
+      name: "IERC20",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.IERC721>;
+    ): Promise<Contracts.IERC20>;
     getContractAt(
-      name: "IERC721Receiver",
+      name: "BackedCCIPReceiver",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.IERC721Receiver>;
+    ): Promise<Contracts.BackedCCIPReceiver>;
     getContractAt(
-      name: "ERC165",
+      name: "CCIPReceiverUpgradeable",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.ERC165>;
+    ): Promise<Contracts.CCIPReceiverUpgradeable>;
     getContractAt(
-      name: "IERC165",
+      name: "ERC20Mock",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.IERC165>;
-    getContractAt(
-      name: "BasicMessageReceiver",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.BasicMessageReceiver>;
-    getContractAt(
-      name: "BasicMessageSender",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.BasicMessageSender>;
-    getContractAt(
-      name: "BasicTokenSender",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.BasicTokenSender>;
-    getContractAt(
-      name: "DestinationMinter",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.DestinationMinter>;
-    getContractAt(
-      name: "MyNFT",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.MyNFT>;
-    getContractAt(
-      name: "SourceMinter",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.SourceMinter>;
-    getContractAt(
-      name: "ProgrammableTokenTransfers",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ProgrammableTokenTransfers>;
-    getContractAt(
-      name: "Withdraw",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Withdraw>;
+    ): Promise<Contracts.ERC20Mock>;
 
     deployContract(
       name: "CCIPReceiver",
@@ -526,10 +445,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC165>;
     deployContract(
-      name: "LinkTokenInterface",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.LinkTokenInterface>;
-    deployContract(
       name: "BurnMintERC677Helper",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.BurnMintERC677Helper>;
@@ -546,73 +461,41 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.WETH9>;
     deployContract(
-      name: "Ownable",
+      name: "OwnableUpgradeable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.Ownable>;
+    ): Promise<Contracts.OwnableUpgradeable>;
     deployContract(
-      name: "IERC4906",
+      name: "Initializable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC4906>;
+    ): Promise<Contracts.Initializable>;
     deployContract(
-      name: "ERC721",
+      name: "ContextUpgradeable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ERC721>;
+    ): Promise<Contracts.ContextUpgradeable>;
     deployContract(
-      name: "ERC721URIStorage",
+      name: "ERC20",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ERC721URIStorage>;
+    ): Promise<Contracts.ERC20>;
     deployContract(
-      name: "IERC721Metadata",
+      name: "IERC20Metadata",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC721Metadata>;
+    ): Promise<Contracts.IERC20Metadata>;
     deployContract(
-      name: "IERC721",
+      name: "IERC20",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC721>;
+    ): Promise<Contracts.IERC20>;
     deployContract(
-      name: "IERC721Receiver",
+      name: "BackedCCIPReceiver",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC721Receiver>;
+    ): Promise<Contracts.BackedCCIPReceiver>;
     deployContract(
-      name: "ERC165",
+      name: "CCIPReceiverUpgradeable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ERC165>;
+    ): Promise<Contracts.CCIPReceiverUpgradeable>;
     deployContract(
-      name: "IERC165",
+      name: "ERC20Mock",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC165>;
-    deployContract(
-      name: "BasicMessageReceiver",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BasicMessageReceiver>;
-    deployContract(
-      name: "BasicMessageSender",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BasicMessageSender>;
-    deployContract(
-      name: "BasicTokenSender",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BasicTokenSender>;
-    deployContract(
-      name: "DestinationMinter",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.DestinationMinter>;
-    deployContract(
-      name: "MyNFT",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.MyNFT>;
-    deployContract(
-      name: "SourceMinter",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.SourceMinter>;
-    deployContract(
-      name: "ProgrammableTokenTransfers",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ProgrammableTokenTransfers>;
-    deployContract(
-      name: "Withdraw",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.Withdraw>;
+    ): Promise<Contracts.ERC20Mock>;
 
     deployContract(
       name: "CCIPReceiver",
@@ -735,11 +618,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC165>;
     deployContract(
-      name: "LinkTokenInterface",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.LinkTokenInterface>;
-    deployContract(
       name: "BurnMintERC677Helper",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -760,90 +638,50 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.WETH9>;
     deployContract(
-      name: "Ownable",
+      name: "OwnableUpgradeable",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.Ownable>;
+    ): Promise<Contracts.OwnableUpgradeable>;
     deployContract(
-      name: "IERC4906",
+      name: "Initializable",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC4906>;
+    ): Promise<Contracts.Initializable>;
     deployContract(
-      name: "ERC721",
+      name: "ContextUpgradeable",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ERC721>;
+    ): Promise<Contracts.ContextUpgradeable>;
     deployContract(
-      name: "ERC721URIStorage",
+      name: "ERC20",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ERC721URIStorage>;
+    ): Promise<Contracts.ERC20>;
     deployContract(
-      name: "IERC721Metadata",
+      name: "IERC20Metadata",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC721Metadata>;
+    ): Promise<Contracts.IERC20Metadata>;
     deployContract(
-      name: "IERC721",
+      name: "IERC20",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC721>;
+    ): Promise<Contracts.IERC20>;
     deployContract(
-      name: "IERC721Receiver",
+      name: "BackedCCIPReceiver",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC721Receiver>;
+    ): Promise<Contracts.BackedCCIPReceiver>;
     deployContract(
-      name: "ERC165",
+      name: "CCIPReceiverUpgradeable",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ERC165>;
+    ): Promise<Contracts.CCIPReceiverUpgradeable>;
     deployContract(
-      name: "IERC165",
+      name: "ERC20Mock",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.IERC165>;
-    deployContract(
-      name: "BasicMessageReceiver",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BasicMessageReceiver>;
-    deployContract(
-      name: "BasicMessageSender",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BasicMessageSender>;
-    deployContract(
-      name: "BasicTokenSender",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.BasicTokenSender>;
-    deployContract(
-      name: "DestinationMinter",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.DestinationMinter>;
-    deployContract(
-      name: "MyNFT",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.MyNFT>;
-    deployContract(
-      name: "SourceMinter",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.SourceMinter>;
-    deployContract(
-      name: "ProgrammableTokenTransfers",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ProgrammableTokenTransfers>;
-    deployContract(
-      name: "Withdraw",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.Withdraw>;
+    ): Promise<Contracts.ERC20Mock>;
 
     // default types
     getContractFactory(
