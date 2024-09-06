@@ -340,6 +340,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         return messageId;
     }
 
+    /// @notice This function assumes that the approval for token transfers from custody wallet is properly managed off-chain.
     /// handle a received message
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
         internal
