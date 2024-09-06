@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -20,7 +21,7 @@ import "./structs/BackedTransferMessageStruct.sol";
 * This contract assumes that custody wallet approval for this contract to transfer tokens will be managed off-chain.
 */
 
-contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUpgradeable {
+contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     // Custom errors to provide more descriptive revert messages.
@@ -100,6 +101,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     function initialize(address _router, address _custody, uint256 _gasLimit) public initializer  {
         __CCIPReceiverUpgradeable_init(_router);
         __Ownable_init();
+        __ReentrancyGuard_init();
 
         _custodyWallet = _custody;
         _defaultGasLimitOnDestinationChain = _gasLimit;
@@ -345,6 +347,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
         internal
         override
+        nonReentrant
         onlyAllowlisted(
             any2EvmMessage.sourceChainSelector,
             abi.decode(any2EvmMessage.sender, (address))
