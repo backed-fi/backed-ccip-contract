@@ -218,7 +218,6 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
         uint64 tokenId = tokenIds[_token];
         address receiver = allowlistedDestinationChains[_destinationChainSelector];
-        if (receiver == address(0)) revert InvalidReceiverAddress();
 
         return _sendMessagePayNative(_destinationChainSelector, receiver, msg.sender, tokenId, _amount, _defaultGasLimitOnDestinationChain);
     }
