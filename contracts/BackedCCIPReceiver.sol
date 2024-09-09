@@ -67,6 +67,11 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         uint64 tokenId
     );
 
+    event TokenRemoved(
+        address token, // The address of the token
+        uint64 tokenId
+    );
+
     address private _custodyWallet; // Custody wallet.
     uint256 private _defaultGasLimitOnDestinationChain; // Gas limit for CCIP execution on destination chain
 
@@ -132,10 +137,26 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         _;
     }
 
-    /// @dev Modifier that checks the receiver address is not 0.
+    /// @dev Modifier that checks the receiver address is not zero address.
     /// @param _receiver The receiver address.
     modifier validateReceiver(address _receiver) {
         if (_receiver == address(0)) revert InvalidReceiverAddress();
+        _;
+    }
+
+    /// @dev Modifier that checks the token address is not zero address or is not registered.
+    /// @param _token The token address.
+    modifier validateToken(address _token) {
+        if (_token == address(0) || tokenIds[_token] != 0) 
+            revert InvalidTokenAddress();
+        _;
+    }
+
+    /// @dev Modifier that checks the _tokenId not 0 and is not registered.
+    /// @param _tokenId The arbitrary id of the token.
+    modifier validateTokenId(uint64 _tokenId) {
+        if (_tokenId == 0 || tokens[_tokenId] != address(0)) 
+            revert InvalidTokenId();
         _;
     }
 
@@ -149,7 +170,9 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         return _defaultGasLimitOnDestinationChain;
     }
 
-    /// @dev Updates the allowlist status of a destination chain for transactions.
+    /// @dev Adds _destinationChainSelector the the allowlist and registers receiver address.
+    /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
+    /// @param _receiver The address of the CCIP receiver on the destination blockchain.
     function registerDestinationChain(uint64 _destinationChainSelector, address _receiver) 
         external 
         onlyOwner
@@ -158,27 +181,57 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         allowlistedDestinationChains[_destinationChainSelector] = _receiver;
     }
 
+    /// @dev Removes _destinationChainSelector from the allowlist.
+    /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
+    function removeDestinationChain(uint64 _destinationChainSelector) 
+        external 
+        onlyOwner
+    {
+        allowlistedDestinationChains[_destinationChainSelector] = address(0);
+    }
+
     /// @dev Updates the allowlist status of a source chain for transactions.
+    /// @param _sourceChainSelector The identifier (aka selector) for the source blockchain.
+    /// @param _allowed Value of the allowlist status
     function allowlistSourceChain(uint64 _sourceChainSelector, bool _allowed ) external onlyOwner {
         allowlistedSourceChains[_sourceChainSelector] = _allowed;
     }
 
     /// @dev Updates the allowlist status of a sender for transactions.
+    /// @param _sender The address of the CCIP message sender.
+    /// @param _allowed Value of the allowlist status
     function allowlistSender(address _sender, bool _allowed) external onlyOwner {
         allowlistedSenders[_sender] = _allowed;
     }
 
-    /// @dev Updates the allowlist status of a sender for transactions.
-    function registerToken(address _token, uint64 _tokenId) external onlyOwner {
-        if (_tokenId == 0 || tokens[_tokenId] != address(0)) 
-            revert InvalidTokenId();
-        if (_token == address(0) || tokenIds[_token] != 0) 
-            revert InvalidTokenAddress();
-
+    /// @dev Updates the allowlist status of a _token under _tokenId.
+    /// @param _token The address of the token.
+    /// @param _tokenId The arbitrary id of the the token.
+    function registerToken(address _token, uint64 _tokenId) 
+        external
+        onlyOwner
+        validateToken(_token)
+        validateTokenId(_tokenId)
+    {
         tokenIds[_token] = _tokenId;
         tokens[_tokenId] = _token;
 
         emit TokenRegistered(_token, _tokenId);
+    }
+
+    /// @dev Removes token from the allowlist.
+    /// @param _token The address of the token.
+    function removeToken(address _token) 
+        external
+        onlyOwner
+        onlyAllowRegisteredTokens(_token)
+    {
+        uint64 tokenId = tokenIds[_token];
+
+        tokenIds[_token] = 0;
+        tokens[tokenId] = address(0);
+
+        emit TokenRemoved(_token, tokenId);
     }
 
     /// @dev Updates the custody wallet.
@@ -199,7 +252,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
     /// @notice Sends tokens to custody wallet and sends information to destination chain.
     /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
-    /// @param _token The address of the token to sent.
+    /// @param _token The address of the token to be sent.
     /// @param _amount The amount to be sent.
     function send(uint64 _destinationChainSelector, address _token, uint256 _amount)
         external
@@ -358,11 +411,6 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
                 feeToken: address(0)
             });
     }
-
-    /// @notice Fallback function to allow the contract to receive Ether.
-    /// @dev This function has no function body, making it a default function for receiving Ether.
-    /// It is automatically called when Ether is sent to the contract without any data.
-    receive() external payable {}
 
     /// @notice Allows the contract owner to withdraw the entire balance of Ether from the contract.
     /// @dev This function reverts if there are no funds to withdraw or if the transfer fails.

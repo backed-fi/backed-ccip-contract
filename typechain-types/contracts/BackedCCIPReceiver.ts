@@ -74,6 +74,8 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "owner"
       | "registerDestinationChain"
       | "registerToken"
+      | "removeDestinationChain"
+      | "removeToken"
       | "renounceOwnership"
       | "send"
       | "supportsInterface"
@@ -95,6 +97,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "MessageSent"
       | "OwnershipTransferred"
       | "TokenRegistered"
+      | "TokenRemoved"
   ): EventFragment;
 
   encodeFunctionData(
@@ -143,6 +146,14 @@ export interface BackedCCIPReceiverInterface extends Interface {
   encodeFunctionData(
     functionFragment: "registerToken",
     values: [AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "removeDestinationChain",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "removeToken",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
@@ -227,6 +238,14 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "registerToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "removeDestinationChain",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "removeToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -383,6 +402,19 @@ export namespace TokenRegisteredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace TokenRemovedEvent {
+  export type InputTuple = [token: AddressLike, tokenId: BigNumberish];
+  export type OutputTuple = [token: string, tokenId: bigint];
+  export interface OutputObject {
+    token: string;
+    tokenId: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export interface BackedCCIPReceiver extends BaseContract {
   connect(runner?: ContractRunner | null): BackedCCIPReceiver;
   waitForDeployment(): Promise<this>;
@@ -497,6 +529,14 @@ export interface BackedCCIPReceiver extends BaseContract {
     [void],
     "nonpayable"
   >;
+
+  removeDestinationChain: TypedContractMethod<
+    [_destinationChainSelector: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  removeToken: TypedContractMethod<[_token: AddressLike], [void], "nonpayable">;
 
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
@@ -629,6 +669,16 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "removeDestinationChain"
+  ): TypedContractMethod<
+    [_destinationChainSelector: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "removeToken"
+  ): TypedContractMethod<[_token: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "renounceOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
@@ -720,6 +770,13 @@ export interface BackedCCIPReceiver extends BaseContract {
     TokenRegisteredEvent.OutputTuple,
     TokenRegisteredEvent.OutputObject
   >;
+  getEvent(
+    key: "TokenRemoved"
+  ): TypedContractEvent<
+    TokenRemovedEvent.InputTuple,
+    TokenRemovedEvent.OutputTuple,
+    TokenRemovedEvent.OutputObject
+  >;
 
   filters: {
     "CustodyWalletUpdated(address)": TypedContractEvent<
@@ -797,6 +854,17 @@ export interface BackedCCIPReceiver extends BaseContract {
       TokenRegisteredEvent.InputTuple,
       TokenRegisteredEvent.OutputTuple,
       TokenRegisteredEvent.OutputObject
+    >;
+
+    "TokenRemoved(address,uint64)": TypedContractEvent<
+      TokenRemovedEvent.InputTuple,
+      TokenRemovedEvent.OutputTuple,
+      TokenRemovedEvent.OutputObject
+    >;
+    TokenRemoved: TypedContractEvent<
+      TokenRemovedEvent.InputTuple,
+      TokenRemovedEvent.OutputTuple,
+      TokenRemovedEvent.OutputObject
     >;
   };
 }
