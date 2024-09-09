@@ -212,23 +212,15 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         onlyAllowRegisteredTokens(_token)
         returns (bytes32 messageId)
     {
-       return _send(_destinationChainSelector, _token, _amount, _defaultGasLimitOnDestinationChain);
-    }
+        IERC20(_token).safeTransferFrom(
+            msg.sender, _custodyWallet, _amount
+        );
 
-    /// @notice Sends tokens to custody wallet and sends information to destination chain with custom gas limit settings.
-    /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
-    /// @param _token The address of the token to sent.
-    /// @param _amount The amount to be sent.
-    /// @param _customGasLimit Custom gas limit for CCIP
-    function sendWithCustomDestinationGasLimit(uint64 _destinationChainSelector, address _token, uint256 _amount,uint256 _customGasLimit
-    )
-        external
-        payable
-        onlyAllowlistedDestinationChain(_destinationChainSelector)
-        onlyAllowRegisteredTokens(_token)
-        returns (bytes32 messageId)
-    {
-        return _send(_destinationChainSelector, _token, _amount, _customGasLimit);
+        uint64 tokenId = tokenIds[_token];
+        address receiver = allowlistedDestinationChains[_destinationChainSelector];
+        if (receiver == address(0)) revert InvalidReceiverAddress();
+
+        return _sendMessagePayNative(_destinationChainSelector, receiver, msg.sender, tokenId, _amount, _defaultGasLimitOnDestinationChain);
     }
 
     /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector`
@@ -237,20 +229,6 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     /// @param _amount The amount to be sent.
     /// @return The calculated delivery fee cost
     function getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount) public view returns (uint256) {
-        return _getDeliveryFeeCost(_destinationChainSelector, _token, _amount, _defaultGasLimitOnDestinationChain);
-    }
-
-    /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector` and using `_customGasLimit`
-    /// @param _destinationChainSelector: The identifier (aka selector) for the destination blockchain.
-    /// @param _token The address of the token to sent.
-    /// @param _amount The amount to be sent.
-    /// @param _customGasLimit Custom CCIP gas limit
-    /// @return The calculated delivery fee cost
-    function getDeliveryFeeCostWithCustomGasLimit(uint64 _destinationChainSelector, address _token, uint256 _amount, uint256 _customGasLimit) public view returns (uint256) {
-        return _getDeliveryFeeCost(_destinationChainSelector, _token, _amount, _customGasLimit);
-    }
-
-    function _getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount, uint256 _gasLimit) internal view returns (uint256) {
         address receiver = allowlistedDestinationChains[_destinationChainSelector];
         uint64 tokenId = tokenIds[_token];
 
@@ -259,7 +237,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
             msg.sender,
             tokenId,
             _amount,
-            _gasLimit
+            _defaultGasLimitOnDestinationChain
         );
 
         return _getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
@@ -270,26 +248,6 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
         // Get the fee required to send the CCIP message
         return router.getFee(_destinationChainSelector, _evm2AnyMessage);
-    }
-
-    /// @notice Sends tokens to custody wallet and sends information to destination chain.
-    /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
-    /// @param _token The address of the token to sent.
-    /// @param _amount The amount to be sent.
-    /// @param _gasLimit Gas limit for CCIP
-    function _send(uint64 _destinationChainSelector, address _token, uint256 _amount, uint256 _gasLimit)
-        internal
-        returns (bytes32 messageId) 
-    {
-        IERC20(_token).safeTransferFrom(
-            msg.sender, _custodyWallet, _amount
-        );
-
-        uint64 tokenId = tokenIds[_token];
-        address receiver = allowlistedDestinationChains[_destinationChainSelector];
-        if (receiver == address(0)) revert InvalidReceiverAddress();
-
-        return _sendMessagePayNative(_destinationChainSelector, receiver, msg.sender, tokenId, _amount, _gasLimit);
     }
 
     /// @notice Sends data to receiver on the destination chain.

@@ -69,7 +69,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "custodyWallet"
       | "gasLimit"
       | "getDeliveryFeeCost"
-      | "getDeliveryFeeCostWithCustomGasLimit"
       | "getLastReceivedMessageDetails"
       | "getRouter"
       | "initialize"
@@ -78,7 +77,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "registerToken"
       | "renounceOwnership"
       | "send"
-      | "sendWithCustomDestinationGasLimit"
       | "supportsInterface"
       | "tokenIds"
       | "tokens"
@@ -134,10 +132,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [BigNumberish, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "getDeliveryFeeCostWithCustomGasLimit",
-    values: [BigNumberish, AddressLike, BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "getLastReceivedMessageDetails",
     values?: undefined
   ): string;
@@ -162,10 +156,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
   encodeFunctionData(
     functionFragment: "send",
     values: [BigNumberish, AddressLike, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "sendWithCustomDestinationGasLimit",
-    values: [BigNumberish, AddressLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -234,10 +224,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getDeliveryFeeCostWithCustomGasLimit",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "getLastReceivedMessageDetails",
     data: BytesLike
   ): Result;
@@ -257,10 +243,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "send", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "sendWithCustomDestinationGasLimit",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
@@ -503,17 +485,6 @@ export interface BackedCCIPReceiver extends BaseContract {
     "view"
   >;
 
-  getDeliveryFeeCostWithCustomGasLimit: TypedContractMethod<
-    [
-      _destinationChainSelector: BigNumberish,
-      _token: AddressLike,
-      _amount: BigNumberish,
-      _customGasLimit: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-
   getLastReceivedMessageDetails: TypedContractMethod<
     [],
     [
@@ -556,17 +527,6 @@ export interface BackedCCIPReceiver extends BaseContract {
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
       _amount: BigNumberish
-    ],
-    [string],
-    "payable"
-  >;
-
-  sendWithCustomDestinationGasLimit: TypedContractMethod<
-    [
-      _destinationChainSelector: BigNumberish,
-      _token: AddressLike,
-      _amount: BigNumberish,
-      _customGasLimit: BigNumberish
     ],
     [string],
     "payable"
@@ -664,18 +624,6 @@ export interface BackedCCIPReceiver extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "getDeliveryFeeCostWithCustomGasLimit"
-  ): TypedContractMethod<
-    [
-      _destinationChainSelector: BigNumberish,
-      _token: AddressLike,
-      _amount: BigNumberish,
-      _customGasLimit: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-  getFunction(
     nameOrSignature: "getLastReceivedMessageDetails"
   ): TypedContractMethod<
     [],
@@ -726,18 +674,6 @@ export interface BackedCCIPReceiver extends BaseContract {
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
       _amount: BigNumberish
-    ],
-    [string],
-    "payable"
-  >;
-  getFunction(
-    nameOrSignature: "sendWithCustomDestinationGasLimit"
-  ): TypedContractMethod<
-    [
-      _destinationChainSelector: BigNumberish,
-      _token: AddressLike,
-      _amount: BigNumberish,
-      _customGasLimit: BigNumberish
     ],
     [string],
     "payable"
