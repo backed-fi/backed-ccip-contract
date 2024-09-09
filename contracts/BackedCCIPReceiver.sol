@@ -26,7 +26,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
     // Custom errors to provide more descriptive revert messages.
     error InsufficientMessageValue(uint256 value, uint256 calculatedFees); // Used to make sure client has sent enough to cover the fees.
-    error NothingToWithdraw(); // Used when trying to withdraw Ether but there's nothing to withdraw.
+    error NothingToWithdraw(); // Used when trying to withdraw but there's nothing to withdraw.
     error FailedToWithdrawEth(address owner, address target, uint256 value); // Used when the withdrawal of Ether fails.
     error DestinationChainNotAllowlisted(uint64 destinationChainSelector); // Used when the destination chain has not been allowlisted by the contract owner.
     error SourceChainNotAllowlisted(uint64 sourceChainSelector); // Used when the source chain has not been allowlisted by the contract owner.
@@ -307,7 +307,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     }
 
     /// @notice This function assumes that the approval for token transfers from custody wallet is properly managed off-chain.
-    /// handle a received message
+    /// @notice Handles received CCIP message, sents out encoded token transfer from custody wallet to receiver.
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
         internal
         override
@@ -359,7 +359,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
             Client.EVM2AnyMessage({
                 receiver: abi.encode(_receiver), // ABI-encoded receiver address
                 data: abi.encode(_tokenReceiver, _tokenId, _amount), // ABI-encoded message
-                tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array aas no tokens are transferred
+                tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array as no tokens are transferred
                 extraArgs: Client._argsToBytes(
                     // Additional arguments, setting gas limit
                     Client.EVMExtraArgsV1({gasLimit: _gasLimit})
