@@ -69,16 +69,15 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "custodyWallet"
       | "gasLimit"
       | "getDeliveryFeeCost"
-      | "getDeliveryFeeCostWithCustomGasLimit"
-      | "getLastReceivedMessageDetails"
       | "getRouter"
       | "initialize"
       | "owner"
       | "registerDestinationChain"
       | "registerToken"
+      | "removeDestinationChain"
+      | "removeToken"
       | "renounceOwnership"
       | "send"
-      | "sendWithCustomDestinationGasLimit"
       | "supportsInterface"
       | "tokenIds"
       | "tokens"
@@ -98,6 +97,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "MessageSent"
       | "OwnershipTransferred"
       | "TokenRegistered"
+      | "TokenRemoved"
   ): EventFragment;
 
   encodeFunctionData(
@@ -133,14 +133,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
     functionFragment: "getDeliveryFeeCost",
     values: [BigNumberish, AddressLike, BigNumberish]
   ): string;
-  encodeFunctionData(
-    functionFragment: "getDeliveryFeeCostWithCustomGasLimit",
-    values: [BigNumberish, AddressLike, BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getLastReceivedMessageDetails",
-    values?: undefined
-  ): string;
   encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "initialize",
@@ -156,16 +148,20 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "removeDestinationChain",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "removeToken",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "send",
     values: [BigNumberish, AddressLike, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "sendWithCustomDestinationGasLimit",
-    values: [BigNumberish, AddressLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -233,14 +229,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
     functionFragment: "getDeliveryFeeCost",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "getDeliveryFeeCostWithCustomGasLimit",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "getLastReceivedMessageDetails",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "getRouter", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
@@ -253,14 +241,18 @@ export interface BackedCCIPReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "removeDestinationChain",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "removeToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "send", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "sendWithCustomDestinationGasLimit",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
@@ -410,6 +402,19 @@ export namespace TokenRegisteredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace TokenRemovedEvent {
+  export type InputTuple = [token: AddressLike, tokenId: BigNumberish];
+  export type OutputTuple = [token: string, tokenId: bigint];
+  export interface OutputObject {
+    token: string;
+    tokenId: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export interface BackedCCIPReceiver extends BaseContract {
   connect(runner?: ContractRunner | null): BackedCCIPReceiver;
   waitForDeployment(): Promise<this>;
@@ -503,30 +508,6 @@ export interface BackedCCIPReceiver extends BaseContract {
     "view"
   >;
 
-  getDeliveryFeeCostWithCustomGasLimit: TypedContractMethod<
-    [
-      _destinationChainSelector: BigNumberish,
-      _token: AddressLike,
-      _amount: BigNumberish,
-      _customGasLimit: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-
-  getLastReceivedMessageDetails: TypedContractMethod<
-    [],
-    [
-      [string, string, string, bigint] & {
-        messageId: string;
-        receiver: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
-    "view"
-  >;
-
   getRouter: TypedContractMethod<[], [string], "view">;
 
   initialize: TypedContractMethod<
@@ -549,6 +530,14 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
 
+  removeDestinationChain: TypedContractMethod<
+    [_destinationChainSelector: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  removeToken: TypedContractMethod<[_token: AddressLike], [void], "nonpayable">;
+
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
   send: TypedContractMethod<
@@ -556,17 +545,6 @@ export interface BackedCCIPReceiver extends BaseContract {
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
       _amount: BigNumberish
-    ],
-    [string],
-    "payable"
-  >;
-
-  sendWithCustomDestinationGasLimit: TypedContractMethod<
-    [
-      _destinationChainSelector: BigNumberish,
-      _token: AddressLike,
-      _amount: BigNumberish,
-      _customGasLimit: BigNumberish
     ],
     [string],
     "payable"
@@ -664,32 +642,6 @@ export interface BackedCCIPReceiver extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "getDeliveryFeeCostWithCustomGasLimit"
-  ): TypedContractMethod<
-    [
-      _destinationChainSelector: BigNumberish,
-      _token: AddressLike,
-      _amount: BigNumberish,
-      _customGasLimit: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "getLastReceivedMessageDetails"
-  ): TypedContractMethod<
-    [],
-    [
-      [string, string, string, bigint] & {
-        messageId: string;
-        receiver: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
-    "view"
-  >;
-  getFunction(
     nameOrSignature: "getRouter"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -717,6 +669,16 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "removeDestinationChain"
+  ): TypedContractMethod<
+    [_destinationChainSelector: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "removeToken"
+  ): TypedContractMethod<[_token: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "renounceOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
@@ -726,18 +688,6 @@ export interface BackedCCIPReceiver extends BaseContract {
       _destinationChainSelector: BigNumberish,
       _token: AddressLike,
       _amount: BigNumberish
-    ],
-    [string],
-    "payable"
-  >;
-  getFunction(
-    nameOrSignature: "sendWithCustomDestinationGasLimit"
-  ): TypedContractMethod<
-    [
-      _destinationChainSelector: BigNumberish,
-      _token: AddressLike,
-      _amount: BigNumberish,
-      _customGasLimit: BigNumberish
     ],
     [string],
     "payable"
@@ -820,6 +770,13 @@ export interface BackedCCIPReceiver extends BaseContract {
     TokenRegisteredEvent.OutputTuple,
     TokenRegisteredEvent.OutputObject
   >;
+  getEvent(
+    key: "TokenRemoved"
+  ): TypedContractEvent<
+    TokenRemovedEvent.InputTuple,
+    TokenRemovedEvent.OutputTuple,
+    TokenRemovedEvent.OutputObject
+  >;
 
   filters: {
     "CustodyWalletUpdated(address)": TypedContractEvent<
@@ -897,6 +854,17 @@ export interface BackedCCIPReceiver extends BaseContract {
       TokenRegisteredEvent.InputTuple,
       TokenRegisteredEvent.OutputTuple,
       TokenRegisteredEvent.OutputObject
+    >;
+
+    "TokenRemoved(address,uint64)": TypedContractEvent<
+      TokenRemovedEvent.InputTuple,
+      TokenRemovedEvent.OutputTuple,
+      TokenRemovedEvent.OutputObject
+    >;
+    TokenRemoved: TypedContractEvent<
+      TokenRemovedEvent.InputTuple,
+      TokenRemovedEvent.OutputTuple,
+      TokenRemovedEvent.OutputObject
     >;
   };
 }
