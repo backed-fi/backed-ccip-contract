@@ -22,8 +22,17 @@ const CELO_ALFAJORES_RPC_URL = process.env.CELO_ALFAJORES_RPC_URL;
 const METIS_SEPOLIA_RPC_URL = process.env.METIS_SEPOLIA_RPC_URL;
 const ZKSYNC_SEPOLIA_RPC_URL = process.env.ZKSYNC_SEPOLIA_RPC_URL;
 
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
+const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY
+
 const config: HardhatUserConfig = {
   solidity: "0.8.19",
+  etherscan: {
+    apiKey: {
+      sepolia: ETHERSCAN_API_KEY!,
+      polygonAmoy: POLYGONSCAN_API_KEY!
+    },
+  },
   networks: {
     hardhat: {
       chainId: 31337,

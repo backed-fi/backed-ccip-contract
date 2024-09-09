@@ -136,13 +136,6 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         _;
     }
 
-    /// @dev Modifier that checks the receiver address is not 0.
-    /// @param _receiver The receiver address.
-    modifier validateReceiver(address _receiver) {
-        if (_receiver == address(0)) revert InvalidReceiverAddress();
-        _;
-    }
-
     /// @dev Returns the address of the current custody wallet.
     function custodyWallet() public view virtual returns (address) {
         return _custodyWallet;
