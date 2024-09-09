@@ -136,6 +136,13 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         _;
     }
 
+    /// @dev Modifier that checks the receiver address is not 0.
+    /// @param _receiver The receiver address.
+    modifier validateReceiver(address _receiver) {
+        if (_receiver == address(0)) revert InvalidReceiverAddress();
+        _;
+    }
+
     /// @dev Returns the address of the current custody wallet.
     function custodyWallet() public view virtual returns (address) {
         return _custodyWallet;
@@ -147,7 +154,11 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     }
 
     /// @dev Updates the allowlist status of a destination chain for transactions.
-    function registerDestinationChain(uint64 _destinationChainSelector, address _receiver) external onlyOwner {
+    function registerDestinationChain(uint64 _destinationChainSelector, address _receiver) 
+        external 
+        onlyOwner
+        validateReceiver(_receiver)
+    {
         allowlistedDestinationChains[_destinationChainSelector] = _receiver;
     }
 
@@ -163,7 +174,10 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
     /// @dev Updates the allowlist status of a sender for transactions.
     function registerToken(address _token, uint64 _tokenId) external onlyOwner {
-        if (_tokenId == 0) revert InvalidTokenId();
+        if (_tokenId == 0) 
+            revert InvalidTokenId();
+        if (_token == address(0)) 
+            revert InvalidTokenAddress();
 
         tokenIds[_token] = _tokenId;
         tokens[_tokenId] = _token;
