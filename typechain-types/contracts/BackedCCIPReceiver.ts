@@ -69,7 +69,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "custodyWallet"
       | "gasLimit"
       | "getDeliveryFeeCost"
-      | "getLastReceivedMessageDetails"
       | "getRouter"
       | "initialize"
       | "owner"
@@ -130,10 +129,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getDeliveryFeeCost",
     values: [BigNumberish, AddressLike, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getLastReceivedMessageDetails",
-    values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
   encodeFunctionData(
@@ -221,10 +216,6 @@ export interface BackedCCIPReceiverInterface extends Interface {
   decodeFunctionResult(functionFragment: "gasLimit", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getDeliveryFeeCost",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "getLastReceivedMessageDetails",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getRouter", data: BytesLike): Result;
@@ -485,19 +476,6 @@ export interface BackedCCIPReceiver extends BaseContract {
     "view"
   >;
 
-  getLastReceivedMessageDetails: TypedContractMethod<
-    [],
-    [
-      [string, string, string, bigint] & {
-        messageId: string;
-        receiver: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
-    "view"
-  >;
-
   getRouter: TypedContractMethod<[], [string], "view">;
 
   initialize: TypedContractMethod<
@@ -621,20 +599,6 @@ export interface BackedCCIPReceiver extends BaseContract {
       _amount: BigNumberish
     ],
     [bigint],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "getLastReceivedMessageDetails"
-  ): TypedContractMethod<
-    [],
-    [
-      [string, string, string, bigint] & {
-        messageId: string;
-        receiver: string;
-        token: string;
-        amount: bigint;
-      }
-    ],
     "view"
   >;
   getFunction(

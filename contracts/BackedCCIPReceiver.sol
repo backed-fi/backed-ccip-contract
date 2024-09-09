@@ -12,8 +12,6 @@ import {SafeERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-
 
 import {CCIPReceiverUpgradeable} from "./ccip-upgradeable/CCIPReceiverUpgradeable.sol";
 
-import "./structs/BackedTransferMessageStruct.sol";
-
 /**
 * @dev
 * The BackedCCIPReceiver contract is designed to facilitate cross-chain token transfers and messaging using Chainlink's Cross-Chain Interoperability Protocol (CCIP).
@@ -68,8 +66,6 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         address token, // The address of the token
         uint64 tokenId
     );
-
-    BackedStructs.BackedTransferMessageStruct private lastReceivedMessage;
 
     address private _custodyWallet; // Custody wallet.
     uint256 private _defaultGasLimitOnDestinationChain; // Gas limit for CCIP execution on destination chain
@@ -325,11 +321,6 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
             _custodyWallet, tokenReceiver, amount
         );
 
-        lastReceivedMessage.messageId = any2EvmMessage.messageId;
-        lastReceivedMessage.receiver = tokenReceiver;
-        lastReceivedMessage.token = token;
-        lastReceivedMessage.amount = amount;
-
         emit MessageReceived(
             any2EvmMessage.messageId,
             any2EvmMessage.sourceChainSelector, // fetch the source chain identifier (aka selector)
@@ -366,19 +357,6 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
                 ),
                 feeToken: address(0)
             });
-    }
-
-    /// @notice Fetches the details of the last received message.
-    /// @return messageId The ID of the last received message.
-    /// @return receiver The last received receiver.
-    /// @return token The last received token.
-    /// @return amount The last received amount.
-    function getLastReceivedMessageDetails()
-        external
-        view
-        returns (bytes32 messageId, address receiver, address token, uint256 amount)
-    {
-        return (lastReceivedMessage.messageId, lastReceivedMessage.receiver, lastReceivedMessage.token, lastReceivedMessage.amount);
     }
 
     /// @notice Fallback function to allow the contract to receive Ether.
