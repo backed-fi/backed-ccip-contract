@@ -33,8 +33,8 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     error SenderNotAllowlisted(address sender); // Used when the sender has not been allowlisted by the contract owner.
     error InvalidReceiverAddress(); // Used when the receiver address is 0.
     error TokenNotRegistered(address token); // Used when the token has not been registered by the contract owner.
-    error InvalidTokenId(); // Used when token id is 0.
-    error InvalidTokenAddress(); // Used when token address is 0.
+    error InvalidTokenId(); // Used when token id is zero address or already registered.
+    error InvalidTokenAddress(); // Used when token address is zero address or already registered.
 
     // Event emitted when a message is sent to another chain.
     event MessageSent(
@@ -174,9 +174,9 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
     /// @dev Updates the allowlist status of a sender for transactions.
     function registerToken(address _token, uint64 _tokenId) external onlyOwner {
-        if (_tokenId == 0) 
+        if (_tokenId == 0 || tokens[_tokenId] != address(0)) 
             revert InvalidTokenId();
-        if (_token == address(0)) 
+        if (_token == address(0) || tokenIds[_token] != 0) 
             revert InvalidTokenAddress();
 
         tokenIds[_token] = _tokenId;
