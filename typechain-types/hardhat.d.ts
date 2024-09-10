@@ -162,6 +162,18 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CCIPReceiverUpgradeable__factory>;
     getContractFactory(
+      name: "BasicMessageReceiver",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BasicMessageReceiver__factory>;
+    getContractFactory(
+      name: "CustomFeeCCIPLocalSimulator",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.CustomFeeCCIPLocalSimulator__factory>;
+    getContractFactory(
+      name: "CustomFeeMockCCIPRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.CustomFeeMockCCIPRouter__factory>;
+    getContractFactory(
       name: "ERC20Mock",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20Mock__factory>;
@@ -352,6 +364,21 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.CCIPReceiverUpgradeable>;
     getContractAt(
+      name: "BasicMessageReceiver",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BasicMessageReceiver>;
+    getContractAt(
+      name: "CustomFeeCCIPLocalSimulator",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.CustomFeeCCIPLocalSimulator>;
+    getContractAt(
+      name: "CustomFeeMockCCIPRouter",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.CustomFeeMockCCIPRouter>;
+    getContractAt(
       name: "ERC20Mock",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -506,6 +533,18 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CCIPReceiverUpgradeable>;
     deployContract(
+      name: "BasicMessageReceiver",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BasicMessageReceiver>;
+    deployContract(
+      name: "CustomFeeCCIPLocalSimulator",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.CustomFeeCCIPLocalSimulator>;
+    deployContract(
+      name: "CustomFeeMockCCIPRouter",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.CustomFeeMockCCIPRouter>;
+    deployContract(
       name: "ERC20Mock",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ERC20Mock>;
@@ -695,6 +734,21 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CCIPReceiverUpgradeable>;
+    deployContract(
+      name: "BasicMessageReceiver",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BasicMessageReceiver>;
+    deployContract(
+      name: "CustomFeeCCIPLocalSimulator",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.CustomFeeCCIPLocalSimulator>;
+    deployContract(
+      name: "CustomFeeMockCCIPRouter",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.CustomFeeMockCCIPRouter>;
     deployContract(
       name: "ERC20Mock",
       args: any[],
