@@ -186,6 +186,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     function removeDestinationChain(uint64 _destinationChainSelector) 
         external 
         onlyOwner
+        onlyAllowlistedDestinationChain(_destinationChainSelector)
     {
         allowlistedDestinationChains[_destinationChainSelector] = address(0);
     }
@@ -369,6 +370,9 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         (address tokenReceiver, uint64 tokenId, uint256 amount) = abi.decode(any2EvmMessage.data, (address, uint64, uint256));
 
         address token = tokens[tokenId];
+
+        if (token == address(0))
+            revert InvalidTokenAddress();
         
         IERC20(token).safeTransferFrom(
             _custodyWallet, tokenReceiver, amount
