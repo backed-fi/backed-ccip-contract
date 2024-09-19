@@ -131,7 +131,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
   encodeFunctionData(functionFragment: "gasLimit", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getDeliveryFeeCost",
-    values: [BigNumberish, AddressLike, BigNumberish]
+    values: [BigNumberish, AddressLike, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
   encodeFunctionData(
@@ -161,7 +161,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "send",
-    values: [BigNumberish, AddressLike, BigNumberish]
+    values: [BigNumberish, AddressLike, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -501,6 +501,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   getDeliveryFeeCost: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
+      _tokenReceiver: AddressLike,
       _token: AddressLike,
       _amount: BigNumberish
     ],
@@ -543,6 +544,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   send: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
+      _tokenReceiver: AddressLike,
       _token: AddressLike,
       _amount: BigNumberish
     ],
@@ -635,6 +637,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
+      _tokenReceiver: AddressLike,
       _token: AddressLike,
       _amount: BigNumberish
     ],
@@ -686,6 +689,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
+      _tokenReceiver: AddressLike,
       _token: AddressLike,
       _amount: BigNumberish
     ],

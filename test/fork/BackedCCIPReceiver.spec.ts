@@ -22,7 +22,7 @@ const token = {
 describe("CCIP Integration", function () {
   it("Should transfer tokens through CCIP from EOA to EOA", async function () {
     const [client, systemWallet] = await hre.ethers.getSigners();
-    const [source, destination] = ["ethereumSepolia", "arbitrumSepolia"];
+    const [source, destination] = ["baseSepolia", "arbitrumSepolia"];
 
     const {
       address: sourceRouterAddress,
@@ -76,11 +76,11 @@ describe("CCIP Integration", function () {
     expect(custodyBalanceOnSourceChain).to.deep.equal(0n)
     expect(clientBalanceOnSourceChain).to.deep.equal(10_000_000_000_000_000_000n)
 
-    const feeCosts = await backedCCIPReceiverOnSourceChain.connect(client).getDeliveryFeeCost(destinationChainSelector, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n)
+    const feeCosts = await backedCCIPReceiverOnSourceChain.connect(client).getDeliveryFeeCost(destinationChainSelector, client.address, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n)
 
     console.log(`Custody balance on source chain: ${custodyBalanceOnSourceChain}`);
     console.log(`Client balance on source chain: ${clientBalanceOnSourceChain}`);
-    const tx = await backedCCIPReceiverOnSourceChain.connect(client).send(destinationChainSelector, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n, { value: feeCosts });
+    const tx = await backedCCIPReceiverOnSourceChain.connect(client).send(destinationChainSelector, client.address, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n, { value: feeCosts });
     const receipt = await tx.wait();
 
     custodyBalanceOnSourceChain = await tokenOnSourceChain.balanceOf(systemWallet.address);
@@ -158,6 +158,7 @@ describe("CCIP Integration", function () {
         destTokenAmounts: [],
       },
     ]);
+
 
     try {
       const estimate = await hre.ethers.provider.estimateGas({

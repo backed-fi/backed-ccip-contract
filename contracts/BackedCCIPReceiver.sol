@@ -253,9 +253,10 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
 
     /// @notice Sends tokens to custody wallet and sends information to destination chain.
     /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
+    /// @param _tokenReceiver The address that will be receiver of the tokens on destination blockchain.
     /// @param _token The address of the token to be sent.
     /// @param _amount The amount to be sent.
-    function send(uint64 _destinationChainSelector, address _token, uint256 _amount)
+    function send(uint64 _destinationChainSelector, address _tokenReceiver, address _token, uint256 _amount)
         external
         payable
         onlyAllowlistedDestinationChain(_destinationChainSelector)
@@ -269,21 +270,22 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
         uint64 tokenId = tokenIds[_token];
         address receiver = allowlistedDestinationChains[_destinationChainSelector];
 
-        return _sendMessagePayNative(_destinationChainSelector, receiver, msg.sender, tokenId, _amount, _defaultGasLimitOnDestinationChain);
+        return _sendMessagePayNative(_destinationChainSelector, receiver, _tokenReceiver, tokenId, _amount, _defaultGasLimitOnDestinationChain);
     }
 
     /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector`
     /// @param _destinationChainSelector: The identifier (aka selector) for the destination blockchain.
+    /// @param _tokenReceiver The address that will be receiver of the tokens on destination blockchain.
     /// @param _token The address of the token to sent.
     /// @param _amount The amount to be sent.
     /// @return The calculated delivery fee cost
-    function getDeliveryFeeCost(uint64 _destinationChainSelector, address _token, uint256 _amount) public view returns (uint256) {
+    function getDeliveryFeeCost(uint64 _destinationChainSelector, address _tokenReceiver, address _token, uint256 _amount) public view returns (uint256) {
         address receiver = allowlistedDestinationChains[_destinationChainSelector];
         uint64 tokenId = tokenIds[_token];
 
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             receiver,
-            msg.sender,
+            _tokenReceiver,
             tokenId,
             _amount,
             _defaultGasLimitOnDestinationChain

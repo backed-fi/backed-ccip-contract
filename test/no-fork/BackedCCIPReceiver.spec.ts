@@ -320,7 +320,7 @@ describe("Backed CCIP Receiver tests", () => {
     it('should return CCIP fee cost', async () => {
       /// Hardcoded value in mocked ccip router
       expect(
-        await backedCCIPReceiver.getDeliveryFeeCost(chainSelector, erc20Address, 200_000n)
+        await backedCCIPReceiver.getDeliveryFeeCost(chainSelector, client.address, erc20Address, 200_000n)
       ).to.equal(1)
     })
   });
@@ -334,14 +334,14 @@ describe("Backed CCIP Receiver tests", () => {
     describe('and `_destinationChainSelector` is not registered', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(client).send(anotherChainSelector, erc20Address, 200_000n)
+          backedCCIPReceiver.connect(client).send(anotherChainSelector, client.address, erc20Address, 200_000n)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'DestinationChainNotAllowlisted');
       });
     });
     describe('and `_token` is not registered', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(client).send(chainSelector, anotherErc20Address, 200_000n)
+          backedCCIPReceiver.connect(client).send(chainSelector, client.address, anotherErc20Address, 200_000n)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'TokenNotRegistered');
       });
     });
@@ -351,7 +351,7 @@ describe("Backed CCIP Receiver tests", () => {
       })
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(client).send(chainSelector, hre.ethers.ZeroAddress, 200_000n)
+          backedCCIPReceiver.connect(client).send(chainSelector, client.address, hre.ethers.ZeroAddress, 200_000n)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
@@ -359,13 +359,13 @@ describe("Backed CCIP Receiver tests", () => {
     describe('and `msg.value` is lower than CCIP fee costs', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(client).send(chainSelector, erc20Address, 200_000n, { value: 0 })
+          backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20Address, 200_000n, { value: 0 })
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InsufficientMessageValue')
       });
     });
 
     it('should send tokens to custody wallet', async () => {
-      await backedCCIPReceiver.connect(client).send(chainSelector, erc20Address, 200_000n, { value: 1 });
+      await backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20Address, 200_000n, { value: 1 });
       const clientBalance = await erc20.balanceOf(client.address);
       const custodyBalance = await erc20.balanceOf(systemWallet.address);
 
@@ -374,7 +374,7 @@ describe("Backed CCIP Receiver tests", () => {
     });
 
     it('should send CCIP message', async () => {
-      const tx = await backedCCIPReceiver.connect(client).send(chainSelector, erc20Address, 200_000n, { value: 1_000_000_000_000_000_000n });
+      const tx = await backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20Address, 200_000n, { value: 1_000_000_000_000_000_000n });
 
       const [lastMessageId, tokenReceiver, tokenId, amount] = await basicReceiver.getLatestMessageDetails();
 
