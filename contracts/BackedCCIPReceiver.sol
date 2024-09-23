@@ -62,6 +62,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     );
 
     event InvalidMessageReceived(
+        bytes32 indexed messageId, // The unique ID of the CCIP message.
         InvalidMessageReason reason // The reason why ccip message consume was skipped
     );
 
@@ -416,7 +417,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         nonReentrant
     {
         if (allowlistedSourceChains[any2EvmMessage.sourceChainSelector] == address(0)) {
-            emit InvalidMessageReceived(InvalidMessageReason.SOURCE_CHAIN_SELECTOR_NOT_ALLOWLISTED);
+            emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.SOURCE_CHAIN_SELECTOR_NOT_ALLOWLISTED);
             
             return;
         }
@@ -424,7 +425,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         (address tokenReceiver, uint64 tokenId, uint256 amount) = abi.decode(any2EvmMessage.data, (address, uint64, uint256));
 
         if (allowlistedSourceChains[any2EvmMessage.sourceChainSelector] != abi.decode(any2EvmMessage.sender, (address))) {
-            emit InvalidMessageReceived(InvalidMessageReason.SOURCE_SENDER_NOT_ALLOWLISTED);
+            emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.SOURCE_SENDER_NOT_ALLOWLISTED);
             
             return;
         }
@@ -432,7 +433,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         address token = tokens[tokenId];
 
         if (token == address(0)) {
-            emit InvalidMessageReceived(InvalidMessageReason.TOKEN_NOT_REGISTERED);
+            emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.TOKEN_NOT_REGISTERED);
             
             return;
         }

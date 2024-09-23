@@ -430,7 +430,7 @@ describe("Backed CCIP Receiver tests", () => {
           sender: defaultAbiCoder.encode(["address"], [random.address])
         }))
           .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
-          .withArgs(1)
+          .withArgs(ccipMessage.messageId, 1)
       });
     });
     describe('and source chain is not registered', () => {
@@ -442,7 +442,7 @@ describe("Backed CCIP Receiver tests", () => {
           sourceChainSelector: anotherChainSelector
         }))
           .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
-          .withArgs(0)
+          .withArgs(ccipMessage.messageId, 0)
       });
     });
 
@@ -455,7 +455,7 @@ describe("Backed CCIP Receiver tests", () => {
           data: defaultAbiCoder.encode(["address", "uint64", "uint256"], [client.address, 2, 200_000n]), // no data
         }))
           .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
-          .withArgs(2)
+          .withArgs(ccipMessage.messageId, 2)
       })
     });
 

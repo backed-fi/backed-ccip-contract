@@ -342,9 +342,10 @@ export namespace InitializedEvent {
 }
 
 export namespace InvalidMessageReceivedEvent {
-  export type InputTuple = [reason: BigNumberish];
-  export type OutputTuple = [reason: bigint];
+  export type InputTuple = [messageId: BytesLike, reason: BigNumberish];
+  export type OutputTuple = [messageId: string, reason: bigint];
   export interface OutputObject {
+    messageId: string;
     reason: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -943,7 +944,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       InitializedEvent.OutputObject
     >;
 
-    "InvalidMessageReceived(uint8)": TypedContractEvent<
+    "InvalidMessageReceived(bytes32,uint8)": TypedContractEvent<
       InvalidMessageReceivedEvent.InputTuple,
       InvalidMessageReceivedEvent.OutputTuple,
       InvalidMessageReceivedEvent.OutputObject
