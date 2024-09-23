@@ -104,8 +104,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         __Ownable_init();
         __ReentrancyGuard_init();
 
-        _custodyWallet = _custody;
-        _defaultGasLimitOnDestinationChain = _gasLimit;
+        updateGasLimit(_gasLimit);
+        updateCustodyWallet(_custody);
     }
 
     /// @dev Modifier that checks if the chain with the given destinationChainSelector is allowlisted.
@@ -237,7 +237,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
 
     /// @dev Updates the custody wallet.
     /// @param _custody new custody wallet address
-    function updateCustodyWallet(address _custody) external onlyOwner {
+    function updateCustodyWallet(address _custody) public onlyOwner {
         _custodyWallet = _custody;
 
         emit CustodyWalletUpdated(_custody);
@@ -245,7 +245,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
 
     /// @dev Updates default gas limit for CCIP.
     /// @param _gasLimit New default gas limit
-    function updateGasLimit(uint256 _gasLimit) external onlyOwner {
+    function updateGasLimit(uint256 _gasLimit) public onlyOwner {
         _defaultGasLimitOnDestinationChain = _gasLimit;
 
         emit GasLimitUpdated(_gasLimit);
