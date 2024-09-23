@@ -151,15 +151,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         _;
     }
 
-    /// @dev Modifier that checks if the sender is allowlisted.
-    /// @param _sourceChainSelector The selector of the source chain.
-    /// @param _sender The address of the sender.
-    modifier onlyAllowlistedSender(uint64 _sourceChainSelector, address _sender) {
-        if (allowlistedSourceChains[_sourceChainSelector] != _sender) 
-            revert SenderNotAllowlisted(_sender);
-        _;
-    }
-
     /// @dev Modifier that checks if token is registered
     /// @param _token The address of the token.
     modifier onlyAllowRegisteredTokens(address _token) {
