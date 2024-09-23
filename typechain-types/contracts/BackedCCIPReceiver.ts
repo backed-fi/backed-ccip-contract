@@ -321,7 +321,7 @@ export namespace MessageReceivedEvent {
     sender: AddressLike,
     token: AddressLike,
     amount: BigNumberish,
-    receiver: AddressLike
+    tokenReceiver: AddressLike
   ];
   export type OutputTuple = [
     messageId: string,
@@ -329,7 +329,7 @@ export namespace MessageReceivedEvent {
     sender: string,
     token: string,
     amount: bigint,
-    receiver: string
+    tokenReceiver: string
   ];
   export interface OutputObject {
     messageId: string;
@@ -337,7 +337,7 @@ export namespace MessageReceivedEvent {
     sender: string;
     token: string;
     amount: bigint;
-    receiver: string;
+    tokenReceiver: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -350,6 +350,7 @@ export namespace MessageSentEvent {
     messageId: BytesLike,
     destinationChainSelector: BigNumberish,
     receiver: AddressLike,
+    tokenReceiver: AddressLike,
     tokenId: BigNumberish,
     amount: BigNumberish,
     fees: BigNumberish
@@ -358,6 +359,7 @@ export namespace MessageSentEvent {
     messageId: string,
     destinationChainSelector: bigint,
     receiver: string,
+    tokenReceiver: string,
     tokenId: bigint,
     amount: bigint,
     fees: bigint
@@ -366,6 +368,7 @@ export namespace MessageSentEvent {
     messageId: string;
     destinationChainSelector: bigint;
     receiver: string;
+    tokenReceiver: string;
     tokenId: bigint;
     amount: bigint;
     fees: bigint;
@@ -827,7 +830,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       MessageReceivedEvent.OutputObject
     >;
 
-    "MessageSent(bytes32,uint64,address,uint64,uint256,uint256)": TypedContractEvent<
+    "MessageSent(bytes32,uint64,address,address,uint64,uint256,uint256)": TypedContractEvent<
       MessageSentEvent.InputTuple,
       MessageSentEvent.OutputTuple,
       MessageSentEvent.OutputObject

@@ -37,7 +37,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     event MessageSent(
         bytes32 indexed messageId, // The unique ID of the CCIP message.
         uint64 indexed destinationChainSelector, // The chain selector of the destination chain.
-        address receiver, // The address of the receiver on the destination chain.
+        address receiver, // The address of the CCIP message receiver on the destination chain.
+        address tokenReceiver, // The address of the token receiver on the destination chain
         uint64 tokenId, // The token being sent.
         uint256 amount, // The amount being sent.
         uint256 fees // The fees paid for sending the CCIP message.
@@ -50,7 +51,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         address sender, // The address of the sender from the source chain.
         address token, // The token that was received.
         uint256 amount, // The amount that was received.
-        address receiver // The receiver of the tokens.
+        address tokenReceiver // The receiver of the tokens.
     );
 
     event CustodyWalletUpdated(
@@ -348,6 +349,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
             messageId,
             _destinationChainSelector,
             _receiver,
+            _tokenReceiver,
             _tokenId,
             _amount,
             fees
