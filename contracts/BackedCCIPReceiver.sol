@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
@@ -19,7 +18,7 @@ import {CCIPReceiverUpgradeable} from "./ccip-upgradeable/CCIPReceiverUpgradeabl
 * This contract assumes that custody wallet approval for this contract to transfer tokens will be managed off-chain.
 */
 
-contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     // Custom errors to provide more descriptive revert messages.
