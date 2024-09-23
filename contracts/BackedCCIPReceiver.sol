@@ -279,7 +279,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     /// @param _token The address of the token to sent.
     /// @param _amount The amount to be sent.
     /// @return The calculated delivery fee cost
-    function getDeliveryFeeCost(uint64 _destinationChainSelector, address _tokenReceiver, address _token, uint256 _amount) public view returns (uint256) {
+    function getDeliveryFeeCost(uint64 _destinationChainSelector, address _tokenReceiver, address _token, uint256 _amount) external view returns (uint256) {
         address receiver = allowlistedDestinationChains[_destinationChainSelector];
         uint64 tokenId = tokenIds[_token];
 
@@ -422,7 +422,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     /// @dev This function reverts if there are no funds to withdraw or if the transfer fails.
     /// It should only be callable by the owner of the contract.
     /// @param _beneficiary The address to which the Ether should be sent.
-    function withdraw(address _beneficiary) public onlyOwner {
+    function withdraw(address _beneficiary) external onlyOwner {
         // Retrieve the balance of this contract
         uint256 amount = address(this).balance;
 
@@ -443,7 +443,7 @@ contract BackedCCIPReceiver is Initializable, CCIPReceiverUpgradeable, OwnableUp
     function withdrawToken(
         address _beneficiary,
         address _token
-    ) public onlyOwner {
+    ) external onlyOwner {
         // Retrieve the balance of this contract
         uint256 amount = IERC20(_token).balanceOf(address(this));
 
