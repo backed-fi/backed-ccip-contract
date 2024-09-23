@@ -21,6 +21,13 @@ import {CCIPReceiverUpgradeable} from "./ccip-upgradeable/CCIPReceiverUpgradeabl
 contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
+    /// CCIP message consumption fail that we should not revert and consume messages.
+    enum InvalidMessageReason {
+        SOURCE_CHAIN_SELECTOR_NOT_ALLOWLISTED,
+        SOURCE_SENDER_NOT_ALLOWLISTED,
+        TOKEN_NOT_REGISTERED
+    }
+
     // Custom errors to provide more descriptive revert messages.
     error InsufficientMessageValue(uint256 value, uint256 calculatedFees); // Used to make sure client has sent enough to cover the fees.
     error NothingToWithdraw(); // Used when trying to withdraw but there's nothing to withdraw.
@@ -52,6 +59,10 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         address token, // The token that was received.
         uint256 amount, // The amount that was received.
         address tokenReceiver // The receiver of the tokens.
+    );
+
+    event InvalidMessageReceived(
+        InvalidMessageReason reason // The reason why ccip message consume was skipped
     );
 
     event DestinationChainRegistered(
@@ -398,19 +409,33 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
 
     /// @notice This function assumes that the approval for token transfers from custody wallet is properly managed off-chain.
     /// @notice Handles received CCIP message, sents out encoded token transfer from custody wallet to receiver.
+    /// @notice We do not revert in some cases and succesfully consume CCIP messages to not allow retries.
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
         internal
         override
         nonReentrant
-        onlyAllowlistedSourceChain(any2EvmMessage.sourceChainSelector)
-        onlyAllowlistedSender(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address)))
     {
+        if (allowlistedSourceChains[any2EvmMessage.sourceChainSelector] == address(0)) {
+            emit InvalidMessageReceived(InvalidMessageReason.SOURCE_CHAIN_SELECTOR_NOT_ALLOWLISTED);
+            
+            return;
+        }
+
         (address tokenReceiver, uint64 tokenId, uint256 amount) = abi.decode(any2EvmMessage.data, (address, uint64, uint256));
+
+        if (allowlistedSourceChains[any2EvmMessage.sourceChainSelector] != abi.decode(any2EvmMessage.sender, (address))) {
+            emit InvalidMessageReceived(InvalidMessageReason.SOURCE_SENDER_NOT_ALLOWLISTED);
+            
+            return;
+        }
 
         address token = tokens[tokenId];
 
-        if (token == address(0))
-            revert InvalidTokenAddress();
+        if (token == address(0)) {
+            emit InvalidMessageReceived(InvalidMessageReason.TOKEN_NOT_REGISTERED);
+            
+            return;
+        }
         
         IERC20(token).safeTransferFrom(
             _custodyWallet, tokenReceiver, amount

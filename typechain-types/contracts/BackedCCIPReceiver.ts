@@ -94,6 +94,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "DestinationChainRemoved"
       | "GasLimitUpdated"
       | "Initialized"
+      | "InvalidMessageReceived"
       | "MessageReceived"
       | "MessageSent"
       | "OwnershipTransferred"
@@ -333,6 +334,18 @@ export namespace InitializedEvent {
   export type OutputTuple = [version: bigint];
   export interface OutputObject {
     version: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace InvalidMessageReceivedEvent {
+  export type InputTuple = [reason: BigNumberish];
+  export type OutputTuple = [reason: bigint];
+  export interface OutputObject {
+    reason: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -818,6 +831,13 @@ export interface BackedCCIPReceiver extends BaseContract {
     InitializedEvent.OutputObject
   >;
   getEvent(
+    key: "InvalidMessageReceived"
+  ): TypedContractEvent<
+    InvalidMessageReceivedEvent.InputTuple,
+    InvalidMessageReceivedEvent.OutputTuple,
+    InvalidMessageReceivedEvent.OutputObject
+  >;
+  getEvent(
     key: "MessageReceived"
   ): TypedContractEvent<
     MessageReceivedEvent.InputTuple,
@@ -921,6 +941,17 @@ export interface BackedCCIPReceiver extends BaseContract {
       InitializedEvent.InputTuple,
       InitializedEvent.OutputTuple,
       InitializedEvent.OutputObject
+    >;
+
+    "InvalidMessageReceived(uint8)": TypedContractEvent<
+      InvalidMessageReceivedEvent.InputTuple,
+      InvalidMessageReceivedEvent.OutputTuple,
+      InvalidMessageReceivedEvent.OutputObject
+    >;
+    InvalidMessageReceived: TypedContractEvent<
+      InvalidMessageReceivedEvent.InputTuple,
+      InvalidMessageReceivedEvent.OutputTuple,
+      InvalidMessageReceivedEvent.OutputObject
     >;
 
     "MessageReceived(bytes32,uint64,address,address,uint256,address)": TypedContractEvent<

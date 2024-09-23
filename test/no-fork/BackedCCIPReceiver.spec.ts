@@ -422,36 +422,40 @@ describe("Backed CCIP Receiver tests", () => {
       });
     });
     describe('and CCIP message sender is not registered', () => {
-      it('should revert', async () => {
+      it('should emit `InvalidMessageReceived` with `SOURCE_SENDER_NOT_ALLOWLISTED`', async () => {
         const router = await hre.ethers.getImpersonatedSigner(sourceRouter);
 
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
           sender: defaultAbiCoder.encode(["address"], [random.address])
         }))
-          .to.revertedWithCustomError(backedCCIPReceiver, 'SenderNotAllowlisted')
+          .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+          .withArgs(1)
       });
     });
     describe('and source chain is not registered', () => {
-      it('should revert', async () => {
+      it('should emit `InvalidMessageReceived` with `SOURCE_CHAIN_SELECTOR_NOT_ALLOWLISTED`', async () => {
         const router = await hre.ethers.getImpersonatedSigner(sourceRouter);
 
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
           sourceChainSelector: anotherChainSelector
         }))
-          .to.revertedWithCustomError(backedCCIPReceiver, 'SourceChainNotAllowlisted')
+          .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+          .withArgs(0)
       });
     });
 
     describe('and token is not registered', () => {
-      it('should revert', async () => {
+      it('should emit `InvalidMessageReceived` with `TOKEN_NOT_REGISTERED`', async () => {
         const router = await hre.ethers.getImpersonatedSigner(sourceRouter);
 
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
           data: defaultAbiCoder.encode(["address", "uint64", "uint256"], [client.address, 2, 200_000n]), // no data
-        })).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
+        }))
+          .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+          .withArgs(2)
       })
     });
 
