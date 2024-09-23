@@ -10,10 +10,6 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 /// @title CCIPReceiverUpgradeable - Base upgradeable contract for CCIP applications that can receive messages.
 abstract contract CCIPReceiverUpgradeable is IAny2EVMMessageReceiver, IERC165, Initializable  {
   address private i_ccipRouter;
-  /// @dev This empty reserved space is put in place to allow future versions to add new
-  /// variables without shifting down storage in the inheritance chain.
-  /// See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-  uint256[49] private __gap;
 
   function __CCIPReceiverUpgradeable_init(address router) internal onlyInitializing {
       if (router == address(0)) revert InvalidRouter(address(0));
@@ -60,4 +56,9 @@ abstract contract CCIPReceiverUpgradeable is IAny2EVMMessageReceiver, IERC165, I
     if (msg.sender != address(i_ccipRouter)) revert InvalidRouter(msg.sender);
     _;
   }
+
+  /// @dev This empty reserved space is put in place to allow future versions to add new
+  /// variables without shifting down storage in the inheritance chain.
+  /// See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+  uint256[49] private __gap;
 }
