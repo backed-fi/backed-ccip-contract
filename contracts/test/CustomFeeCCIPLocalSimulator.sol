@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.23;
 
 import {WETH9} from "@chainlink/local/src/shared/WETH9.sol";
 import {LinkToken} from "@chainlink/local/src/shared/LinkToken.sol";
