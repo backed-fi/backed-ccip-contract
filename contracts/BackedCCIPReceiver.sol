@@ -28,7 +28,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     error DestinationChainNotAllowlisted(uint64 destinationChainSelector); // Used when the destination chain has not been allowlisted by the contract owner.
     error SourceChainNotAllowlisted(uint64 sourceChainSelector); // Used when the source chain has not been allowlisted by the contract owner.
     error SenderNotAllowlisted(address sender); // Used when the sender has not been allowlisted by the contract owner.
-    error InvalidReceiverAddress(); // Used when the receiver address is 0.
+    error InvalidAddress(); // Used when the address is 0.
     error TokenNotRegistered(address token); // Used when the token has not been registered by the contract owner.
     error InvalidTokenId(); // Used when token id is zero address or already registered.
     error InvalidTokenAddress(); // Used when token address is zero address or already registered.
@@ -54,6 +54,24 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         address tokenReceiver // The receiver of the tokens.
     );
 
+    event DestinationChainRegistered(
+        uint64 destinationChainSelector, // The selector of the destination chain
+        address destinationChainReceiver // The receiver of the CCIP message on the destination chain
+    );
+
+    event DestinationChainRemoved(
+        uint64 destinationChainSelector // The selector of the destination chain
+    );
+
+    event SourceChainRegistered(
+        uint64 sourceChainSelector, // The selector of the source chain
+        address sourceChainSender // The address of the CCIP message sender on the source chain
+    );
+
+    event SourceChainRemoved(
+        uint64 sourceChainSelector // The selector of the source chain
+    );
+
     event CustodyWalletUpdated(
         address newCustodywallet // The address of new custody wallet.
     );
@@ -75,14 +93,11 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     address private _custodyWallet; // Custody wallet.
     uint256 private _defaultGasLimitOnDestinationChain; // Gas limit for CCIP execution on destination chain
 
-    // Mapping to keep track of allowlisted destination chains.
+    // Mapping to keep track of allowlisted destination chains and it's receiver addresses.
     mapping(uint64 => address) public allowlistedDestinationChains;
 
-    // Mapping to keep track of allowlisted source chains.
-    mapping(uint64 => bool) public allowlistedSourceChains;
-
-    // Mapping to keep track of allowlisted senders.
-    mapping(address => bool) public allowlistedSenders;
+    // Mapping to keep track of allowlisted source chains and it's sender addresses.
+    mapping(uint64 => address) public allowlistedSourceChains;
 
     // Mapping from token address to tokenId.
     mapping(address => uint64) public tokenIds;
@@ -116,13 +131,20 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         _;
     }
 
-    /// @dev Modifier that checks if the chain with the given sourceChainSelector is allowlisted and if the sender is allowlisted.
-    /// @param _sourceChainSelector The selector of the destination chain.
-    /// @param _sender The address of the sender.
-    modifier onlyAllowlisted(uint64 _sourceChainSelector, address _sender) {
-        if (!allowlistedSourceChains[_sourceChainSelector])
+    /// @dev Modifier that checks if the chain with the given _sourceChainSelector is allowlisted.
+    /// @param _sourceChainSelector The selector of the source chain.
+    modifier onlyAllowlistedSourceChain(uint64 _sourceChainSelector) {
+        if (allowlistedSourceChains[_sourceChainSelector] == address(0))
             revert SourceChainNotAllowlisted(_sourceChainSelector);
-        if (!allowlistedSenders[_sender]) revert SenderNotAllowlisted(_sender);
+        _;
+    }
+
+    /// @dev Modifier that checks if the sender is allowlisted.
+    /// @param _sourceChainSelector The selector of the source chain.
+    /// @param _sender The address of the sender.
+    modifier onlyAllowlistedSender(uint64 _sourceChainSelector, address _sender) {
+        if (allowlistedSourceChains[_sourceChainSelector] != _sender) 
+            revert SenderNotAllowlisted(_sender);
         _;
     }
 
@@ -137,10 +159,10 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         _;
     }
 
-    /// @dev Modifier that checks the receiver address is not zero address.
-    /// @param _receiver The receiver address.
-    modifier validateReceiver(address _receiver) {
-        if (_receiver == address(0)) revert InvalidReceiverAddress();
+    /// @dev Modifier that checks the address is not zero address.
+    /// @param _address The address to be registered.
+    modifier validateAddress(address _address) {
+        if (_address == address(0)) revert InvalidAddress();
         _;
     }
 
@@ -172,13 +194,15 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
 
     /// @dev Adds _destinationChainSelector the the allowlist and registers receiver address.
     /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
-    /// @param _receiver The address of the CCIP receiver on the destination blockchain.
-    function registerDestinationChain(uint64 _destinationChainSelector, address _receiver) 
+    /// @param _destinationChainReceiver The address of the CCIP receiver on the destination blockchain.
+    function registerDestinationChain(uint64 _destinationChainSelector, address _destinationChainReceiver) 
         external 
         onlyOwner
-        validateReceiver(_receiver)
+        validateAddress(_destinationChainReceiver)
     {
-        allowlistedDestinationChains[_destinationChainSelector] = _receiver;
+        allowlistedDestinationChains[_destinationChainSelector] = _destinationChainReceiver;
+
+        emit DestinationChainRegistered(_destinationChainSelector, _destinationChainReceiver);
     }
 
     /// @dev Removes _destinationChainSelector from the allowlist.
@@ -189,20 +213,33 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         onlyAllowlistedDestinationChain(_destinationChainSelector)
     {
         allowlistedDestinationChains[_destinationChainSelector] = address(0);
+
+        emit DestinationChainRemoved(_destinationChainSelector);
     }
 
-    /// @dev Updates the allowlist status of a source chain for transactions.
+    /// @dev Adds _sourceChainSelector the the allowlist and registers sender address.
+    /// @param _sourceChainSelector The identifier (aka selector) of the source blockchain.
+    /// @param _sourceChainSender The address of the CCIP sender on the source blockchain.
+    function registerSourceChain(uint64 _sourceChainSelector, address _sourceChainSender) 
+        external 
+        onlyOwner
+        validateAddress(_sourceChainSender)
+    {
+        allowlistedSourceChains[_sourceChainSelector] = _sourceChainSender;
+
+        emit SourceChainRegistered(_sourceChainSelector, _sourceChainSender);
+    }
+   
+    /// @dev Removes _sourceChainSelector from the allowlist.
     /// @param _sourceChainSelector The identifier (aka selector) for the source blockchain.
-    /// @param _allowed Value of the allowlist status
-    function allowlistSourceChain(uint64 _sourceChainSelector, bool _allowed ) external onlyOwner {
-        allowlistedSourceChains[_sourceChainSelector] = _allowed;
-    }
+    function removeSourceChain(uint64 _sourceChainSelector) 
+        external 
+        onlyOwner
+        onlyAllowlistedSourceChain(_sourceChainSelector)
+    {
+        allowlistedSourceChains[_sourceChainSelector] = address(0);
 
-    /// @dev Updates the allowlist status of a sender for transactions.
-    /// @param _sender The address of the CCIP message sender.
-    /// @param _allowed Value of the allowlist status
-    function allowlistSender(address _sender, bool _allowed) external onlyOwner {
-        allowlistedSenders[_sender] = _allowed;
+        emit SourceChainRemoved(_sourceChainSelector);
     }
 
     /// @dev Updates the allowlist status of a _token under _tokenId.
@@ -365,10 +402,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         internal
         override
         nonReentrant
-        onlyAllowlisted(
-            any2EvmMessage.sourceChainSelector,
-            abi.decode(any2EvmMessage.sender, (address))
-        ) // Make sure source chain and sender are allowlisted
+        onlyAllowlistedSourceChain(any2EvmMessage.sourceChainSelector)
+        onlyAllowlistedSender(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address)))
     {
         (address tokenReceiver, uint64 tokenId, uint256 amount) = abi.decode(any2EvmMessage.data, (address, uint64, uint256));
 

@@ -60,10 +60,7 @@ export declare namespace Client {
 export interface BackedCCIPReceiverInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "allowlistSender"
-      | "allowlistSourceChain"
       | "allowlistedDestinationChains"
-      | "allowlistedSenders"
       | "allowlistedSourceChains"
       | "ccipReceive"
       | "custodyWallet"
@@ -73,8 +70,10 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "initialize"
       | "owner"
       | "registerDestinationChain"
+      | "registerSourceChain"
       | "registerToken"
       | "removeDestinationChain"
+      | "removeSourceChain"
       | "removeToken"
       | "renounceOwnership"
       | "send"
@@ -91,30 +90,22 @@ export interface BackedCCIPReceiverInterface extends Interface {
   getEvent(
     nameOrSignatureOrTopic:
       | "CustodyWalletUpdated"
+      | "DestinationChainRegistered"
+      | "DestinationChainRemoved"
       | "GasLimitUpdated"
       | "Initialized"
       | "MessageReceived"
       | "MessageSent"
       | "OwnershipTransferred"
+      | "SourceChainRegistered"
+      | "SourceChainRemoved"
       | "TokenRegistered"
       | "TokenRemoved"
   ): EventFragment;
 
   encodeFunctionData(
-    functionFragment: "allowlistSender",
-    values: [AddressLike, boolean]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "allowlistSourceChain",
-    values: [BigNumberish, boolean]
-  ): string;
-  encodeFunctionData(
     functionFragment: "allowlistedDestinationChains",
     values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "allowlistedSenders",
-    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "allowlistedSourceChains",
@@ -144,11 +135,19 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "registerSourceChain",
+    values: [BigNumberish, AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "registerToken",
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "removeDestinationChain",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "removeSourceChain",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -197,19 +196,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "allowlistSender",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "allowlistSourceChain",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "allowlistedDestinationChains",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "allowlistedSenders",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -237,11 +224,19 @@ export interface BackedCCIPReceiverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "registerSourceChain",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "registerToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "removeDestinationChain",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "removeSourceChain",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -283,6 +278,37 @@ export namespace CustodyWalletUpdatedEvent {
   export type OutputTuple = [newCustodywallet: string];
   export interface OutputObject {
     newCustodywallet: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace DestinationChainRegisteredEvent {
+  export type InputTuple = [
+    destinationChainSelector: BigNumberish,
+    destinationChainReceiver: AddressLike
+  ];
+  export type OutputTuple = [
+    destinationChainSelector: bigint,
+    destinationChainReceiver: string
+  ];
+  export interface OutputObject {
+    destinationChainSelector: bigint;
+    destinationChainReceiver: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace DestinationChainRemovedEvent {
+  export type InputTuple = [destinationChainSelector: BigNumberish];
+  export type OutputTuple = [destinationChainSelector: bigint];
+  export interface OutputObject {
+    destinationChainSelector: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -392,6 +418,37 @@ export namespace OwnershipTransferredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace SourceChainRegisteredEvent {
+  export type InputTuple = [
+    sourceChainSelector: BigNumberish,
+    sourceChainSender: AddressLike
+  ];
+  export type OutputTuple = [
+    sourceChainSelector: bigint,
+    sourceChainSender: string
+  ];
+  export interface OutputObject {
+    sourceChainSelector: bigint;
+    sourceChainSender: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace SourceChainRemovedEvent {
+  export type InputTuple = [sourceChainSelector: BigNumberish];
+  export type OutputTuple = [sourceChainSelector: bigint];
+  export interface OutputObject {
+    sourceChainSelector: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace TokenRegisteredEvent {
   export type InputTuple = [token: AddressLike, tokenId: BigNumberish];
   export type OutputTuple = [token: string, tokenId: bigint];
@@ -461,33 +518,15 @@ export interface BackedCCIPReceiver extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  allowlistSender: TypedContractMethod<
-    [_sender: AddressLike, _allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
-
-  allowlistSourceChain: TypedContractMethod<
-    [_sourceChainSelector: BigNumberish, _allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
-
   allowlistedDestinationChains: TypedContractMethod<
     [arg0: BigNumberish],
     [string],
     "view"
   >;
 
-  allowlistedSenders: TypedContractMethod<
-    [arg0: AddressLike],
-    [boolean],
-    "view"
-  >;
-
   allowlistedSourceChains: TypedContractMethod<
     [arg0: BigNumberish],
-    [boolean],
+    [string],
     "view"
   >;
 
@@ -523,7 +562,16 @@ export interface BackedCCIPReceiver extends BaseContract {
   owner: TypedContractMethod<[], [string], "view">;
 
   registerDestinationChain: TypedContractMethod<
-    [_destinationChainSelector: BigNumberish, _receiver: AddressLike],
+    [
+      _destinationChainSelector: BigNumberish,
+      _destinationChainReceiver: AddressLike
+    ],
+    [void],
+    "nonpayable"
+  >;
+
+  registerSourceChain: TypedContractMethod<
+    [_sourceChainSelector: BigNumberish, _sourceChainSender: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -536,6 +584,12 @@ export interface BackedCCIPReceiver extends BaseContract {
 
   removeDestinationChain: TypedContractMethod<
     [_destinationChainSelector: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  removeSourceChain: TypedContractMethod<
+    [_sourceChainSelector: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -600,28 +654,11 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "allowlistSender"
-  ): TypedContractMethod<
-    [_sender: AddressLike, _allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
-    nameOrSignature: "allowlistSourceChain"
-  ): TypedContractMethod<
-    [_sourceChainSelector: BigNumberish, _allowed: boolean],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
     nameOrSignature: "allowlistedDestinationChains"
   ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
   getFunction(
-    nameOrSignature: "allowlistedSenders"
-  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
-  getFunction(
     nameOrSignature: "allowlistedSourceChains"
-  ): TypedContractMethod<[arg0: BigNumberish], [boolean], "view">;
+  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
   getFunction(
     nameOrSignature: "ccipReceive"
   ): TypedContractMethod<
@@ -663,7 +700,17 @@ export interface BackedCCIPReceiver extends BaseContract {
   getFunction(
     nameOrSignature: "registerDestinationChain"
   ): TypedContractMethod<
-    [_destinationChainSelector: BigNumberish, _receiver: AddressLike],
+    [
+      _destinationChainSelector: BigNumberish,
+      _destinationChainReceiver: AddressLike
+    ],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "registerSourceChain"
+  ): TypedContractMethod<
+    [_sourceChainSelector: BigNumberish, _sourceChainSender: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -678,6 +725,13 @@ export interface BackedCCIPReceiver extends BaseContract {
     nameOrSignature: "removeDestinationChain"
   ): TypedContractMethod<
     [_destinationChainSelector: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "removeSourceChain"
+  ): TypedContractMethod<
+    [_sourceChainSelector: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -736,6 +790,20 @@ export interface BackedCCIPReceiver extends BaseContract {
     CustodyWalletUpdatedEvent.OutputObject
   >;
   getEvent(
+    key: "DestinationChainRegistered"
+  ): TypedContractEvent<
+    DestinationChainRegisteredEvent.InputTuple,
+    DestinationChainRegisteredEvent.OutputTuple,
+    DestinationChainRegisteredEvent.OutputObject
+  >;
+  getEvent(
+    key: "DestinationChainRemoved"
+  ): TypedContractEvent<
+    DestinationChainRemovedEvent.InputTuple,
+    DestinationChainRemovedEvent.OutputTuple,
+    DestinationChainRemovedEvent.OutputObject
+  >;
+  getEvent(
     key: "GasLimitUpdated"
   ): TypedContractEvent<
     GasLimitUpdatedEvent.InputTuple,
@@ -771,6 +839,20 @@ export interface BackedCCIPReceiver extends BaseContract {
     OwnershipTransferredEvent.OutputObject
   >;
   getEvent(
+    key: "SourceChainRegistered"
+  ): TypedContractEvent<
+    SourceChainRegisteredEvent.InputTuple,
+    SourceChainRegisteredEvent.OutputTuple,
+    SourceChainRegisteredEvent.OutputObject
+  >;
+  getEvent(
+    key: "SourceChainRemoved"
+  ): TypedContractEvent<
+    SourceChainRemovedEvent.InputTuple,
+    SourceChainRemovedEvent.OutputTuple,
+    SourceChainRemovedEvent.OutputObject
+  >;
+  getEvent(
     key: "TokenRegistered"
   ): TypedContractEvent<
     TokenRegisteredEvent.InputTuple,
@@ -795,6 +877,28 @@ export interface BackedCCIPReceiver extends BaseContract {
       CustodyWalletUpdatedEvent.InputTuple,
       CustodyWalletUpdatedEvent.OutputTuple,
       CustodyWalletUpdatedEvent.OutputObject
+    >;
+
+    "DestinationChainRegistered(uint64,address)": TypedContractEvent<
+      DestinationChainRegisteredEvent.InputTuple,
+      DestinationChainRegisteredEvent.OutputTuple,
+      DestinationChainRegisteredEvent.OutputObject
+    >;
+    DestinationChainRegistered: TypedContractEvent<
+      DestinationChainRegisteredEvent.InputTuple,
+      DestinationChainRegisteredEvent.OutputTuple,
+      DestinationChainRegisteredEvent.OutputObject
+    >;
+
+    "DestinationChainRemoved(uint64)": TypedContractEvent<
+      DestinationChainRemovedEvent.InputTuple,
+      DestinationChainRemovedEvent.OutputTuple,
+      DestinationChainRemovedEvent.OutputObject
+    >;
+    DestinationChainRemoved: TypedContractEvent<
+      DestinationChainRemovedEvent.InputTuple,
+      DestinationChainRemovedEvent.OutputTuple,
+      DestinationChainRemovedEvent.OutputObject
     >;
 
     "GasLimitUpdated(uint256)": TypedContractEvent<
@@ -850,6 +954,28 @@ export interface BackedCCIPReceiver extends BaseContract {
       OwnershipTransferredEvent.InputTuple,
       OwnershipTransferredEvent.OutputTuple,
       OwnershipTransferredEvent.OutputObject
+    >;
+
+    "SourceChainRegistered(uint64,address)": TypedContractEvent<
+      SourceChainRegisteredEvent.InputTuple,
+      SourceChainRegisteredEvent.OutputTuple,
+      SourceChainRegisteredEvent.OutputObject
+    >;
+    SourceChainRegistered: TypedContractEvent<
+      SourceChainRegisteredEvent.InputTuple,
+      SourceChainRegisteredEvent.OutputTuple,
+      SourceChainRegisteredEvent.OutputObject
+    >;
+
+    "SourceChainRemoved(uint64)": TypedContractEvent<
+      SourceChainRemovedEvent.InputTuple,
+      SourceChainRemovedEvent.OutputTuple,
+      SourceChainRemovedEvent.OutputObject
+    >;
+    SourceChainRemoved: TypedContractEvent<
+      SourceChainRemovedEvent.InputTuple,
+      SourceChainRemovedEvent.OutputTuple,
+      SourceChainRemovedEvent.OutputObject
     >;
 
     "TokenRegistered(address,uint64)": TypedContractEvent<

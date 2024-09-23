@@ -133,7 +133,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.registerDestinationChain(chainSelector, hre.ethers.ZeroAddress)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidReceiverAddress');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidAddress');
       });
     });
     it('should register `_receiver` for `_destinationChainSelector`', async () => {
@@ -177,36 +177,45 @@ describe("Backed CCIP Receiver tests", () => {
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(random).allowlistSourceChain(chainSelector, true)
+          backedCCIPReceiver.connect(random).registerSourceChain(chainSelector, backedCCIPReceiverAddress)
         ).to.revertedWith('Ownable: caller is not the owner');
       });
     });
     it('should update `_sourceChainSelector` value', async () => {
-      await backedCCIPReceiver.allowlistSourceChain(chainSelector, true);
+      await backedCCIPReceiver.registerSourceChain(chainSelector, backedCCIPReceiverAddress);
 
-      expect(await backedCCIPReceiver.allowlistedSourceChains(chainSelector)).to.be.true;
-
-      await backedCCIPReceiver.allowlistSourceChain(chainSelector, false);
-
-      expect(await backedCCIPReceiver.allowlistedSourceChains(chainSelector)).to.be.false;
+      expect(await backedCCIPReceiver.allowlistedSourceChains(chainSelector)).to.deep.equal(backedCCIPReceiverAddress);
     });
   });
-  describe('#allowlistSender', () => {
+  describe('#removeSourceChain', () => {
+    beforeEach(async () => {
+      await backedCCIPReceiver.registerSourceChain(chainSelector, backedCCIPReceiverAddress);
+    })
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(random).allowlistSender(backedCCIPReceiverAddress, true)
+          backedCCIPReceiver.connect(random).removeSourceChain(chainSelector)
         ).to.revertedWith('Ownable: caller is not the owner');
       });
     });
+    describe('when `_sourceChainSelector` is not registered', () => {
+      it('should revert', async () => {
+        await expect(
+          backedCCIPReceiver.removeSourceChain(anotherChainSelector)
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'SourceChainNotAllowlisted');
+      });
+    });
+
     it('should update `_sender` value', async () => {
-      await backedCCIPReceiver.allowlistSender(backedCCIPReceiver, true);
+      let sourceChainSender = await backedCCIPReceiver.allowlistedSourceChains(chainSelector);
 
-      expect(await backedCCIPReceiver.allowlistedSenders(backedCCIPReceiver)).to.be.true;
+      expect(sourceChainSender).to.deep.equal(backedCCIPReceiverAddress);
 
-      await backedCCIPReceiver.allowlistSender(backedCCIPReceiver, false);
+      await backedCCIPReceiver.removeSourceChain(chainSelector);
 
-      expect(await backedCCIPReceiver.allowlistedSenders(backedCCIPReceiver)).to.be.false;
+      sourceChainSender = await backedCCIPReceiver.allowlistedDestinationChains(chainSelector);
+
+      expect(sourceChainSender).to.deep.equal(hre.ethers.ZeroAddress);
     });
   });
   describe('#updateCustodyWallet', () => {
@@ -396,8 +405,7 @@ describe("Backed CCIP Receiver tests", () => {
         destTokenAmounts: [],
       };
 
-      await backedCCIPReceiver.allowlistSourceChain(chainSelector, true);
-      await backedCCIPReceiver.allowlistSender(backedCCIPReceiverAddress, true);
+      await backedCCIPReceiver.registerSourceChain(chainSelector, backedCCIPReceiverAddress);
 
       await backedCCIPReceiver.registerToken(erc20Address, 1);
 

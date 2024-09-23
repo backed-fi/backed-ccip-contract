@@ -127,8 +127,7 @@ describe("CCIP Integration", function () {
     console.log(`Deployed Backed IBTA on ${destinationChainSelector}: ${tokenAddressOnDestinationChain}`);
 
     await backedCCIPReceiverOnDestinationChain.registerToken(tokenAddressOnDestinationChain, token.id);
-    await backedCCIPReceiverOnDestinationChain.allowlistSender(backedCCIPSourceChainAddress, true);
-    await backedCCIPReceiverOnDestinationChain.allowlistSourceChain(sourceChainSelector, true);
+    await backedCCIPReceiverOnDestinationChain.registerSourceChain(sourceChainSelector, backedCCIPSourceChainAddress);
 
     await tokenOnDestinationChain.mint(systemWallet, 10_000_000_000_000_000_000n);
     await tokenOnDestinationChain.connect(systemWallet).approve(backedCCIPReceiverAddressOnDestinationChain, 10_000_000_000_000_000_000n);
