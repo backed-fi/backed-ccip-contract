@@ -29,6 +29,8 @@ export const backedCcipReceiverAbi = [
     ],
     name: 'DestinationChainNotAllowlisted',
   },
+  { type: 'error', inputs: [], name: 'EnforcedPause' },
+  { type: 'error', inputs: [], name: 'ExpectedPause' },
   {
     type: 'error',
     inputs: [
@@ -46,7 +48,8 @@ export const backedCcipReceiverAbi = [
     ],
     name: 'InsufficientMessageValue',
   },
-  { type: 'error', inputs: [], name: 'InvalidReceiverAddress' },
+  { type: 'error', inputs: [], name: 'InvalidAddress' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
   {
     type: 'error',
     inputs: [{ name: 'router', internalType: 'address', type: 'address' }],
@@ -54,7 +57,19 @@ export const backedCcipReceiverAbi = [
   },
   { type: 'error', inputs: [], name: 'InvalidTokenAddress' },
   { type: 'error', inputs: [], name: 'InvalidTokenId' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
   { type: 'error', inputs: [], name: 'NothingToWithdraw' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
   {
     type: 'error',
     inputs: [{ name: 'sender', internalType: 'address', type: 'address' }],
@@ -90,6 +105,38 @@ export const backedCcipReceiverAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'destinationChainSelector',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+      {
+        name: 'destinationChainReceiver',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'DestinationChainRegistered',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'destinationChainSelector',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'DestinationChainRemoved',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'newGasLimit',
         internalType: 'uint256',
         type: 'uint256',
@@ -102,9 +149,33 @@ export const backedCcipReceiverAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
-      { name: 'version', internalType: 'uint8', type: 'uint8', indexed: false },
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
     ],
     name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'messageId',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'reason',
+        internalType: 'enum BackedCCIPReceiver.InvalidMessageReason',
+        type: 'uint8',
+        indexed: false,
+      },
+    ],
+    name: 'InvalidMessageReceived',
   },
   {
     type: 'event',
@@ -141,7 +212,7 @@ export const backedCcipReceiverAbi = [
         indexed: false,
       },
       {
-        name: 'receiver',
+        name: 'tokenReceiver',
         internalType: 'address',
         type: 'address',
         indexed: false,
@@ -167,6 +238,12 @@ export const backedCcipReceiverAbi = [
       },
       {
         name: 'receiver',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'tokenReceiver',
         internalType: 'address',
         type: 'address',
         indexed: false,
@@ -216,6 +293,51 @@ export const backedCcipReceiverAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'Paused',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'sourceChainSelector',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+      {
+        name: 'sourceChainSender',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'SourceChainRegistered',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'sourceChainSelector',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'SourceChainRemoved',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'token',
         internalType: 'address',
         type: 'address',
@@ -250,24 +372,17 @@ export const backedCcipReceiverAbi = [
     name: 'TokenRemoved',
   },
   {
-    type: 'function',
+    type: 'event',
+    anonymous: false,
     inputs: [
-      { name: '_sender', internalType: 'address', type: 'address' },
-      { name: '_allowed', internalType: 'bool', type: 'bool' },
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
     ],
-    name: 'allowlistSender',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_sourceChainSelector', internalType: 'uint64', type: 'uint64' },
-      { name: '_allowed', internalType: 'bool', type: 'bool' },
-    ],
-    name: 'allowlistSourceChain',
-    outputs: [],
-    stateMutability: 'nonpayable',
+    name: 'Unpaused',
   },
   {
     type: 'function',
@@ -278,16 +393,9 @@ export const backedCcipReceiverAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'allowlistedSenders',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
     name: 'allowlistedSourceChains',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -344,6 +452,7 @@ export const backedCcipReceiverAbi = [
         internalType: 'uint64',
         type: 'uint64',
       },
+      { name: '_tokenReceiver', internalType: 'address', type: 'address' },
       { name: '_token', internalType: 'address', type: 'address' },
       { name: '_amount', internalType: 'uint256', type: 'uint256' },
     ],
@@ -378,15 +487,43 @@ export const backedCcipReceiverAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'pause',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'paused',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [
       {
         name: '_destinationChainSelector',
         internalType: 'uint64',
         type: 'uint64',
       },
-      { name: '_receiver', internalType: 'address', type: 'address' },
+      {
+        name: '_destinationChainReceiver',
+        internalType: 'address',
+        type: 'address',
+      },
     ],
     name: 'registerDestinationChain',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_sourceChainSelector', internalType: 'uint64', type: 'uint64' },
+      { name: '_sourceChainSender', internalType: 'address', type: 'address' },
+    ],
+    name: 'registerSourceChain',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -415,6 +552,15 @@ export const backedCcipReceiverAbi = [
   },
   {
     type: 'function',
+    inputs: [
+      { name: '_sourceChainSelector', internalType: 'uint64', type: 'uint64' },
+    ],
+    name: 'removeSourceChain',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [{ name: '_token', internalType: 'address', type: 'address' }],
     name: 'removeToken',
     outputs: [],
@@ -435,6 +581,7 @@ export const backedCcipReceiverAbi = [
         internalType: 'uint64',
         type: 'uint64',
       },
+      { name: '_tokenReceiver', internalType: 'address', type: 'address' },
       { name: '_token', internalType: 'address', type: 'address' },
       { name: '_amount', internalType: 'uint256', type: 'uint256' },
     ],
@@ -467,6 +614,13 @@ export const backedCcipReceiverAbi = [
     type: 'function',
     inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
     name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'unpause',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -511,12 +665,42 @@ export const backedCcipReceiverAbi = [
 
 export const erc20Abi = [
   {
-    type: 'constructor',
+    type: 'error',
     inputs: [
-      { name: 'name_', internalType: 'string', type: 'string' },
-      { name: 'symbol_', internalType: 'string', type: 'string' },
+      { name: 'spender', internalType: 'address', type: 'address' },
+      { name: 'allowance', internalType: 'uint256', type: 'uint256' },
+      { name: 'needed', internalType: 'uint256', type: 'uint256' },
     ],
-    stateMutability: 'nonpayable',
+    name: 'ERC20InsufficientAllowance',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'sender', internalType: 'address', type: 'address' },
+      { name: 'balance', internalType: 'uint256', type: 'uint256' },
+      { name: 'needed', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'ERC20InsufficientBalance',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'approver', internalType: 'address', type: 'address' }],
+    name: 'ERC20InvalidApprover',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'receiver', internalType: 'address', type: 'address' }],
+    name: 'ERC20InvalidReceiver',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'sender', internalType: 'address', type: 'address' }],
+    name: 'ERC20InvalidSender',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'spender', internalType: 'address', type: 'address' }],
+    name: 'ERC20InvalidSpender',
   },
   {
     type: 'event',
@@ -572,7 +756,7 @@ export const erc20Abi = [
     type: 'function',
     inputs: [
       { name: 'spender', internalType: 'address', type: 'address' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'value', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'approve',
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
@@ -591,26 +775,6 @@ export const erc20Abi = [
     name: 'decimals',
     outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
     stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spender', internalType: 'address', type: 'address' },
-      { name: 'subtractedValue', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'decreaseAllowance',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spender', internalType: 'address', type: 'address' },
-      { name: 'addedValue', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'increaseAllowance',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -637,7 +801,7 @@ export const erc20Abi = [
     type: 'function',
     inputs: [
       { name: 'to', internalType: 'address', type: 'address' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'value', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'transfer',
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
@@ -648,7 +812,7 @@ export const erc20Abi = [
     inputs: [
       { name: 'from', internalType: 'address', type: 'address' },
       { name: 'to', internalType: 'address', type: 'address' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'value', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'transferFrom',
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
@@ -674,15 +838,6 @@ export const readBackedCcipReceiverAllowlistedDestinationChains =
   /*#__PURE__*/ createReadContract({
     abi: backedCcipReceiverAbi,
     functionName: 'allowlistedDestinationChains',
-  })
-
-/**
- * Wraps __{@link readContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistedSenders"`
- */
-export const readBackedCcipReceiverAllowlistedSenders =
-  /*#__PURE__*/ createReadContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistedSenders',
   })
 
 /**
@@ -736,6 +891,14 @@ export const readBackedCcipReceiverOwner = /*#__PURE__*/ createReadContract({
 })
 
 /**
+ * Wraps __{@link readContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"paused"`
+ */
+export const readBackedCcipReceiverPaused = /*#__PURE__*/ createReadContract({
+  abi: backedCcipReceiverAbi,
+  functionName: 'paused',
+})
+
+/**
  * Wraps __{@link readContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"supportsInterface"`
  */
 export const readBackedCcipReceiverSupportsInterface =
@@ -768,24 +931,6 @@ export const writeBackedCcipReceiver = /*#__PURE__*/ createWriteContract({
 })
 
 /**
- * Wraps __{@link writeContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistSender"`
- */
-export const writeBackedCcipReceiverAllowlistSender =
-  /*#__PURE__*/ createWriteContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistSender',
-  })
-
-/**
- * Wraps __{@link writeContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistSourceChain"`
- */
-export const writeBackedCcipReceiverAllowlistSourceChain =
-  /*#__PURE__*/ createWriteContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistSourceChain',
-  })
-
-/**
  * Wraps __{@link writeContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"ccipReceive"`
  */
 export const writeBackedCcipReceiverCcipReceive =
@@ -804,12 +949,29 @@ export const writeBackedCcipReceiverInitialize =
   })
 
 /**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"pause"`
+ */
+export const writeBackedCcipReceiverPause = /*#__PURE__*/ createWriteContract({
+  abi: backedCcipReceiverAbi,
+  functionName: 'pause',
+})
+
+/**
  * Wraps __{@link writeContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"registerDestinationChain"`
  */
 export const writeBackedCcipReceiverRegisterDestinationChain =
   /*#__PURE__*/ createWriteContract({
     abi: backedCcipReceiverAbi,
     functionName: 'registerDestinationChain',
+  })
+
+/**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"registerSourceChain"`
+ */
+export const writeBackedCcipReceiverRegisterSourceChain =
+  /*#__PURE__*/ createWriteContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'registerSourceChain',
   })
 
 /**
@@ -828,6 +990,15 @@ export const writeBackedCcipReceiverRemoveDestinationChain =
   /*#__PURE__*/ createWriteContract({
     abi: backedCcipReceiverAbi,
     functionName: 'removeDestinationChain',
+  })
+
+/**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"removeSourceChain"`
+ */
+export const writeBackedCcipReceiverRemoveSourceChain =
+  /*#__PURE__*/ createWriteContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'removeSourceChain',
   })
 
 /**
@@ -864,6 +1035,13 @@ export const writeBackedCcipReceiverTransferOwnership =
     abi: backedCcipReceiverAbi,
     functionName: 'transferOwnership',
   })
+
+/**
+ * Wraps __{@link writeContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"unpause"`
+ */
+export const writeBackedCcipReceiverUnpause = /*#__PURE__*/ createWriteContract(
+  { abi: backedCcipReceiverAbi, functionName: 'unpause' },
+)
 
 /**
  * Wraps __{@link writeContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"updateCustodyWallet"`
@@ -909,24 +1087,6 @@ export const simulateBackedCcipReceiver = /*#__PURE__*/ createSimulateContract({
 })
 
 /**
- * Wraps __{@link simulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistSender"`
- */
-export const simulateBackedCcipReceiverAllowlistSender =
-  /*#__PURE__*/ createSimulateContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistSender',
-  })
-
-/**
- * Wraps __{@link simulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistSourceChain"`
- */
-export const simulateBackedCcipReceiverAllowlistSourceChain =
-  /*#__PURE__*/ createSimulateContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistSourceChain',
-  })
-
-/**
  * Wraps __{@link simulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"ccipReceive"`
  */
 export const simulateBackedCcipReceiverCcipReceive =
@@ -945,12 +1105,30 @@ export const simulateBackedCcipReceiverInitialize =
   })
 
 /**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"pause"`
+ */
+export const simulateBackedCcipReceiverPause =
+  /*#__PURE__*/ createSimulateContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'pause',
+  })
+
+/**
  * Wraps __{@link simulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"registerDestinationChain"`
  */
 export const simulateBackedCcipReceiverRegisterDestinationChain =
   /*#__PURE__*/ createSimulateContract({
     abi: backedCcipReceiverAbi,
     functionName: 'registerDestinationChain',
+  })
+
+/**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"registerSourceChain"`
+ */
+export const simulateBackedCcipReceiverRegisterSourceChain =
+  /*#__PURE__*/ createSimulateContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'registerSourceChain',
   })
 
 /**
@@ -969,6 +1147,15 @@ export const simulateBackedCcipReceiverRemoveDestinationChain =
   /*#__PURE__*/ createSimulateContract({
     abi: backedCcipReceiverAbi,
     functionName: 'removeDestinationChain',
+  })
+
+/**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"removeSourceChain"`
+ */
+export const simulateBackedCcipReceiverRemoveSourceChain =
+  /*#__PURE__*/ createSimulateContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'removeSourceChain',
   })
 
 /**
@@ -1005,6 +1192,15 @@ export const simulateBackedCcipReceiverTransferOwnership =
   /*#__PURE__*/ createSimulateContract({
     abi: backedCcipReceiverAbi,
     functionName: 'transferOwnership',
+  })
+
+/**
+ * Wraps __{@link simulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"unpause"`
+ */
+export const simulateBackedCcipReceiverUnpause =
+  /*#__PURE__*/ createSimulateContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'unpause',
   })
 
 /**
@@ -1059,6 +1255,24 @@ export const watchBackedCcipReceiverCustodyWalletUpdatedEvent =
   })
 
 /**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"DestinationChainRegistered"`
+ */
+export const watchBackedCcipReceiverDestinationChainRegisteredEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'DestinationChainRegistered',
+  })
+
+/**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"DestinationChainRemoved"`
+ */
+export const watchBackedCcipReceiverDestinationChainRemovedEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'DestinationChainRemoved',
+  })
+
+/**
  * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"GasLimitUpdated"`
  */
 export const watchBackedCcipReceiverGasLimitUpdatedEvent =
@@ -1074,6 +1288,15 @@ export const watchBackedCcipReceiverInitializedEvent =
   /*#__PURE__*/ createWatchContractEvent({
     abi: backedCcipReceiverAbi,
     eventName: 'Initialized',
+  })
+
+/**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"InvalidMessageReceived"`
+ */
+export const watchBackedCcipReceiverInvalidMessageReceivedEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'InvalidMessageReceived',
   })
 
 /**
@@ -1104,6 +1327,33 @@ export const watchBackedCcipReceiverOwnershipTransferredEvent =
   })
 
 /**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"Paused"`
+ */
+export const watchBackedCcipReceiverPausedEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'Paused',
+  })
+
+/**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"SourceChainRegistered"`
+ */
+export const watchBackedCcipReceiverSourceChainRegisteredEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'SourceChainRegistered',
+  })
+
+/**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"SourceChainRemoved"`
+ */
+export const watchBackedCcipReceiverSourceChainRemovedEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'SourceChainRemoved',
+  })
+
+/**
  * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"TokenRegistered"`
  */
 export const watchBackedCcipReceiverTokenRegisteredEvent =
@@ -1119,6 +1369,15 @@ export const watchBackedCcipReceiverTokenRemovedEvent =
   /*#__PURE__*/ createWatchContractEvent({
     abi: backedCcipReceiverAbi,
     eventName: 'TokenRemoved',
+  })
+
+/**
+ * Wraps __{@link watchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"Unpaused"`
+ */
+export const watchBackedCcipReceiverUnpausedEvent =
+  /*#__PURE__*/ createWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'Unpaused',
   })
 
 /**
@@ -1188,22 +1447,6 @@ export const writeErc20Approve = /*#__PURE__*/ createWriteContract({
 })
 
 /**
- * Wraps __{@link writeContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"decreaseAllowance"`
- */
-export const writeErc20DecreaseAllowance = /*#__PURE__*/ createWriteContract({
-  abi: erc20Abi,
-  functionName: 'decreaseAllowance',
-})
-
-/**
- * Wraps __{@link writeContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"increaseAllowance"`
- */
-export const writeErc20IncreaseAllowance = /*#__PURE__*/ createWriteContract({
-  abi: erc20Abi,
-  functionName: 'increaseAllowance',
-})
-
-/**
  * Wraps __{@link writeContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"transfer"`
  */
 export const writeErc20Transfer = /*#__PURE__*/ createWriteContract({
@@ -1233,24 +1476,6 @@ export const simulateErc20Approve = /*#__PURE__*/ createSimulateContract({
   abi: erc20Abi,
   functionName: 'approve',
 })
-
-/**
- * Wraps __{@link simulateContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"decreaseAllowance"`
- */
-export const simulateErc20DecreaseAllowance =
-  /*#__PURE__*/ createSimulateContract({
-    abi: erc20Abi,
-    functionName: 'decreaseAllowance',
-  })
-
-/**
- * Wraps __{@link simulateContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"increaseAllowance"`
- */
-export const simulateErc20IncreaseAllowance =
-  /*#__PURE__*/ createSimulateContract({
-    abi: erc20Abi,
-    functionName: 'increaseAllowance',
-  })
 
 /**
  * Wraps __{@link simulateContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"transfer"`
@@ -1312,15 +1537,6 @@ export const useReadBackedCcipReceiverAllowlistedDestinationChains =
   })
 
 /**
- * Wraps __{@link useReadContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistedSenders"`
- */
-export const useReadBackedCcipReceiverAllowlistedSenders =
-  /*#__PURE__*/ createUseReadContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistedSenders',
-  })
-
-/**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistedSourceChains"`
  */
 export const useReadBackedCcipReceiverAllowlistedSourceChains =
@@ -1375,6 +1591,15 @@ export const useReadBackedCcipReceiverOwner =
   })
 
 /**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"paused"`
+ */
+export const useReadBackedCcipReceiverPaused =
+  /*#__PURE__*/ createUseReadContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'paused',
+  })
+
+/**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"supportsInterface"`
  */
 export const useReadBackedCcipReceiverSupportsInterface =
@@ -1409,24 +1634,6 @@ export const useWriteBackedCcipReceiver = /*#__PURE__*/ createUseWriteContract({
 })
 
 /**
- * Wraps __{@link useWriteContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistSender"`
- */
-export const useWriteBackedCcipReceiverAllowlistSender =
-  /*#__PURE__*/ createUseWriteContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistSender',
-  })
-
-/**
- * Wraps __{@link useWriteContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistSourceChain"`
- */
-export const useWriteBackedCcipReceiverAllowlistSourceChain =
-  /*#__PURE__*/ createUseWriteContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistSourceChain',
-  })
-
-/**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"ccipReceive"`
  */
 export const useWriteBackedCcipReceiverCcipReceive =
@@ -1445,12 +1652,30 @@ export const useWriteBackedCcipReceiverInitialize =
   })
 
 /**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"pause"`
+ */
+export const useWriteBackedCcipReceiverPause =
+  /*#__PURE__*/ createUseWriteContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'pause',
+  })
+
+/**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"registerDestinationChain"`
  */
 export const useWriteBackedCcipReceiverRegisterDestinationChain =
   /*#__PURE__*/ createUseWriteContract({
     abi: backedCcipReceiverAbi,
     functionName: 'registerDestinationChain',
+  })
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"registerSourceChain"`
+ */
+export const useWriteBackedCcipReceiverRegisterSourceChain =
+  /*#__PURE__*/ createUseWriteContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'registerSourceChain',
   })
 
 /**
@@ -1469,6 +1694,15 @@ export const useWriteBackedCcipReceiverRemoveDestinationChain =
   /*#__PURE__*/ createUseWriteContract({
     abi: backedCcipReceiverAbi,
     functionName: 'removeDestinationChain',
+  })
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"removeSourceChain"`
+ */
+export const useWriteBackedCcipReceiverRemoveSourceChain =
+  /*#__PURE__*/ createUseWriteContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'removeSourceChain',
   })
 
 /**
@@ -1505,6 +1739,15 @@ export const useWriteBackedCcipReceiverTransferOwnership =
   /*#__PURE__*/ createUseWriteContract({
     abi: backedCcipReceiverAbi,
     functionName: 'transferOwnership',
+  })
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"unpause"`
+ */
+export const useWriteBackedCcipReceiverUnpause =
+  /*#__PURE__*/ createUseWriteContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'unpause',
   })
 
 /**
@@ -1550,24 +1793,6 @@ export const useSimulateBackedCcipReceiver =
   /*#__PURE__*/ createUseSimulateContract({ abi: backedCcipReceiverAbi })
 
 /**
- * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistSender"`
- */
-export const useSimulateBackedCcipReceiverAllowlistSender =
-  /*#__PURE__*/ createUseSimulateContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistSender',
-  })
-
-/**
- * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"allowlistSourceChain"`
- */
-export const useSimulateBackedCcipReceiverAllowlistSourceChain =
-  /*#__PURE__*/ createUseSimulateContract({
-    abi: backedCcipReceiverAbi,
-    functionName: 'allowlistSourceChain',
-  })
-
-/**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"ccipReceive"`
  */
 export const useSimulateBackedCcipReceiverCcipReceive =
@@ -1586,12 +1811,30 @@ export const useSimulateBackedCcipReceiverInitialize =
   })
 
 /**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"pause"`
+ */
+export const useSimulateBackedCcipReceiverPause =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'pause',
+  })
+
+/**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"registerDestinationChain"`
  */
 export const useSimulateBackedCcipReceiverRegisterDestinationChain =
   /*#__PURE__*/ createUseSimulateContract({
     abi: backedCcipReceiverAbi,
     functionName: 'registerDestinationChain',
+  })
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"registerSourceChain"`
+ */
+export const useSimulateBackedCcipReceiverRegisterSourceChain =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'registerSourceChain',
   })
 
 /**
@@ -1610,6 +1853,15 @@ export const useSimulateBackedCcipReceiverRemoveDestinationChain =
   /*#__PURE__*/ createUseSimulateContract({
     abi: backedCcipReceiverAbi,
     functionName: 'removeDestinationChain',
+  })
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"removeSourceChain"`
+ */
+export const useSimulateBackedCcipReceiverRemoveSourceChain =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'removeSourceChain',
   })
 
 /**
@@ -1646,6 +1898,15 @@ export const useSimulateBackedCcipReceiverTransferOwnership =
   /*#__PURE__*/ createUseSimulateContract({
     abi: backedCcipReceiverAbi,
     functionName: 'transferOwnership',
+  })
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"unpause"`
+ */
+export const useSimulateBackedCcipReceiverUnpause =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'unpause',
   })
 
 /**
@@ -1700,6 +1961,24 @@ export const useWatchBackedCcipReceiverCustodyWalletUpdatedEvent =
   })
 
 /**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"DestinationChainRegistered"`
+ */
+export const useWatchBackedCcipReceiverDestinationChainRegisteredEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'DestinationChainRegistered',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"DestinationChainRemoved"`
+ */
+export const useWatchBackedCcipReceiverDestinationChainRemovedEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'DestinationChainRemoved',
+  })
+
+/**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"GasLimitUpdated"`
  */
 export const useWatchBackedCcipReceiverGasLimitUpdatedEvent =
@@ -1715,6 +1994,15 @@ export const useWatchBackedCcipReceiverInitializedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
     abi: backedCcipReceiverAbi,
     eventName: 'Initialized',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"InvalidMessageReceived"`
+ */
+export const useWatchBackedCcipReceiverInvalidMessageReceivedEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'InvalidMessageReceived',
   })
 
 /**
@@ -1745,6 +2033,33 @@ export const useWatchBackedCcipReceiverOwnershipTransferredEvent =
   })
 
 /**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"Paused"`
+ */
+export const useWatchBackedCcipReceiverPausedEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'Paused',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"SourceChainRegistered"`
+ */
+export const useWatchBackedCcipReceiverSourceChainRegisteredEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'SourceChainRegistered',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"SourceChainRemoved"`
+ */
+export const useWatchBackedCcipReceiverSourceChainRemovedEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'SourceChainRemoved',
+  })
+
+/**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"TokenRegistered"`
  */
 export const useWatchBackedCcipReceiverTokenRegisteredEvent =
@@ -1760,6 +2075,15 @@ export const useWatchBackedCcipReceiverTokenRemovedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
     abi: backedCcipReceiverAbi,
     eventName: 'TokenRemoved',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `eventName` set to `"Unpaused"`
+ */
+export const useWatchBackedCcipReceiverUnpausedEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: backedCcipReceiverAbi,
+    eventName: 'Unpaused',
   })
 
 /**
@@ -1833,24 +2157,6 @@ export const useWriteErc20Approve = /*#__PURE__*/ createUseWriteContract({
 })
 
 /**
- * Wraps __{@link useWriteContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"decreaseAllowance"`
- */
-export const useWriteErc20DecreaseAllowance =
-  /*#__PURE__*/ createUseWriteContract({
-    abi: erc20Abi,
-    functionName: 'decreaseAllowance',
-  })
-
-/**
- * Wraps __{@link useWriteContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"increaseAllowance"`
- */
-export const useWriteErc20IncreaseAllowance =
-  /*#__PURE__*/ createUseWriteContract({
-    abi: erc20Abi,
-    functionName: 'increaseAllowance',
-  })
-
-/**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"transfer"`
  */
 export const useWriteErc20Transfer = /*#__PURE__*/ createUseWriteContract({
@@ -1880,24 +2186,6 @@ export const useSimulateErc20Approve = /*#__PURE__*/ createUseSimulateContract({
   abi: erc20Abi,
   functionName: 'approve',
 })
-
-/**
- * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"decreaseAllowance"`
- */
-export const useSimulateErc20DecreaseAllowance =
-  /*#__PURE__*/ createUseSimulateContract({
-    abi: erc20Abi,
-    functionName: 'decreaseAllowance',
-  })
-
-/**
- * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"increaseAllowance"`
- */
-export const useSimulateErc20IncreaseAllowance =
-  /*#__PURE__*/ createUseSimulateContract({
-    abi: erc20Abi,
-    functionName: 'increaseAllowance',
-  })
 
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link erc20Abi}__ and `functionName` set to `"transfer"`

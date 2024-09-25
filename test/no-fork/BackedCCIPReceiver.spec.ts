@@ -116,7 +116,8 @@ describe("Backed CCIP Receiver tests", () => {
     describe('when `initialize` is called again', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.initialize(sourceRouter, systemWallet.address, 200_000)).to.revertedWith('Initializable: contract is already initialized')
+          backedCCIPReceiver.initialize(sourceRouter, systemWallet.address, 200_000)).to
+          .revertedWithCustomError(backedCCIPReceiver, 'InvalidInitialization')
       });
     });
   });
@@ -126,7 +127,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).registerDestinationChain(chainSelector, backedCCIPReceiverAddress)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_receiver` is equal to zero address', () => {
@@ -150,7 +151,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).removeDestinationChain(chainSelector)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_destinationChainSelector` is not registered', () => {
@@ -178,7 +179,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).registerSourceChain(chainSelector, backedCCIPReceiverAddress)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     it('should update `_sourceChainSelector` value', async () => {
@@ -195,7 +196,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).removeSourceChain(chainSelector)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_sourceChainSelector` is not registered', () => {
@@ -223,7 +224,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).updateCustodyWallet(random.address)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     it('should update custody wallet to `_custodyWallet`', async () => {
@@ -237,7 +238,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).updateGasLimit(300_000)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount')
       });
     });
     it('should update default gas limit to `_gasLimit`', async () => {
@@ -251,7 +252,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).registerToken(erc20Address, 1)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_tokenId` is equal 0', () => {
@@ -303,7 +304,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).removeToken(erc20Address)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_token` is not registered', () => {

@@ -71,8 +71,8 @@ export const CCIP_BnM_ADDRESSES: AddressMap = {
 }
 
 export const BACKED_CCIP_RECEIVER: AddressMap = {
-    [`ethereumSepolia`]: `0x787E2c754E724570361EE0aE451847144ce56AB5`,
-    [`polygonAmoy`]: `0xa337fa5D85e8850F31D0E6Ad5E02b0f55A8cDDCF`
+    [`ethereumSepolia`]: `0xb5C3Ebc3Ea9A32CF7F8901f9aBD4C2109B9BaE9c`,
+    [`polygonAmoy`]: `0x03b58d94e676fB05092b32aAD0bA524c333E46b7`
 }
 
 export const CCIP_LnM_ADDRESSES: AddressMap = {

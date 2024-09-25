@@ -19,7 +19,7 @@ import type {
   TypedListener,
 } from "../../../common";
 
-export interface ContextUpgradeableInterface extends Interface {
+export interface ReentrancyGuardUpgradeableInterface extends Interface {
   getEvent(nameOrSignatureOrTopic: "Initialized"): EventFragment;
 }
 
@@ -35,11 +35,11 @@ export namespace InitializedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export interface ContextUpgradeable extends BaseContract {
-  connect(runner?: ContractRunner | null): ContextUpgradeable;
+export interface ReentrancyGuardUpgradeable extends BaseContract {
+  connect(runner?: ContractRunner | null): ReentrancyGuardUpgradeable;
   waitForDeployment(): Promise<this>;
 
-  interface: ContextUpgradeableInterface;
+  interface: ReentrancyGuardUpgradeableInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,

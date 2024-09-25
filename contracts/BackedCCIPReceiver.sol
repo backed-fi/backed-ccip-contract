@@ -2,7 +2,8 @@
 pragma solidity ^0.8.23;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -18,7 +19,7 @@ import {CCIPReceiverUpgradeable} from "./ccip-upgradeable/CCIPReceiverUpgradeabl
 * This contract assumes that custody wallet approval for this contract to transfer tokens will be managed off-chain.
 */
 
-contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     /// CCIP message consumption fail that we should not revert and consume messages.
@@ -128,7 +129,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     /// @param _gasLimit Initial value for default CCIP execution gas limit on destination chain.
     function initialize(address _router, address _custody, uint256 _gasLimit) public initializer  {
         __CCIPReceiverUpgradeable_init(_router);
-        __Ownable_init();
+        __Ownable_init(msg.sender);
+        __Pausable_init();
         __ReentrancyGuard_init();
 
         updateGasLimit(_gasLimit);
@@ -201,6 +203,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     function registerDestinationChain(uint64 _destinationChainSelector, address _destinationChainReceiver) 
         external 
         onlyOwner
+        whenNotPaused
         validateAddress(_destinationChainReceiver)
     {
         allowlistedDestinationChains[_destinationChainSelector] = _destinationChainReceiver;
@@ -213,6 +216,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     function removeDestinationChain(uint64 _destinationChainSelector) 
         external 
         onlyOwner
+        whenNotPaused
         onlyAllowlistedDestinationChain(_destinationChainSelector)
     {
         allowlistedDestinationChains[_destinationChainSelector] = address(0);
@@ -226,6 +230,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     function registerSourceChain(uint64 _sourceChainSelector, address _sourceChainSender) 
         external 
         onlyOwner
+        whenNotPaused
         validateAddress(_sourceChainSender)
     {
         allowlistedSourceChains[_sourceChainSelector] = _sourceChainSender;
@@ -238,6 +243,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     function removeSourceChain(uint64 _sourceChainSelector) 
         external 
         onlyOwner
+        whenNotPaused
         onlyAllowlistedSourceChain(_sourceChainSelector)
     {
         allowlistedSourceChains[_sourceChainSelector] = address(0);
@@ -251,6 +257,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     function registerToken(address _token, uint64 _tokenId) 
         external
         onlyOwner
+        whenNotPaused
         validateToken(_token)
         validateTokenId(_tokenId)
     {
@@ -265,6 +272,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     function removeToken(address _token) 
         external
         onlyOwner
+        whenNotPaused
         onlyAllowRegisteredTokens(_token)
     {
         uint64 tokenId = tokenIds[_token];
@@ -277,7 +285,11 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
 
     /// @dev Updates the custody wallet.
     /// @param _custody new custody wallet address
-    function updateCustodyWallet(address _custody) public onlyOwner {
+    function updateCustodyWallet(address _custody) 
+        public 
+        onlyOwner 
+        whenNotPaused
+    {
         _custodyWallet = _custody;
 
         emit CustodyWalletUpdated(_custody);
@@ -285,7 +297,11 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
 
     /// @dev Updates default gas limit for CCIP.
     /// @param _gasLimit New default gas limit
-    function updateGasLimit(uint256 _gasLimit) public onlyOwner {
+    function updateGasLimit(uint256 _gasLimit)
+        public 
+        onlyOwner 
+        whenNotPaused
+    {
         _defaultGasLimitOnDestinationChain = _gasLimit;
 
         emit GasLimitUpdated(_gasLimit);
@@ -299,6 +315,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
     function send(uint64 _destinationChainSelector, address _tokenReceiver, address _token, uint256 _amount)
         external
         payable
+        whenNotPaused
         onlyAllowlistedDestinationChain(_destinationChainSelector)
         onlyAllowRegisteredTokens(_token)
         returns (bytes32 messageId)
@@ -504,5 +521,15 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Reen
         if (amount == 0) revert NothingToWithdraw();
 
         IERC20(_token).safeTransfer(_beneficiary, amount);
+    }
+
+    /// @notice Pauses the contract
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Pauses the contract
+    function unpause() external onlyOwner {
+        _unpause();
     }
 }

@@ -4,9 +4,12 @@
 import type {
   BaseContract,
   BigNumberish,
+  BytesLike,
   FunctionFragment,
+  Result,
   Interface,
   EventFragment,
+  AddressLike,
   ContractRunner,
   ContractMethod,
   Listener,
@@ -17,10 +20,19 @@ import type {
   TypedEventLog,
   TypedLogDescription,
   TypedListener,
+  TypedContractMethod,
 } from "../../../common";
 
-export interface ContextUpgradeableInterface extends Interface {
-  getEvent(nameOrSignatureOrTopic: "Initialized"): EventFragment;
+export interface PausableUpgradeableInterface extends Interface {
+  getFunction(nameOrSignature: "paused"): FunctionFragment;
+
+  getEvent(
+    nameOrSignatureOrTopic: "Initialized" | "Paused" | "Unpaused"
+  ): EventFragment;
+
+  encodeFunctionData(functionFragment: "paused", values?: undefined): string;
+
+  decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
 }
 
 export namespace InitializedEvent {
@@ -35,11 +47,35 @@ export namespace InitializedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export interface ContextUpgradeable extends BaseContract {
-  connect(runner?: ContractRunner | null): ContextUpgradeable;
+export namespace PausedEvent {
+  export type InputTuple = [account: AddressLike];
+  export type OutputTuple = [account: string];
+  export interface OutputObject {
+    account: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace UnpausedEvent {
+  export type InputTuple = [account: AddressLike];
+  export type OutputTuple = [account: string];
+  export interface OutputObject {
+    account: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export interface PausableUpgradeable extends BaseContract {
+  connect(runner?: ContractRunner | null): PausableUpgradeable;
   waitForDeployment(): Promise<this>;
 
-  interface: ContextUpgradeableInterface;
+  interface: PausableUpgradeableInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -78,9 +114,15 @@ export interface ContextUpgradeable extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  paused: TypedContractMethod<[], [boolean], "view">;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
+
+  getFunction(
+    nameOrSignature: "paused"
+  ): TypedContractMethod<[], [boolean], "view">;
 
   getEvent(
     key: "Initialized"
@@ -88,6 +130,20 @@ export interface ContextUpgradeable extends BaseContract {
     InitializedEvent.InputTuple,
     InitializedEvent.OutputTuple,
     InitializedEvent.OutputObject
+  >;
+  getEvent(
+    key: "Paused"
+  ): TypedContractEvent<
+    PausedEvent.InputTuple,
+    PausedEvent.OutputTuple,
+    PausedEvent.OutputObject
+  >;
+  getEvent(
+    key: "Unpaused"
+  ): TypedContractEvent<
+    UnpausedEvent.InputTuple,
+    UnpausedEvent.OutputTuple,
+    UnpausedEvent.OutputObject
   >;
 
   filters: {
@@ -100,6 +156,28 @@ export interface ContextUpgradeable extends BaseContract {
       InitializedEvent.InputTuple,
       InitializedEvent.OutputTuple,
       InitializedEvent.OutputObject
+    >;
+
+    "Paused(address)": TypedContractEvent<
+      PausedEvent.InputTuple,
+      PausedEvent.OutputTuple,
+      PausedEvent.OutputObject
+    >;
+    Paused: TypedContractEvent<
+      PausedEvent.InputTuple,
+      PausedEvent.OutputTuple,
+      PausedEvent.OutputObject
+    >;
+
+    "Unpaused(address)": TypedContractEvent<
+      UnpausedEvent.InputTuple,
+      UnpausedEvent.OutputTuple,
+      UnpausedEvent.OutputObject
+    >;
+    Unpaused: TypedContractEvent<
+      UnpausedEvent.InputTuple,
+      UnpausedEvent.OutputTuple,
+      UnpausedEvent.OutputObject
     >;
   };
 }

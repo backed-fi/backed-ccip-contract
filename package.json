@@ -13,6 +13,7 @@
     "@chainlink/local": "^0.2.1",
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "@openzeppelin/hardhat-upgrades": "^3.2.1",
     "@wagmi/cli": "^2.1.15",
     "ethers": "^6.13.2",

@@ -72,6 +72,14 @@ export type { ReentrancyGuardUpgradeable } from "./@openzeppelin/contracts-upgra
 export { ReentrancyGuardUpgradeable__factory } from "./factories/@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable__factory";
 export type { ContextUpgradeable } from "./@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable";
 export { ContextUpgradeable__factory } from "./factories/@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable__factory";
+export type { PausableUpgradeable } from "./@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable";
+export { PausableUpgradeable__factory } from "./factories/@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable__factory";
+export type { IERC1155Errors } from "./@openzeppelin/contracts/interfaces/draft-IERC6093.sol/IERC1155Errors";
+export { IERC1155Errors__factory } from "./factories/@openzeppelin/contracts/interfaces/draft-IERC6093.sol/IERC1155Errors__factory";
+export type { IERC20Errors } from "./@openzeppelin/contracts/interfaces/draft-IERC6093.sol/IERC20Errors";
+export { IERC20Errors__factory } from "./factories/@openzeppelin/contracts/interfaces/draft-IERC6093.sol/IERC20Errors__factory";
+export type { IERC721Errors } from "./@openzeppelin/contracts/interfaces/draft-IERC6093.sol/IERC721Errors";
+export { IERC721Errors__factory } from "./factories/@openzeppelin/contracts/interfaces/draft-IERC6093.sol/IERC721Errors__factory";
 export type { BackedCCIPReceiver } from "./contracts/BackedCCIPReceiver";
 export { BackedCCIPReceiver__factory } from "./factories/contracts/BackedCCIPReceiver__factory";
 export type { CCIPReceiverUpgradeable } from "./contracts/ccip-upgradeable/CCIPReceiverUpgradeable";

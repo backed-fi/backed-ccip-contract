@@ -4,9 +4,9 @@
 
 import { Contract, Interface, type ContractRunner } from "ethers";
 import type {
-  Initializable,
-  InitializableInterface,
-} from "../../../../../@openzeppelin/contracts-upgradeable/proxy/utils/Initializable";
+  ReentrancyGuardUpgradeable,
+  ReentrancyGuardUpgradeableInterface,
+} from "../../../../@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable";
 
 const _abi = [
   {
@@ -17,6 +17,11 @@ const _abi = [
   {
     inputs: [],
     name: "NotInitializing",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "ReentrancyGuardReentrantCall",
     type: "error",
   },
   {
@@ -34,15 +39,19 @@ const _abi = [
   },
 ] as const;
 
-export class Initializable__factory {
+export class ReentrancyGuardUpgradeable__factory {
   static readonly abi = _abi;
-  static createInterface(): InitializableInterface {
-    return new Interface(_abi) as InitializableInterface;
+  static createInterface(): ReentrancyGuardUpgradeableInterface {
+    return new Interface(_abi) as ReentrancyGuardUpgradeableInterface;
   }
   static connect(
     address: string,
     runner?: ContractRunner | null
-  ): Initializable {
-    return new Contract(address, _abi, runner) as unknown as Initializable;
+  ): ReentrancyGuardUpgradeable {
+    return new Contract(
+      address,
+      _abi,
+      runner
+    ) as unknown as ReentrancyGuardUpgradeable;
   }
 }
