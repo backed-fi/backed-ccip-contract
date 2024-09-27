@@ -2,5 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as ccipUpgradeable from "./ccip-upgradeable";
+export * as interfaces from "./interfaces";
 export * as test from "./test";
 export { BackedCCIPReceiver__factory } from "./BackedCCIPReceiver__factory";

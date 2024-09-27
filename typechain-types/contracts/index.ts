@@ -3,6 +3,8 @@
 /* eslint-disable */
 import type * as ccipUpgradeable from "./ccip-upgradeable";
 export type { ccipUpgradeable };
+import type * as interfaces from "./interfaces";
+export type { interfaces };
 import type * as test from "./test";
 export type { test };
 export type { BackedCCIPReceiver } from "./BackedCCIPReceiver";
