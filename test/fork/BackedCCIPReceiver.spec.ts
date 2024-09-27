@@ -16,7 +16,8 @@ import { BackedCCIPReceiver__factory } from "../../typechain-types/factories/con
 const token = {
   id: 1337,
   name: 'Backed IBTA',
-  symbol: 'bIBTA'
+  symbol: 'bIBTA',
+  variant: 0n,
 }
 
 describe("CCIP Integration", function () {
@@ -63,7 +64,7 @@ describe("CCIP Integration", function () {
 
     console.log(`Deployed Backed IBTA on ${sourceChainSelector}: ${tokenOnSourceChainAddress}`);
 
-    await backedCCIPReceiverOnSourceChain.registerToken(tokenOnSourceChainAddress, token.id);
+    await backedCCIPReceiverOnSourceChain.registerToken(tokenOnSourceChainAddress, token.id, token.variant);
 
     await tokenOnSourceChain.mint(client, 10_000_000_000_000_000_000n);
 
@@ -126,7 +127,7 @@ describe("CCIP Integration", function () {
 
     console.log(`Deployed Backed IBTA on ${destinationChainSelector}: ${tokenAddressOnDestinationChain}`);
 
-    await backedCCIPReceiverOnDestinationChain.registerToken(tokenAddressOnDestinationChain, token.id);
+    await backedCCIPReceiverOnDestinationChain.registerToken(tokenAddressOnDestinationChain, token.id, token.variant);
     await backedCCIPReceiverOnDestinationChain.registerSourceChain(sourceChainSelector, backedCCIPSourceChainAddress);
 
     await tokenOnDestinationChain.mint(systemWallet, 10_000_000_000_000_000_000n);

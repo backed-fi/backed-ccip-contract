@@ -19,6 +19,12 @@ const token = {
   symbol: 'bIBTA'
 }
 
+const REGULAR_TOKEN = 0n;
+const AUTO_FEE_TOKEN = 1n;
+
+const PRODUCT_ID = 102392n;
+const ANOTHER_PRODUCT_ID = 34039n;
+
 describe("Backed CCIP Receiver tests", () => {
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
@@ -251,54 +257,56 @@ describe("Backed CCIP Receiver tests", () => {
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(random).registerToken(erc20Address, 1)
+          backedCCIPReceiver.connect(random).registerToken(erc20Address, 1, 0)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_tokenId` is equal 0', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(erc20Address, 0)
+          backedCCIPReceiver.registerToken(erc20Address, 0, REGULAR_TOKEN)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
       });
     });
     describe('when `_tokenId` is already registered', () => {
       beforeEach(async () => {
-        await backedCCIPReceiver.registerToken(erc20Address, 1);
+        await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
       })
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(anotherErc20Address, 1)
+          backedCCIPReceiver.registerToken(anotherErc20Address, PRODUCT_ID, REGULAR_TOKEN)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
       });
     });
     describe('when `_token` is equal zero address', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(hre.ethers.ZeroAddress, 1)
+          backedCCIPReceiver.registerToken(hre.ethers.ZeroAddress, PRODUCT_ID, REGULAR_TOKEN)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
     describe('when `_token` is already registered', () => {
       beforeEach(async () => {
-        await backedCCIPReceiver.registerToken(erc20Address, 2);
+        await backedCCIPReceiver.registerToken(erc20Address, ANOTHER_PRODUCT_ID, REGULAR_TOKEN);
       })
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(erc20Address, 1)
+          backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
     it('should set mapping from `_tokenId` to `_token`', async () => {
-      await backedCCIPReceiver.registerToken(erc20Address, 1);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
+      const [tokenId, variant] = await backedCCIPReceiver.tokenInfos(erc20Address)
 
-      expect(await backedCCIPReceiver.tokenIds(erc20Address)).to.be.equal(1);
-      expect(await backedCCIPReceiver.tokens(1)).to.be.equal(erc20Address);
+      expect(tokenId).to.eq(PRODUCT_ID);
+      expect(variant).to.eq(REGULAR_TOKEN);
+      expect(await backedCCIPReceiver.tokens(PRODUCT_ID)).to.be.equal(erc20Address);
     });
   });
   describe('#removeToken', () => {
     beforeEach(async () => {
-      await backedCCIPReceiver.registerToken(erc20Address, 1);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
     })
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
@@ -316,12 +324,12 @@ describe("Backed CCIP Receiver tests", () => {
     });
 
     it('should remove token', async () => {
-      let tokenId = await backedCCIPReceiver.tokenIds(erc20Address);
+      let [tokenId] = await backedCCIPReceiver.tokenInfos(erc20Address);
 
-      expect(tokenId).to.deep.equal(1);
+      expect(tokenId).to.deep.equal(PRODUCT_ID);
 
       await backedCCIPReceiver.removeToken(erc20Address);
-      tokenId = await backedCCIPReceiver.tokenIds(erc20Address);
+      [tokenId] = await backedCCIPReceiver.tokenInfos(erc20Address);
 
       expect(tokenId).to.deep.equal(0);
     });
@@ -337,7 +345,7 @@ describe("Backed CCIP Receiver tests", () => {
   describe('#send', () => {
     beforeEach(async () => {
       await backedCCIPReceiver.registerDestinationChain(chainSelector, basicReceiverAddress);
-      await backedCCIPReceiver.registerToken(erc20Address, 1);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
 
       await erc20.connect(client).approve(backedCCIPReceiverAddress, 1_000_000n);
     });
@@ -389,7 +397,7 @@ describe("Backed CCIP Receiver tests", () => {
       const [lastMessageId, tokenReceiver, tokenId, amount] = await basicReceiver.getLatestMessageDetails();
 
       expect(tokenReceiver).to.deep.equal(client.address);
-      expect(tokenId).to.deep.equal(1);
+      expect(tokenId).to.deep.equal(PRODUCT_ID);
       expect(amount).to.deep.equal(200_000n);
     });
   });
@@ -402,13 +410,13 @@ describe("Backed CCIP Receiver tests", () => {
         messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
         sourceChainSelector: chainSelector,
         sender: defaultAbiCoder.encode(["address"], [backedCCIPReceiverAddress]),
-        data: defaultAbiCoder.encode(["address", "uint64", "uint256"], [client.address, 1, 200_000n]), // no data
+        data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8"], [client.address, PRODUCT_ID, 200_000n, REGULAR_TOKEN]), // no data
         destTokenAmounts: [],
       };
 
       await backedCCIPReceiver.registerSourceChain(chainSelector, backedCCIPReceiverAddress);
 
-      await backedCCIPReceiver.registerToken(erc20Address, 1);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
 
       await erc20.mint(systemWallet, 1_000_000n);
       await erc20.connect(systemWallet).approve(backedCCIPReceiver, 1_000_000n);
@@ -453,7 +461,7 @@ describe("Backed CCIP Receiver tests", () => {
 
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
-          data: defaultAbiCoder.encode(["address", "uint64", "uint256"], [client.address, 2, 200_000n]), // no data
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8"], [client.address, 2, 200_000n, REGULAR_TOKEN]), // no data
         }))
           .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
           .withArgs(ccipMessage.messageId, 2)
