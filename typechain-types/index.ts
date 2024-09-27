@@ -68,6 +68,8 @@ export type { OwnableUpgradeable } from "./@openzeppelin/contracts-upgradeable/a
 export { OwnableUpgradeable__factory } from "./factories/@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable__factory";
 export type { Initializable } from "./@openzeppelin/contracts-upgradeable/proxy/utils/Initializable";
 export { Initializable__factory } from "./factories/@openzeppelin/contracts-upgradeable/proxy/utils/Initializable__factory";
+export type { ERC20Upgradeable } from "./@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable";
+export { ERC20Upgradeable__factory } from "./factories/@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable__factory";
 export type { ContextUpgradeable } from "./@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable";
 export { ContextUpgradeable__factory } from "./factories/@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable__factory";
 export type { PausableUpgradeable } from "./@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable";
@@ -92,5 +94,7 @@ export type { CustomFeeCCIPLocalSimulator } from "./contracts/test/CustomFeeCCIP
 export { CustomFeeCCIPLocalSimulator__factory } from "./factories/contracts/test/CustomFeeCCIPLocalSimulator__factory";
 export type { CustomFeeMockCCIPRouter } from "./contracts/test/CustomFeeMockCCIPRouter";
 export { CustomFeeMockCCIPRouter__factory } from "./factories/contracts/test/CustomFeeMockCCIPRouter__factory";
+export type { ERC20AutoFeeMock } from "./contracts/test/ERC20AutoFeeMock";
+export { ERC20AutoFeeMock__factory } from "./factories/contracts/test/ERC20AutoFeeMock__factory";
 export type { ERC20Mock } from "./contracts/test/ERC20Mock";
 export { ERC20Mock__factory } from "./factories/contracts/test/ERC20Mock__factory";

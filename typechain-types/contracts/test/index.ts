@@ -4,4 +4,5 @@
 export type { BasicMessageReceiver } from "./BasicMessageReceiver";
 export type { CustomFeeCCIPLocalSimulator } from "./CustomFeeCCIPLocalSimulator";
 export type { CustomFeeMockCCIPRouter } from "./CustomFeeMockCCIPRouter";
+export type { ERC20AutoFeeMock } from "./ERC20AutoFeeMock";
 export type { ERC20Mock } from "./ERC20Mock";

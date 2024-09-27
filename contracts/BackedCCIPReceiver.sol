@@ -356,7 +356,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             revert TokenVariantNotSupported();
         }
 
-        return _sendMessagePayNative(_destinationChainSelector, receiver, _tokenReceiver, tokenInfo.id, _amount, _defaultGasLimitOnDestinationChain, tokenInfo.variant);
+        return _sendMessagePayNative(_destinationChainSelector, receiver, _tokenReceiver, tokenInfo.id, amount, _defaultGasLimitOnDestinationChain, tokenInfo.variant);
     }
 
     /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector`
