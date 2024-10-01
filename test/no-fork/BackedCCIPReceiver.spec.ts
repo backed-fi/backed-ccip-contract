@@ -64,7 +64,7 @@ describe("Backed CCIP Receiver tests", () => {
       "BackedCCIPReceiver"
     );
     const backedCCIPReceiver =
-      await hre.upgrades.deployProxy(factory, [sourceRouter, systemWallet.address, 100_000]) as unknown as BackedCCIPReceiver;
+      await hre.upgrades.deployProxy(factory, [sourceRouter, systemWallet.address, 120_000]) as unknown as BackedCCIPReceiver;
     const backedCCIPReceiverAddress = await backedCCIPReceiver.getAddress();
 
     const basicReceiverFactory = await hre.ethers.getContractFactory(
@@ -414,17 +414,20 @@ describe("Backed CCIP Receiver tests", () => {
       });
     });
     describe('and token variant is `AUTO_FEE`', () => {
-      it('should send shares in CCIP message', async () => {
+      it('should send multiplier nonce in CCIP message payload', async () => {
         const amountToTransfer = 200_000n;
-        const shares = await erc20AutoFee.getSharesByUnderlyingAmount(amountToTransfer);
+
+        const { newMultiplierNonce: currentMultiplierNonce } = await erc20AutoFee.getCurrentMultiplier();
 
         await backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20AutoFeeAddress, amountToTransfer, { value: 1_000_000_000_000_000_000n });
 
-        const [lastMessageId, tokenReceiver, tokenId, amount] = await basicReceiver.getLatestMessageDetails();
+        const [lastMessageId, tokenReceiver, tokenId, amount, variant, multiplier] = await basicReceiver.getLatestMessageDetails();
 
         expect(tokenReceiver).to.deep.equal(client.address);
         expect(tokenId).to.deep.equal(ANOTHER_PRODUCT_ID);
-        expect(amount).to.deep.equal(shares);
+        expect(amount).to.deep.equal(amount);
+        expect(variant).to.deep.equal(AUTO_FEE_TOKEN);
+        expect(multiplier).to.deep.equal(currentMultiplierNonce);
       });
     })
 
@@ -460,7 +463,7 @@ describe("Backed CCIP Receiver tests", () => {
         messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
         sourceChainSelector: chainSelector,
         sender: defaultAbiCoder.encode(["address"], [backedCCIPReceiverAddress]),
-        data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8"], [client.address, PRODUCT_ID, bridgeAmount, REGULAR_TOKEN]), // no data
+        data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, PRODUCT_ID, bridgeAmount, REGULAR_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
         destTokenAmounts: [],
       };
       router = await hre.ethers.getImpersonatedSigner(sourceRouter);
@@ -477,9 +480,6 @@ describe("Backed CCIP Receiver tests", () => {
       await erc20AutoFee.connect(systemWallet).approve(backedCCIPReceiver, INITIAL_BALANCE);
     })
     describe('and `msg.sender` is not CCIP rounter', () => {
-      beforeEach(() => {
-
-      })
       it('should revert', async () => {
         await expect(backedCCIPReceiver.ccipReceive(ccipMessage))
           .to.revertedWithCustomError(backedCCIPReceiver, 'InvalidRouter')
@@ -510,7 +510,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should emit `InvalidMessageReceived` with `TOKEN_NOT_REGISTERED`', async () => {
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
-          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8"], [client.address, 2, 200_000n, REGULAR_TOKEN]), // no data
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, 2, 200_000n, REGULAR_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
         }))
           .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
           .withArgs(ccipMessage.messageId, 2)
@@ -520,7 +520,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should emit `InvalidMessageReceived` with `TOKEN_RECEIVER_INVALID`', async () => {
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
-          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8"], [hre.ethers.ZeroAddress, PRODUCT_ID, 200_000n, REGULAR_TOKEN]), // no data
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [hre.ethers.ZeroAddress, PRODUCT_ID, 200_000n, REGULAR_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
         }))
           .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
           .withArgs(ccipMessage.messageId, 3)
@@ -530,41 +530,69 @@ describe("Backed CCIP Receiver tests", () => {
       it('should emit `InvalidMessageReceived` with `TOKEN_VARIANT_MISMATCH`', async () => {
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
-          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8"], [client.address, PRODUCT_ID, 200_000n, AUTO_FEE_TOKEN]), // no data
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, PRODUCT_ID, 200_000n, AUTO_FEE_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
         }))
           .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
           .withArgs(ccipMessage.messageId, 4)
       })
     })
     describe('and token is `AUTO_FEE` variant', () => {
-      describe('and multiplier has changed', () => {
-        it('should send updated token amount from custody to receiver based on shares', async () => {
-          const bridgeShares = 100_000n;
-          const multiplier = 0.1;
-          await erc20AutoFee.updateMultiplierValue(new Decimal(multiplier).mul(1e18).toString());
-          const underlyingAmount = await erc20AutoFee.getUnderlyingAmountByShares(bridgeShares);
+      describe('and source multiplier nonce is lower than destination multiplier nonce', () => {
+        it('should send amount based on current multiplier from custody account', async () => {
+          const sourceMultiplierNonce = 10;
+          await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.4).mul(1e18).toString(), sourceMultiplierNonce + 1);
+
+          const payload = defaultAbiCoder.encode(["uint256"], [sourceMultiplierNonce]);
+          const amount = 200_000n;
 
           await backedCCIPReceiver.connect(router).ccipReceive({
             ...ccipMessage,
-            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8"], [client.address, ANOTHER_PRODUCT_ID, bridgeShares, AUTO_FEE_TOKEN]), // no data
+            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]), // no data
           });
+
+          const { newMultiplier } = await erc20AutoFee.getCurrentMultiplier();
+          const multiplier = new Decimal(newMultiplier.toString()).div(1e18);
 
           const clientBalance = await erc20AutoFee.balanceOf(client.address);
 
-          expect(new Decimal(clientBalance.toString())).to.deep.equal(new Decimal(INITIAL_BALANCE.toString()).mul(multiplier).add(underlyingAmount.toString()));
+          expect(new Decimal(clientBalance.toString())).to.deep.equal(new Decimal(INITIAL_BALANCE.toString()).mul(multiplier).add(amount.toString()));
         })
       })
-      it('should send token from custody to receiver based on shares', async () => {
-        const underlyingAmount = await erc20AutoFee.getUnderlyingAmountByShares(bridgeAmount)
+
+      describe('and source multiplier nonce is higher than destination multiplier nonce', () => {
+        it('should revert with `InvalidMultiplierNonce`', async () => {
+          const sourceMultiplierNonce = 10;
+
+          await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.3).mul(1e18).toString(), sourceMultiplierNonce - 1);
+
+          const payload = defaultAbiCoder.encode(["uint256"], [sourceMultiplierNonce]);
+          const amount = 200_000n;
+
+          await expect(backedCCIPReceiver.connect(router).ccipReceive({
+            ...ccipMessage,
+            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]), // no data
+          })).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidMultiplierNonce');
+        })
+      })
+
+      it('should send token from custody to receiver', async () => {
+        const sourceMultiplierNonce = 10;
+        await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.4).mul(1e18).toString(), sourceMultiplierNonce);
+
+        const payload = defaultAbiCoder.encode(["uint256"], [sourceMultiplierNonce]);
+        const amount = 200_000n;
 
         await backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
-          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8"], [client.address, ANOTHER_PRODUCT_ID, bridgeAmount, AUTO_FEE_TOKEN]), // no data
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]), // no data
         });
+
+        const { newMultiplier } = await erc20AutoFee.getCurrentMultiplier();
+        const multiplier = new Decimal(newMultiplier.toString()).div(1e18);
 
         const clientBalance = await erc20AutoFee.balanceOf(client.address);
 
-        expect(new Decimal(clientBalance.toString())).to.deep.equal(new Decimal(INITIAL_BALANCE.toString()).mul(MULTIPLIER).add(underlyingAmount.toString()))
+        expect(new Decimal(clientBalance.toString())).to.deep.equal(new Decimal(INITIAL_BALANCE.toString()).mul(multiplier).add(amount.toString()));
       });
     })
 

@@ -60,6 +60,7 @@ contract ERC20AutoFeeMock is ERC20 {
      *
      */
     uint256 public multiplier;
+    uint256 public multiplierNonce;
 
     mapping(address => uint256) private _shares;
 
@@ -73,7 +74,7 @@ contract ERC20AutoFeeMock is ERC20 {
      * @dev See {IERC20-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
-        uint256 newMultiplier = getCurrentMultiplier();
+        (uint256 newMultiplier, ) = getCurrentMultiplier();
         return _getUnderlyingAmountByShares(_totalShares, newMultiplier);
     }
 
@@ -83,7 +84,7 @@ contract ERC20AutoFeeMock is ERC20 {
     function balanceOf(
         address account
     ) public view virtual override returns (uint256) {
-        uint256 newMultiplier = getCurrentMultiplier();
+        (uint256 newMultiplier, ) = getCurrentMultiplier();
         return _getUnderlyingAmountByShares(sharesOf(account), newMultiplier);
     }
 
@@ -95,9 +96,10 @@ contract ERC20AutoFeeMock is ERC20 {
         public
         view
         virtual
-        returns (uint256 newMultiplier)
+        returns (uint256 newMultiplier, uint256 newMultiplierNonce)
     {
         newMultiplier = multiplier;
+        newMultiplierNonce = multiplierNonce;
     }
 
     /**
@@ -113,7 +115,7 @@ contract ERC20AutoFeeMock is ERC20 {
     function getSharesByUnderlyingAmount(
         uint256 _underlyingAmount
     ) external view returns (uint256) {
-        uint256 newMultiplier = getCurrentMultiplier();
+        (uint256 newMultiplier, ) = getCurrentMultiplier();
         return _getSharesByUnderlyingAmount(_underlyingAmount, newMultiplier);
     }
 
@@ -123,7 +125,7 @@ contract ERC20AutoFeeMock is ERC20 {
     function getUnderlyingAmountByShares(
         uint256 _sharesAmount
     ) external view returns (uint256) {
-        uint256 newMultiplier = getCurrentMultiplier();
+        (uint256 newMultiplier, ) = getCurrentMultiplier();
         return _getUnderlyingAmountByShares(_sharesAmount, newMultiplier);
     }
 
@@ -168,7 +170,21 @@ contract ERC20AutoFeeMock is ERC20 {
     function updateMultiplierValue(
         uint256 newMultiplier
     ) external {
-        _updateMultiplier(newMultiplier);
+        _updateMultiplier(newMultiplier, multiplierNonce + 1);
+    }
+
+    /**
+     * @dev Function to change the contract multiplier, only if oldMultiplier did not change in the meantime. Allowed only for owner
+     *
+     * Emits a { MultiplierChanged } event
+     *
+     * @param newMultiplier New multiplier value
+     */
+    function updateMultiplierWithNonce(
+        uint256 newMultiplier,
+        uint256 newNonce
+    ) external {
+        _updateMultiplier(newMultiplier, newNonce);
     }
 
     /**
@@ -279,7 +295,8 @@ contract ERC20AutoFeeMock is ERC20 {
      *
      * Emit an {MultiplierUpdated} event.
      */
-    function _updateMultiplier(uint256 newMultiplier) internal virtual {
+    function _updateMultiplier(uint256 newMultiplier, uint256 newMultiplierNonce) internal virtual {
         multiplier = newMultiplier;
+        multiplierNonce = newMultiplierNonce;
     }
 }

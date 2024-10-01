@@ -51,17 +51,17 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     error InvalidTokenId(); // Used when token id is zero address or already registered.
     error InvalidTokenAddress(); // Used when token address is zero address or already registered.
     error TokenVariantNotSupported(); // Used when token variant is not recognized.
+    error InvalidMultiplierNonce(); // User when source chain multiplier nonce is ahead of current chain nonce.
 
     // Event emitted when a message is sent to another chain.
     event MessageSent(
         bytes32 indexed messageId, // The unique ID of the CCIP message.
         uint64 indexed destinationChainSelector, // The chain selector of the destination chain.
-        address receiver, // The address of the CCIP message receiver on the destination chain.
-        address tokenReceiver, // The address of the token receiver on the destination chain
+        address receiver, // The address of the CCIP message receiver on the destination chain. address tokenReceiver, // The address of the token receiver on the destination chain
         uint64 tokenId, // The token being sent.
         uint256 amount, // The amount being sent.
         TokenVariant variant, // The token variant.
-        uint256 fees // The fees paid for sending the CCIP message.
+        bytes payload // Token type specific payload
     );
 
     // Event emitted when a message is received from another chain.
@@ -72,7 +72,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         address token, // The token that was received.
         uint256 amount, // The amount that was received.
         TokenVariant variant, // The token variant.
-        address tokenReceiver // The receiver of the tokens.
+        address tokenReceiver, // The receiver of the tokens.
+        bytes payload // ABI-encoded CCIP message data payload
     );
 
     event InvalidMessageReceived(
@@ -346,17 +347,31 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         TokenInfo memory tokenInfo = tokenInfos[_token];
         address receiver = allowlistedDestinationChains[_destinationChainSelector];
 
-        uint256 amount;
+        bytes memory data;
+        bytes memory payload;
 
         if (tokenInfo.variant == TokenVariant.REGULAR) {
-            amount = _amount;
+            payload = bytes("");
         } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
-            amount = IBackedAutoFeeTokenImplementation(_token).getSharesByUnderlyingAmount(_amount);
+            (, uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
+            payload = abi.encode(multiplierNonce);
         } else {
             revert TokenVariantNotSupported();
         }
+        data = abi.encode(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, payload);
 
-        return _sendMessagePayNative(_destinationChainSelector, receiver, _tokenReceiver, tokenInfo.id, amount, _defaultGasLimitOnDestinationChain, tokenInfo.variant);
+        messageId = _sendMessagePayNative(_destinationChainSelector, receiver, data, _defaultGasLimitOnDestinationChain);
+
+        // Emit an event with message details
+        emit MessageSent(
+            messageId,
+            _destinationChainSelector,
+            receiver,
+            tokenInfo.id,
+            _amount,
+            tokenInfo.variant,
+            payload
+        );
     }
 
     /// @notice Returns the calculated delivery fee on the given `_destinationChainSelector`
@@ -368,14 +383,23 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     function getDeliveryFeeCost(uint64 _destinationChainSelector, address _tokenReceiver, address _token, uint256 _amount) external view returns (uint256) {
         address receiver = allowlistedDestinationChains[_destinationChainSelector];
         TokenInfo memory tokenInfo = tokenInfos[_token];
+        
+        bytes memory data;
+
+        if (tokenInfo.variant == TokenVariant.REGULAR) {
+            data = abi.encode(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, bytes(""));
+        } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
+            /// It doesn't matter, used only for CCIP message data size.
+            uint256 multiplierNonce = 1;
+            bytes memory payload = abi.encode(multiplierNonce);
+
+            data = abi.encode(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, payload);
+        }
 
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             receiver,
-            _tokenReceiver,
-            tokenInfo.id,
-            _amount,
-            _defaultGasLimitOnDestinationChain,
-            tokenInfo.variant
+            data,
+            _defaultGasLimitOnDestinationChain
         );
 
         return _getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
@@ -393,19 +417,14 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     /// @dev Assumes your contract has sufficient native gas tokens.
     /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
     /// @param _receiver The address of the recipient of the message on the destination blockchain.
-    /// @param _tokenReceiver The address of the recipient of the token on the destination blockchain.
-    /// @param _tokenId The arbitrary id of the token to be received on the destination blockchain.
-    /// @param _amount The amount to be received on the destination blockchain.
-    /// @param _variant The variant of the token.
+    /// @param _data ABI encoded CCIP message data.
+    /// @param _gasLimit Gas limit for transaction on destination chain.
     /// @return messageId The ID of the CCIP message that was sent.
     function _sendMessagePayNative(
         uint64 _destinationChainSelector,
         address _receiver,
-        address _tokenReceiver,
-        uint64 _tokenId,
-        uint256 _amount,
-        uint256 _gasLimit,
-        TokenVariant _variant
+        bytes memory _data,
+        uint256 _gasLimit
     )
         internal
         returns (bytes32 messageId)
@@ -413,11 +432,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         // Create an EVM2AnyMessage struct in memory with necessary information for sending a cross-chain message
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             _receiver,
-            _tokenReceiver,
-            _tokenId,
-            _amount,
-            _gasLimit,
-            _variant
+            _data,
+            _gasLimit
         );
 
         uint256 fees = _getDeliveryCost(_destinationChainSelector, evm2AnyMessage);
@@ -432,18 +448,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         messageId = router.ccipSend{value: fees}(
             _destinationChainSelector,
             evm2AnyMessage
-        );
-
-        // Emit an event with message details
-        emit MessageSent(
-            messageId,
-            _destinationChainSelector,
-            _receiver,
-            _tokenReceiver,
-            _tokenId,
-            _amount,
-            _variant,
-            fees
         );
 
         // Return the CCIP message ID
@@ -464,7 +468,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             return;
         }
 
-        (address tokenReceiver, uint64 tokenId, uint256 amount, TokenVariant variant) = abi.decode(any2EvmMessage.data, (address, uint64, uint256, TokenVariant));
+        (address tokenReceiver, uint64 tokenId, uint256 amount, TokenVariant variant, bytes memory payload) = abi.decode(any2EvmMessage.data, (address, uint64, uint256, TokenVariant, bytes));
 
         if (allowlistedSourceChains[any2EvmMessage.sourceChainSelector] != abi.decode(any2EvmMessage.sender, (address))) {
             emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.SOURCE_SENDER_NOT_ALLOWLISTED);
@@ -498,7 +502,14 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         if (variant == TokenVariant.REGULAR) {
             underlyingAmount = amount;
         } else if (variant == TokenVariant.AUTO_FEE) {
-            underlyingAmount = IBackedAutoFeeTokenImplementation(token).getUnderlyingAmountByShares(amount);
+            (uint256 sourceMultiplierNonce) = abi.decode(payload, (uint256)); 
+            (, uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(token).getCurrentMultiplier();
+
+            if (sourceMultiplierNonce > multiplierNonce) {
+                revert InvalidMultiplierNonce();
+            }
+
+            underlyingAmount = amount;
         } else {
             emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.TOKEN_VARIANT_NOT_SUPPORTED);
             
@@ -516,31 +527,27 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             token,
             amount,
             tokenInfo.variant,
-            tokenReceiver
+            tokenReceiver,
+            payload
         );
     }
 
     /// @notice Construct a CCIP message.
     /// @dev This function will create an EVM2AnyMessage struct with all the necessary information for sending a text.
     /// @param _receiver The address of the message receiver. 
-    /// @param _tokenReceiver The address of the token receiver. 
-    /// @param _tokenId The arbitrary id of the token to be received on the destination blockchain.
-    /// @param _amount The amount to be received.
-    /// @param _variant The variant of the token.
+    /// @param _data ABI encoded message CCIP payload.
+    /// @param _gasLimit Gas limit for transaction on destination chain
     /// @return Client.EVM2AnyMessage Returns an EVM2AnyMessage struct which contains information for sending a CCIP message.
     function _buildCCIPMessage(
         address _receiver,
-        address _tokenReceiver,
-        uint64 _tokenId,
-        uint256 _amount,
-        uint256 _gasLimit,
-        TokenVariant _variant
+        bytes memory _data,
+        uint256 _gasLimit
     ) private pure returns (Client.EVM2AnyMessage memory) {
         // Create an EVM2AnyMessage struct in memory with necessary information for sending a cross-chain message
         return
             Client.EVM2AnyMessage({
                 receiver: abi.encode(_receiver), // ABI-encoded receiver address
-                data: abi.encode(_tokenReceiver, _tokenId, _amount, _variant), // ABI-encoded message
+                data: _data, // ABI-encoded message data
                 tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array as no tokens are transferred
                 extraArgs: Client._argsToBytes(
                     // Additional arguments, setting gas limit

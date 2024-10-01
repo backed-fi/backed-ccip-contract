@@ -36,6 +36,7 @@ export interface ERC20AutoFeeMockInterface extends Interface {
       | "getUnderlyingAmountByShares"
       | "mint"
       | "multiplier"
+      | "multiplierNonce"
       | "multiplierUpdater"
       | "name"
       | "setMultiplierUpdater"
@@ -47,6 +48,7 @@ export interface ERC20AutoFeeMockInterface extends Interface {
       | "transferFrom"
       | "transferShares"
       | "updateMultiplierValue"
+      | "updateMultiplierWithNonce"
   ): FunctionFragment;
 
   getEvent(nameOrSignatureOrTopic: "Approval" | "Transfer"): EventFragment;
@@ -89,6 +91,10 @@ export interface ERC20AutoFeeMockInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "multiplierNonce",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "multiplierUpdater",
     values?: undefined
   ): string;
@@ -126,6 +132,10 @@ export interface ERC20AutoFeeMockInterface extends Interface {
     functionFragment: "updateMultiplierValue",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "updateMultiplierWithNonce",
+    values: [BigNumberish, BigNumberish]
+  ): string;
 
   decodeFunctionResult(functionFragment: "allowance", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
@@ -146,6 +156,10 @@ export interface ERC20AutoFeeMockInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "multiplier", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "multiplierNonce",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "multiplierUpdater",
     data: BytesLike
@@ -179,6 +193,10 @@ export interface ERC20AutoFeeMockInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "updateMultiplierValue",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateMultiplierWithNonce",
     data: BytesLike
   ): Result;
 }
@@ -284,7 +302,11 @@ export interface ERC20AutoFeeMock extends BaseContract {
 
   decimals: TypedContractMethod<[], [bigint], "view">;
 
-  getCurrentMultiplier: TypedContractMethod<[], [bigint], "view">;
+  getCurrentMultiplier: TypedContractMethod<
+    [],
+    [[bigint, bigint] & { newMultiplier: bigint; newMultiplierNonce: bigint }],
+    "view"
+  >;
 
   getSharesByUnderlyingAmount: TypedContractMethod<
     [_underlyingAmount: BigNumberish],
@@ -305,6 +327,8 @@ export interface ERC20AutoFeeMock extends BaseContract {
   >;
 
   multiplier: TypedContractMethod<[], [bigint], "view">;
+
+  multiplierNonce: TypedContractMethod<[], [bigint], "view">;
 
   multiplierUpdater: TypedContractMethod<[], [string], "view">;
 
@@ -352,6 +376,12 @@ export interface ERC20AutoFeeMock extends BaseContract {
     "nonpayable"
   >;
 
+  updateMultiplierWithNonce: TypedContractMethod<
+    [newMultiplier: BigNumberish, newNonce: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -385,7 +415,11 @@ export interface ERC20AutoFeeMock extends BaseContract {
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getCurrentMultiplier"
-  ): TypedContractMethod<[], [bigint], "view">;
+  ): TypedContractMethod<
+    [],
+    [[bigint, bigint] & { newMultiplier: bigint; newMultiplierNonce: bigint }],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getSharesByUnderlyingAmount"
   ): TypedContractMethod<[_underlyingAmount: BigNumberish], [bigint], "view">;
@@ -401,6 +435,9 @@ export interface ERC20AutoFeeMock extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "multiplier"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "multiplierNonce"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "multiplierUpdater"
@@ -455,6 +492,13 @@ export interface ERC20AutoFeeMock extends BaseContract {
   getFunction(
     nameOrSignature: "updateMultiplierValue"
   ): TypedContractMethod<[newMultiplier: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "updateMultiplierWithNonce"
+  ): TypedContractMethod<
+    [newMultiplier: BigNumberish, newNonce: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
 
   getEvent(
     key: "Approval"

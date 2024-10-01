@@ -82,7 +82,7 @@ const _abi = [
       },
       {
         internalType: "uint256",
-        name: "periodsPassed",
+        name: "newMultiplierNonce",
         type: "uint256",
       },
     ],
