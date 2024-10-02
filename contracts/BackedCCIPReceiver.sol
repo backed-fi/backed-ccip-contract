@@ -30,7 +30,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         TOKEN_NOT_REGISTERED,
         TOKEN_RECEIVER_INVALID,
         TOKEN_VARIANT_MISMATCH,
-        TOKEN_VARIANT_NOT_SUPPORTED
+        TOKEN_VARIANT_NOT_SUPPORTED,
+        MULTIPLIER_MISMATCH
     }
 
     /// Variants of tokens that are supported by this bridge.
@@ -507,10 +508,16 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             (uint256 multiplier, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(token).getCurrentMultiplier();
 
             if (sourceMultiplierNonce > multiplierNonce) {
+                // Revert to be able to re-try CCIP message once the nonce on the destination chain catches up.
                 revert InvalidMultiplierNonce();
             } else if (sourceMultiplierNonce < multiplierNonce)
                 underlyingAmount = amount * multiplier / sourceMultiplier;
             else {
+                if (multiplier != sourceMultiplier) {
+                    emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.MULTIPLIER_MISMATCH);
+            
+                    return;
+                }
                 underlyingAmount = amount;
             }
         } else {

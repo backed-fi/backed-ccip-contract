@@ -548,7 +548,7 @@ describe("Backed CCIP Receiver tests", () => {
 
           await backedCCIPReceiver.connect(router).ccipReceive({
             ...ccipMessage,
-            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]), // no data
+            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]),
           });
 
           const { newMultiplier } = await erc20AutoFee.getCurrentMultiplier();
@@ -572,14 +572,30 @@ describe("Backed CCIP Receiver tests", () => {
 
           await expect(backedCCIPReceiver.connect(router).ccipReceive({
             ...ccipMessage,
-            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]), // no data
+            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]),
           })).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidMultiplierNonce');
+        })
+      })
+      describe('and source multiplier nonce matches destination multiplier nonce but multpiliers do not match', () => {
+        it('should emit `InvalidMessageReceived` with `MULTIPLIER_MISMATCH`', async () => {
+          const sourceMultiplierNonce = 10;
+          const sourceMultiplier = new Decimal(0.5).mul(1e18);
+
+          await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.4).mul(1e18).toString(), sourceMultiplierNonce);
+
+          const payload = defaultAbiCoder.encode(["uint256", "uint256"], [sourceMultiplier.toString(), sourceMultiplierNonce]);
+          await expect(backedCCIPReceiver.connect(router).ccipReceive({
+            ...ccipMessage,
+            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, 200_000n, AUTO_FEE_TOKEN, payload]),
+          }))
+            .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+            .withArgs(ccipMessage.messageId, 6)
         })
       })
 
       it('should send token from custody to receiver', async () => {
         const sourceMultiplierNonce = 10;
-        const sourceMultiplier = new Decimal(0.5).mul(1e18);
+        const sourceMultiplier = new Decimal(0.4).mul(1e18);
 
         await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.4).mul(1e18).toString(), sourceMultiplierNonce);
 
@@ -588,7 +604,7 @@ describe("Backed CCIP Receiver tests", () => {
 
         await backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
-          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]), // no data
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]),
         });
 
         const { newMultiplier } = await erc20AutoFee.getCurrentMultiplier();
