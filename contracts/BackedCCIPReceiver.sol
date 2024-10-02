@@ -392,8 +392,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         if (tokenInfo.variant == TokenVariant.REGULAR) {
             payload = bytes("");
         } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
-            (, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
-            payload = abi.encode(multiplierNonce);
+            (uint256 multiplier, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
+            payload = abi.encode(multiplier, multiplierNonce);
         }
         data = abi.encode(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, payload);
 
@@ -503,14 +503,16 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         if (variant == TokenVariant.REGULAR) {
             underlyingAmount = amount;
         } else if (variant == TokenVariant.AUTO_FEE) {
-            (uint256 sourceMultiplierNonce) = abi.decode(payload, (uint256)); 
-            (, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(token).getCurrentMultiplier();
+            (uint256 sourceMultiplier, uint256 sourceMultiplierNonce) = abi.decode(payload, (uint256, uint256)); 
+            (uint256 multiplier, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(token).getCurrentMultiplier();
 
             if (sourceMultiplierNonce > multiplierNonce) {
                 revert InvalidMultiplierNonce();
+            } else if (sourceMultiplierNonce < multiplierNonce)
+                underlyingAmount = amount * multiplier / sourceMultiplier;
+            else {
+                underlyingAmount = amount;
             }
-
-            underlyingAmount = amount;
         } else {
             emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.TOKEN_VARIANT_NOT_SUPPORTED);
             

@@ -540,9 +540,10 @@ describe("Backed CCIP Receiver tests", () => {
       describe('and source multiplier nonce is lower than destination multiplier nonce', () => {
         it('should send amount based on current multiplier from custody account', async () => {
           const sourceMultiplierNonce = 10;
+          const sourceMultiplier = new Decimal(0.5);
           await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.4).mul(1e18).toString(), sourceMultiplierNonce + 1);
 
-          const payload = defaultAbiCoder.encode(["uint256"], [sourceMultiplierNonce]);
+          const payload = defaultAbiCoder.encode(["uint256", "uint256"], [sourceMultiplier.mul(1e18).toString(), sourceMultiplierNonce]);
           const amount = 200_000n;
 
           await backedCCIPReceiver.connect(router).ccipReceive({
@@ -555,17 +556,18 @@ describe("Backed CCIP Receiver tests", () => {
 
           const clientBalance = await erc20AutoFee.balanceOf(client.address);
 
-          expect(new Decimal(clientBalance.toString())).to.deep.equal(new Decimal(INITIAL_BALANCE.toString()).mul(multiplier).add(amount.toString()));
+          expect(new Decimal(clientBalance.toString())).to.deep.equal(new Decimal(INITIAL_BALANCE.toString()).mul(multiplier).add(new Decimal(amount.toString()).mul(multiplier).div(sourceMultiplier)));
         })
       })
 
       describe('and source multiplier nonce is higher than destination multiplier nonce', () => {
         it('should revert with `InvalidMultiplierNonce`', async () => {
           const sourceMultiplierNonce = 10;
+          const sourceMultiplier = new Decimal(0.5).mul(1e18);
 
           await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.3).mul(1e18).toString(), sourceMultiplierNonce - 1);
 
-          const payload = defaultAbiCoder.encode(["uint256"], [sourceMultiplierNonce]);
+          const payload = defaultAbiCoder.encode(["uint256", "uint256"], [sourceMultiplier.toString(), sourceMultiplierNonce]);
           const amount = 200_000n;
 
           await expect(backedCCIPReceiver.connect(router).ccipReceive({
@@ -577,9 +579,11 @@ describe("Backed CCIP Receiver tests", () => {
 
       it('should send token from custody to receiver', async () => {
         const sourceMultiplierNonce = 10;
+        const sourceMultiplier = new Decimal(0.5).mul(1e18);
+
         await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.4).mul(1e18).toString(), sourceMultiplierNonce);
 
-        const payload = defaultAbiCoder.encode(["uint256"], [sourceMultiplierNonce]);
+        const payload = defaultAbiCoder.encode(["uint256", "uint256"], [sourceMultiplier.toString(), sourceMultiplierNonce]);
         const amount = 200_000n;
 
         await backedCCIPReceiver.connect(router).ccipReceive({
