@@ -132,7 +132,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     // Mapping to keep track of allowlisted source chains and it's sender addresses.
     mapping(uint64 => address) public allowlistedSourceChains;
 
-    // Mapping from token address to tokenId.
+    // Mapping from token address to token information.
     mapping(address => TokenInfo) public tokenInfos;
     // Mapping from tokenId to token address
     mapping(uint64 => address) public tokens;
