@@ -57,7 +57,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     event MessageSent(
         bytes32 indexed messageId, // The unique ID of the CCIP message.
         uint64 indexed destinationChainSelector, // The chain selector of the destination chain.
-        address receiver, // The address of the CCIP message receiver on the destination chain. address tokenReceiver, // The address of the token receiver on the destination chain
+        address receiver, // The address of the CCIP message receiver on the destination chain. 
+        address tokenReceiver, // The address of the token receiver on the destination chain
         uint64 tokenId, // The token being sent.
         uint256 amount, // The amount being sent.
         TokenVariant variant, // The token variant.
@@ -353,7 +354,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         if (tokenInfo.variant == TokenVariant.REGULAR) {
             payload = bytes("");
         } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
-            (, uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
+            (, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
             payload = abi.encode(multiplierNonce);
         } else {
             revert TokenVariantNotSupported();
@@ -386,16 +387,15 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         TokenInfo memory tokenInfo = tokenInfos[_token];
         
         bytes memory data;
+        bytes memory payload;
 
         if (tokenInfo.variant == TokenVariant.REGULAR) {
-            data = abi.encode(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, bytes(""));
+            payload = bytes("");
         } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
-            /// It doesn't matter, used only for CCIP message data size.
-            uint256 multiplierNonce = 1;
-            bytes memory payload = abi.encode(multiplierNonce);
-
-            data = abi.encode(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, payload);
+            (, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
+            payload = abi.encode(multiplierNonce);
         }
+        data = abi.encode(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, payload);
 
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             receiver,
@@ -504,7 +504,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             underlyingAmount = amount;
         } else if (variant == TokenVariant.AUTO_FEE) {
             (uint256 sourceMultiplierNonce) = abi.decode(payload, (uint256)); 
-            (, uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(token).getCurrentMultiplier();
+            (, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(token).getCurrentMultiplier();
 
             if (sourceMultiplierNonce > multiplierNonce) {
                 revert InvalidMultiplierNonce();

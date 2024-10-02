@@ -61,7 +61,7 @@ interface IBackedAutoFeeTokenImplementation {
      * @dev Retrieves most up to date value of multiplier
      *
      */
-    function getCurrentMultiplier() external view returns (uint256 newMultiplier, uint256 newMultiplierNonce);
+    function getCurrentMultiplier() external view returns (uint256 newMultiplier, uint256 periodsPassed, uint256 newMultiplierNonce);
     /**
      * @dev Returns amount of shares owned by given account
      */

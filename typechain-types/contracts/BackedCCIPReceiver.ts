@@ -407,6 +407,7 @@ export namespace MessageSentEvent {
     messageId: BytesLike,
     destinationChainSelector: BigNumberish,
     receiver: AddressLike,
+    tokenReceiver: AddressLike,
     tokenId: BigNumberish,
     amount: BigNumberish,
     variant: BigNumberish,
@@ -416,6 +417,7 @@ export namespace MessageSentEvent {
     messageId: string,
     destinationChainSelector: bigint,
     receiver: string,
+    tokenReceiver: string,
     tokenId: bigint,
     amount: bigint,
     variant: bigint,
@@ -425,6 +427,7 @@ export namespace MessageSentEvent {
     messageId: string;
     destinationChainSelector: bigint;
     receiver: string;
+    tokenReceiver: string;
     tokenId: bigint;
     amount: bigint;
     variant: bigint;
@@ -1044,7 +1047,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       MessageReceivedEvent.OutputObject
     >;
 
-    "MessageSent(bytes32,uint64,address,uint64,uint256,uint8,bytes)": TypedContractEvent<
+    "MessageSent(bytes32,uint64,address,address,uint64,uint256,uint8,bytes)": TypedContractEvent<
       MessageSentEvent.InputTuple,
       MessageSentEvent.OutputTuple,
       MessageSentEvent.OutputObject

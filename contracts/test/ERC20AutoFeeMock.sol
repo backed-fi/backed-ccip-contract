@@ -74,7 +74,7 @@ contract ERC20AutoFeeMock is ERC20 {
      * @dev See {IERC20-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
-        (uint256 newMultiplier, ) = getCurrentMultiplier();
+        (uint256 newMultiplier, ,) = getCurrentMultiplier();
         return _getUnderlyingAmountByShares(_totalShares, newMultiplier);
     }
 
@@ -84,7 +84,7 @@ contract ERC20AutoFeeMock is ERC20 {
     function balanceOf(
         address account
     ) public view virtual override returns (uint256) {
-        (uint256 newMultiplier, ) = getCurrentMultiplier();
+        (uint256 newMultiplier, ,) = getCurrentMultiplier();
         return _getUnderlyingAmountByShares(sharesOf(account), newMultiplier);
     }
 
@@ -96,10 +96,11 @@ contract ERC20AutoFeeMock is ERC20 {
         public
         view
         virtual
-        returns (uint256 newMultiplier, uint256 newMultiplierNonce)
+        returns (uint256 newMultiplier, uint256 periodsPassed, uint256 newMultiplierNonce)
     {
         newMultiplier = multiplier;
         newMultiplierNonce = multiplierNonce;
+        periodsPassed = 1;
     }
 
     /**
@@ -115,7 +116,7 @@ contract ERC20AutoFeeMock is ERC20 {
     function getSharesByUnderlyingAmount(
         uint256 _underlyingAmount
     ) external view returns (uint256) {
-        (uint256 newMultiplier, ) = getCurrentMultiplier();
+        (uint256 newMultiplier, ,) = getCurrentMultiplier();
         return _getSharesByUnderlyingAmount(_underlyingAmount, newMultiplier);
     }
 
@@ -125,7 +126,7 @@ contract ERC20AutoFeeMock is ERC20 {
     function getUnderlyingAmountByShares(
         uint256 _sharesAmount
     ) external view returns (uint256) {
-        (uint256 newMultiplier, ) = getCurrentMultiplier();
+        (uint256 newMultiplier, ,) = getCurrentMultiplier();
         return _getUnderlyingAmountByShares(_sharesAmount, newMultiplier);
     }
 

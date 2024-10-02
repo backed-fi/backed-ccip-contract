@@ -209,7 +209,13 @@ export interface IBackedAutoFeeTokenImplementation extends BaseContract {
 
   getCurrentMultiplier: TypedContractMethod<
     [],
-    [[bigint, bigint] & { newMultiplier: bigint; newMultiplierNonce: bigint }],
+    [
+      [bigint, bigint, bigint] & {
+        newMultiplier: bigint;
+        periodsPassed: bigint;
+        newMultiplierNonce: bigint;
+      }
+    ],
     "view"
   >;
 
@@ -291,7 +297,13 @@ export interface IBackedAutoFeeTokenImplementation extends BaseContract {
     nameOrSignature: "getCurrentMultiplier"
   ): TypedContractMethod<
     [],
-    [[bigint, bigint] & { newMultiplier: bigint; newMultiplierNonce: bigint }],
+    [
+      [bigint, bigint, bigint] & {
+        newMultiplier: bigint;
+        periodsPassed: bigint;
+        newMultiplierNonce: bigint;
+      }
+    ],
     "view"
   >;
   getFunction(
