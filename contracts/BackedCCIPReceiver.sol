@@ -51,7 +51,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     error InvalidTokenId(); // Used when token id is zero address or already registered.
     error InvalidTokenAddress(); // Used when token address is zero address or already registered.
     error TokenVariantNotSupported(); // Used when token variant is not recognized.
-    error InvalidMultiplierNonce(); // User when source chain multiplier nonce is ahead of current chain nonce.
+    error InvalidMultiplierNonce(); // Used when source chain multiplier nonce is ahead of current chain nonce.
 
     // Event emitted when a message is sent to another chain.
     event MessageSent(
@@ -367,6 +367,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             messageId,
             _destinationChainSelector,
             receiver,
+            _tokenReceiver,
             tokenInfo.id,
             _amount,
             tokenInfo.variant,
