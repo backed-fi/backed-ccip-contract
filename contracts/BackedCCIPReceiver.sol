@@ -355,8 +355,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         if (tokenInfo.variant == TokenVariant.REGULAR) {
             payload = bytes("");
         } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
-            (, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
-            payload = abi.encode(multiplierNonce);
+            (uint256 multiplier, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
+            payload = abi.encode(multiplier, multiplierNonce);
         } else {
             revert TokenVariantNotSupported();
         }
