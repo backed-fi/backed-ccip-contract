@@ -134,13 +134,33 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Initializable__factory>;
     getContractFactory(
-      name: "ReentrancyGuardUpgradeable",
+      name: "ERC20Upgradeable",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ReentrancyGuardUpgradeable__factory>;
+    ): Promise<Contracts.ERC20Upgradeable__factory>;
     getContractFactory(
       name: "ContextUpgradeable",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ContextUpgradeable__factory>;
+    getContractFactory(
+      name: "PausableUpgradeable",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.PausableUpgradeable__factory>;
+    getContractFactory(
+      name: "ReentrancyGuardUpgradeable",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ReentrancyGuardUpgradeable__factory>;
+    getContractFactory(
+      name: "IERC1155Errors",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC1155Errors__factory>;
+    getContractFactory(
+      name: "IERC20Errors",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20Errors__factory>;
+    getContractFactory(
+      name: "IERC721Errors",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC721Errors__factory>;
     getContractFactory(
       name: "ERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -162,6 +182,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CCIPReceiverUpgradeable__factory>;
     getContractFactory(
+      name: "IBackedAutoFeeTokenImplementation",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IBackedAutoFeeTokenImplementation__factory>;
+    getContractFactory(
       name: "BasicMessageReceiver",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.BasicMessageReceiver__factory>;
@@ -173,6 +197,10 @@ declare module "hardhat/types/runtime" {
       name: "CustomFeeMockCCIPRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CustomFeeMockCCIPRouter__factory>;
+    getContractFactory(
+      name: "ERC20AutoFeeMock",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ERC20AutoFeeMock__factory>;
     getContractFactory(
       name: "ERC20Mock",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -329,15 +357,40 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.Initializable>;
     getContractAt(
-      name: "ReentrancyGuardUpgradeable",
+      name: "ERC20Upgradeable",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.ReentrancyGuardUpgradeable>;
+    ): Promise<Contracts.ERC20Upgradeable>;
     getContractAt(
       name: "ContextUpgradeable",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.ContextUpgradeable>;
+    getContractAt(
+      name: "PausableUpgradeable",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.PausableUpgradeable>;
+    getContractAt(
+      name: "ReentrancyGuardUpgradeable",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ReentrancyGuardUpgradeable>;
+    getContractAt(
+      name: "IERC1155Errors",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC1155Errors>;
+    getContractAt(
+      name: "IERC20Errors",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20Errors>;
+    getContractAt(
+      name: "IERC721Errors",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC721Errors>;
     getContractAt(
       name: "ERC20",
       address: string | ethers.Addressable,
@@ -364,6 +417,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.CCIPReceiverUpgradeable>;
     getContractAt(
+      name: "IBackedAutoFeeTokenImplementation",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IBackedAutoFeeTokenImplementation>;
+    getContractAt(
       name: "BasicMessageReceiver",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -378,6 +436,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.CustomFeeMockCCIPRouter>;
+    getContractAt(
+      name: "ERC20AutoFeeMock",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ERC20AutoFeeMock>;
     getContractAt(
       name: "ERC20Mock",
       address: string | ethers.Addressable,
@@ -505,13 +568,33 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Initializable>;
     deployContract(
-      name: "ReentrancyGuardUpgradeable",
+      name: "ERC20Upgradeable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ReentrancyGuardUpgradeable>;
+    ): Promise<Contracts.ERC20Upgradeable>;
     deployContract(
       name: "ContextUpgradeable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ContextUpgradeable>;
+    deployContract(
+      name: "PausableUpgradeable",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PausableUpgradeable>;
+    deployContract(
+      name: "ReentrancyGuardUpgradeable",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ReentrancyGuardUpgradeable>;
+    deployContract(
+      name: "IERC1155Errors",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC1155Errors>;
+    deployContract(
+      name: "IERC20Errors",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC20Errors>;
+    deployContract(
+      name: "IERC721Errors",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC721Errors>;
     deployContract(
       name: "ERC20",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -533,6 +616,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CCIPReceiverUpgradeable>;
     deployContract(
+      name: "IBackedAutoFeeTokenImplementation",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IBackedAutoFeeTokenImplementation>;
+    deployContract(
       name: "BasicMessageReceiver",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.BasicMessageReceiver>;
@@ -544,6 +631,10 @@ declare module "hardhat/types/runtime" {
       name: "CustomFeeMockCCIPRouter",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CustomFeeMockCCIPRouter>;
+    deployContract(
+      name: "ERC20AutoFeeMock",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ERC20AutoFeeMock>;
     deployContract(
       name: "ERC20Mock",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -700,15 +791,40 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Initializable>;
     deployContract(
-      name: "ReentrancyGuardUpgradeable",
+      name: "ERC20Upgradeable",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ReentrancyGuardUpgradeable>;
+    ): Promise<Contracts.ERC20Upgradeable>;
     deployContract(
       name: "ContextUpgradeable",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ContextUpgradeable>;
+    deployContract(
+      name: "PausableUpgradeable",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PausableUpgradeable>;
+    deployContract(
+      name: "ReentrancyGuardUpgradeable",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ReentrancyGuardUpgradeable>;
+    deployContract(
+      name: "IERC1155Errors",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC1155Errors>;
+    deployContract(
+      name: "IERC20Errors",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC20Errors>;
+    deployContract(
+      name: "IERC721Errors",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC721Errors>;
     deployContract(
       name: "ERC20",
       args: any[],
@@ -735,6 +851,11 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CCIPReceiverUpgradeable>;
     deployContract(
+      name: "IBackedAutoFeeTokenImplementation",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IBackedAutoFeeTokenImplementation>;
+    deployContract(
       name: "BasicMessageReceiver",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -749,6 +870,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CustomFeeMockCCIPRouter>;
+    deployContract(
+      name: "ERC20AutoFeeMock",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ERC20AutoFeeMock>;
     deployContract(
       name: "ERC20Mock",
       args: any[],

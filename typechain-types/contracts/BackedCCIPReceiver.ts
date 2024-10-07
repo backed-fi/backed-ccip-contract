@@ -69,6 +69,8 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "getRouter"
       | "initialize"
       | "owner"
+      | "pause"
+      | "paused"
       | "registerDestinationChain"
       | "registerSourceChain"
       | "registerToken"
@@ -78,9 +80,10 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "renounceOwnership"
       | "send"
       | "supportsInterface"
-      | "tokenIds"
+      | "tokenInfos"
       | "tokens"
       | "transferOwnership"
+      | "unpause"
       | "updateCustodyWallet"
       | "updateGasLimit"
       | "withdraw"
@@ -98,10 +101,12 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "MessageReceived"
       | "MessageSent"
       | "OwnershipTransferred"
+      | "Paused"
       | "SourceChainRegistered"
       | "SourceChainRemoved"
       | "TokenRegistered"
       | "TokenRemoved"
+      | "Unpaused"
   ): EventFragment;
 
   encodeFunctionData(
@@ -131,6 +136,8 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [AddressLike, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(functionFragment: "pause", values?: undefined): string;
+  encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "registerDestinationChain",
     values: [BigNumberish, AddressLike]
@@ -141,7 +148,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "registerToken",
-    values: [AddressLike, BigNumberish]
+    values: [AddressLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "removeDestinationChain",
@@ -168,7 +175,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "tokenIds",
+    functionFragment: "tokenInfos",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
@@ -179,6 +186,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
     functionFragment: "transferOwnership",
     values: [AddressLike]
   ): string;
+  encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "updateCustodyWallet",
     values: [AddressLike]
@@ -220,6 +228,8 @@ export interface BackedCCIPReceiverInterface extends Interface {
   decodeFunctionResult(functionFragment: "getRouter", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "registerDestinationChain",
     data: BytesLike
@@ -253,12 +263,13 @@ export interface BackedCCIPReceiverInterface extends Interface {
     functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "tokenIds", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "tokenInfos", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "tokens", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "updateCustodyWallet",
     data: BytesLike
@@ -361,7 +372,9 @@ export namespace MessageReceivedEvent {
     sender: AddressLike,
     token: AddressLike,
     amount: BigNumberish,
-    tokenReceiver: AddressLike
+    variant: BigNumberish,
+    tokenReceiver: AddressLike,
+    payload: BytesLike
   ];
   export type OutputTuple = [
     messageId: string,
@@ -369,7 +382,9 @@ export namespace MessageReceivedEvent {
     sender: string,
     token: string,
     amount: bigint,
-    tokenReceiver: string
+    variant: bigint,
+    tokenReceiver: string,
+    payload: string
   ];
   export interface OutputObject {
     messageId: string;
@@ -377,7 +392,9 @@ export namespace MessageReceivedEvent {
     sender: string;
     token: string;
     amount: bigint;
+    variant: bigint;
     tokenReceiver: string;
+    payload: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -393,7 +410,8 @@ export namespace MessageSentEvent {
     tokenReceiver: AddressLike,
     tokenId: BigNumberish,
     amount: BigNumberish,
-    fees: BigNumberish
+    variant: BigNumberish,
+    payload: BytesLike
   ];
   export type OutputTuple = [
     messageId: string,
@@ -402,7 +420,8 @@ export namespace MessageSentEvent {
     tokenReceiver: string,
     tokenId: bigint,
     amount: bigint,
-    fees: bigint
+    variant: bigint,
+    payload: string
   ];
   export interface OutputObject {
     messageId: string;
@@ -411,7 +430,8 @@ export namespace MessageSentEvent {
     tokenReceiver: string;
     tokenId: bigint;
     amount: bigint;
-    fees: bigint;
+    variant: bigint;
+    payload: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -425,6 +445,18 @@ export namespace OwnershipTransferredEvent {
   export interface OutputObject {
     previousOwner: string;
     newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace PausedEvent {
+  export type InputTuple = [account: AddressLike];
+  export type OutputTuple = [account: string];
+  export interface OutputObject {
+    account: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -482,6 +514,18 @@ export namespace TokenRemovedEvent {
   export interface OutputObject {
     token: string;
     tokenId: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace UnpausedEvent {
+  export type InputTuple = [account: AddressLike];
+  export type OutputTuple = [account: string];
+  export interface OutputObject {
+    account: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -575,6 +619,10 @@ export interface BackedCCIPReceiver extends BaseContract {
 
   owner: TypedContractMethod<[], [string], "view">;
 
+  pause: TypedContractMethod<[], [void], "nonpayable">;
+
+  paused: TypedContractMethod<[], [boolean], "view">;
+
   registerDestinationChain: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
@@ -591,7 +639,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   >;
 
   registerToken: TypedContractMethod<
-    [_token: AddressLike, _tokenId: BigNumberish],
+    [_token: AddressLike, _tokenId: BigNumberish, _variant: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -629,7 +677,11 @@ export interface BackedCCIPReceiver extends BaseContract {
     "view"
   >;
 
-  tokenIds: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
+  tokenInfos: TypedContractMethod<
+    [arg0: AddressLike],
+    [[bigint, bigint] & { id: bigint; variant: bigint }],
+    "view"
+  >;
 
   tokens: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
 
@@ -638,6 +690,8 @@ export interface BackedCCIPReceiver extends BaseContract {
     [void],
     "nonpayable"
   >;
+
+  unpause: TypedContractMethod<[], [void], "nonpayable">;
 
   updateCustodyWallet: TypedContractMethod<
     [_custody: AddressLike],
@@ -712,6 +766,12 @@ export interface BackedCCIPReceiver extends BaseContract {
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "pause"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "paused"
+  ): TypedContractMethod<[], [boolean], "view">;
+  getFunction(
     nameOrSignature: "registerDestinationChain"
   ): TypedContractMethod<
     [
@@ -731,7 +791,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   getFunction(
     nameOrSignature: "registerToken"
   ): TypedContractMethod<
-    [_token: AddressLike, _tokenId: BigNumberish],
+    [_token: AddressLike, _tokenId: BigNumberish, _variant: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -771,14 +831,21 @@ export interface BackedCCIPReceiver extends BaseContract {
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
   getFunction(
-    nameOrSignature: "tokenIds"
-  ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
+    nameOrSignature: "tokenInfos"
+  ): TypedContractMethod<
+    [arg0: AddressLike],
+    [[bigint, bigint] & { id: bigint; variant: bigint }],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "tokens"
   ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "unpause"
+  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "updateCustodyWallet"
   ): TypedContractMethod<[_custody: AddressLike], [void], "nonpayable">;
@@ -860,6 +927,13 @@ export interface BackedCCIPReceiver extends BaseContract {
     OwnershipTransferredEvent.OutputObject
   >;
   getEvent(
+    key: "Paused"
+  ): TypedContractEvent<
+    PausedEvent.InputTuple,
+    PausedEvent.OutputTuple,
+    PausedEvent.OutputObject
+  >;
+  getEvent(
     key: "SourceChainRegistered"
   ): TypedContractEvent<
     SourceChainRegisteredEvent.InputTuple,
@@ -886,6 +960,13 @@ export interface BackedCCIPReceiver extends BaseContract {
     TokenRemovedEvent.InputTuple,
     TokenRemovedEvent.OutputTuple,
     TokenRemovedEvent.OutputObject
+  >;
+  getEvent(
+    key: "Unpaused"
+  ): TypedContractEvent<
+    UnpausedEvent.InputTuple,
+    UnpausedEvent.OutputTuple,
+    UnpausedEvent.OutputObject
   >;
 
   filters: {
@@ -933,7 +1014,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       GasLimitUpdatedEvent.OutputObject
     >;
 
-    "Initialized(uint8)": TypedContractEvent<
+    "Initialized(uint64)": TypedContractEvent<
       InitializedEvent.InputTuple,
       InitializedEvent.OutputTuple,
       InitializedEvent.OutputObject
@@ -955,7 +1036,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       InvalidMessageReceivedEvent.OutputObject
     >;
 
-    "MessageReceived(bytes32,uint64,address,address,uint256,address)": TypedContractEvent<
+    "MessageReceived(bytes32,uint64,address,address,uint256,uint8,address,bytes)": TypedContractEvent<
       MessageReceivedEvent.InputTuple,
       MessageReceivedEvent.OutputTuple,
       MessageReceivedEvent.OutputObject
@@ -966,7 +1047,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       MessageReceivedEvent.OutputObject
     >;
 
-    "MessageSent(bytes32,uint64,address,address,uint64,uint256,uint256)": TypedContractEvent<
+    "MessageSent(bytes32,uint64,address,address,uint64,uint256,uint8,bytes)": TypedContractEvent<
       MessageSentEvent.InputTuple,
       MessageSentEvent.OutputTuple,
       MessageSentEvent.OutputObject
@@ -986,6 +1067,17 @@ export interface BackedCCIPReceiver extends BaseContract {
       OwnershipTransferredEvent.InputTuple,
       OwnershipTransferredEvent.OutputTuple,
       OwnershipTransferredEvent.OutputObject
+    >;
+
+    "Paused(address)": TypedContractEvent<
+      PausedEvent.InputTuple,
+      PausedEvent.OutputTuple,
+      PausedEvent.OutputObject
+    >;
+    Paused: TypedContractEvent<
+      PausedEvent.InputTuple,
+      PausedEvent.OutputTuple,
+      PausedEvent.OutputObject
     >;
 
     "SourceChainRegistered(uint64,address)": TypedContractEvent<
@@ -1030,6 +1122,17 @@ export interface BackedCCIPReceiver extends BaseContract {
       TokenRemovedEvent.InputTuple,
       TokenRemovedEvent.OutputTuple,
       TokenRemovedEvent.OutputObject
+    >;
+
+    "Unpaused(address)": TypedContractEvent<
+      UnpausedEvent.InputTuple,
+      UnpausedEvent.OutputTuple,
+      UnpausedEvent.OutputObject
+    >;
+    Unpaused: TypedContractEvent<
+      UnpausedEvent.InputTuple,
+      UnpausedEvent.OutputTuple,
+      UnpausedEvent.OutputObject
     >;
   };
 }
