@@ -4,4 +4,5 @@
 export { BasicMessageReceiver__factory } from "./BasicMessageReceiver__factory";
 export { CustomFeeCCIPLocalSimulator__factory } from "./CustomFeeCCIPLocalSimulator__factory";
 export { CustomFeeMockCCIPRouter__factory } from "./CustomFeeMockCCIPRouter__factory";
+export { ERC20AutoFeeMock__factory } from "./ERC20AutoFeeMock__factory";
 export { ERC20Mock__factory } from "./ERC20Mock__factory";

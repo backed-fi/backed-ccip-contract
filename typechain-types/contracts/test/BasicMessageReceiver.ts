@@ -144,7 +144,7 @@ export interface BasicMessageReceiver extends BaseContract {
 
   getLatestMessageDetails: TypedContractMethod<
     [],
-    [[string, string, bigint, bigint]],
+    [[string, string, bigint, bigint, bigint, bigint]],
     "view"
   >;
 
@@ -169,7 +169,11 @@ export interface BasicMessageReceiver extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "getLatestMessageDetails"
-  ): TypedContractMethod<[], [[string, string, bigint, bigint]], "view">;
+  ): TypedContractMethod<
+    [],
+    [[string, string, bigint, bigint, bigint, bigint]],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getRouter"
   ): TypedContractMethod<[], [string], "view">;

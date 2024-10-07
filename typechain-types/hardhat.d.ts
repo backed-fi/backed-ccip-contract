@@ -134,9 +134,9 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Initializable__factory>;
     getContractFactory(
-      name: "ReentrancyGuardUpgradeable",
+      name: "ERC20Upgradeable",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ReentrancyGuardUpgradeable__factory>;
+    ): Promise<Contracts.ERC20Upgradeable__factory>;
     getContractFactory(
       name: "ContextUpgradeable",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -182,6 +182,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CCIPReceiverUpgradeable__factory>;
     getContractFactory(
+      name: "IBackedAutoFeeTokenImplementation",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IBackedAutoFeeTokenImplementation__factory>;
+    getContractFactory(
       name: "BasicMessageReceiver",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.BasicMessageReceiver__factory>;
@@ -193,6 +197,10 @@ declare module "hardhat/types/runtime" {
       name: "CustomFeeMockCCIPRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CustomFeeMockCCIPRouter__factory>;
+    getContractFactory(
+      name: "ERC20AutoFeeMock",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ERC20AutoFeeMock__factory>;
     getContractFactory(
       name: "ERC20Mock",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -349,10 +357,10 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.Initializable>;
     getContractAt(
-      name: "ReentrancyGuardUpgradeable",
+      name: "ERC20Upgradeable",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
-    ): Promise<Contracts.ReentrancyGuardUpgradeable>;
+    ): Promise<Contracts.ERC20Upgradeable>;
     getContractAt(
       name: "ContextUpgradeable",
       address: string | ethers.Addressable,
@@ -409,6 +417,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.CCIPReceiverUpgradeable>;
     getContractAt(
+      name: "IBackedAutoFeeTokenImplementation",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IBackedAutoFeeTokenImplementation>;
+    getContractAt(
       name: "BasicMessageReceiver",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -423,6 +436,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.CustomFeeMockCCIPRouter>;
+    getContractAt(
+      name: "ERC20AutoFeeMock",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ERC20AutoFeeMock>;
     getContractAt(
       name: "ERC20Mock",
       address: string | ethers.Addressable,
@@ -550,9 +568,9 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Initializable>;
     deployContract(
-      name: "ReentrancyGuardUpgradeable",
+      name: "ERC20Upgradeable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ReentrancyGuardUpgradeable>;
+    ): Promise<Contracts.ERC20Upgradeable>;
     deployContract(
       name: "ContextUpgradeable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -598,6 +616,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CCIPReceiverUpgradeable>;
     deployContract(
+      name: "IBackedAutoFeeTokenImplementation",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IBackedAutoFeeTokenImplementation>;
+    deployContract(
       name: "BasicMessageReceiver",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.BasicMessageReceiver>;
@@ -609,6 +631,10 @@ declare module "hardhat/types/runtime" {
       name: "CustomFeeMockCCIPRouter",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CustomFeeMockCCIPRouter>;
+    deployContract(
+      name: "ERC20AutoFeeMock",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ERC20AutoFeeMock>;
     deployContract(
       name: "ERC20Mock",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -765,10 +791,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Initializable>;
     deployContract(
-      name: "ReentrancyGuardUpgradeable",
+      name: "ERC20Upgradeable",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ReentrancyGuardUpgradeable>;
+    ): Promise<Contracts.ERC20Upgradeable>;
     deployContract(
       name: "ContextUpgradeable",
       args: any[],
@@ -825,6 +851,11 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CCIPReceiverUpgradeable>;
     deployContract(
+      name: "IBackedAutoFeeTokenImplementation",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IBackedAutoFeeTokenImplementation>;
+    deployContract(
       name: "BasicMessageReceiver",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -839,6 +870,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.CustomFeeMockCCIPRouter>;
+    deployContract(
+      name: "ERC20AutoFeeMock",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ERC20AutoFeeMock>;
     deployContract(
       name: "ERC20Mock",
       args: any[],
