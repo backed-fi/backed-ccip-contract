@@ -224,7 +224,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     function registerDestinationChain(uint64 _destinationChainSelector, address _destinationChainReceiver) 
         external 
         onlyOwner
-        whenNotPaused
         validateAddress(_destinationChainReceiver)
     {
         allowlistedDestinationChains[_destinationChainSelector] = _destinationChainReceiver;
@@ -237,7 +236,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     function removeDestinationChain(uint64 _destinationChainSelector) 
         external 
         onlyOwner
-        whenNotPaused
         onlyAllowlistedDestinationChain(_destinationChainSelector)
     {
         allowlistedDestinationChains[_destinationChainSelector] = address(0);
@@ -251,7 +249,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     function registerSourceChain(uint64 _sourceChainSelector, address _sourceChainSender) 
         external 
         onlyOwner
-        whenNotPaused
         validateAddress(_sourceChainSender)
     {
         allowlistedSourceChains[_sourceChainSelector] = _sourceChainSender;
@@ -264,7 +261,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     function removeSourceChain(uint64 _sourceChainSelector) 
         external 
         onlyOwner
-        whenNotPaused
         onlyAllowlistedSourceChain(_sourceChainSelector)
     {
         allowlistedSourceChains[_sourceChainSelector] = address(0);
@@ -279,7 +275,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     function registerToken(address _token, uint64 _tokenId, TokenVariant _variant) 
         external
         onlyOwner
-        whenNotPaused
         validateToken(_token)
         validateTokenId(_tokenId)
     {
@@ -294,7 +289,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     function removeToken(address _token) 
         external
         onlyOwner
-        whenNotPaused
         onlyAllowRegisteredTokens(_token)
     {
         TokenInfo memory tokenInfo = tokenInfos[_token];
@@ -310,7 +304,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     function updateCustodyWallet(address _custody) 
         public 
         onlyOwner 
-        whenNotPaused
     {
         _custodyWallet = _custody;
 
@@ -322,7 +315,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     function updateGasLimit(uint256 _gasLimit)
         public 
         onlyOwner 
-        whenNotPaused
     {
         _defaultGasLimitOnDestinationChain = _gasLimit;
 
