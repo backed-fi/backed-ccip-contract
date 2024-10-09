@@ -14,6 +14,7 @@ contract BasicMessageReceiver is CCIPReceiver {
     address tokenReceiver;
     uint64 tokenId;
     uint256 amount;
+    uint256 multiplier;
     uint256 multiplierNonce;
     TokenVariant variant;
       /// Variants of tokens that are supported by this bridge.
@@ -37,7 +38,8 @@ contract BasicMessageReceiver is CCIPReceiver {
         variant = _variant;
 
         if (variant == TokenVariant.AUTO_FEE) {
-            (uint256 _multiplierNonce) = abi.decode(_payload, (uint256));
+            (uint256 _multiplier, uint256 _multiplierNonce) = abi.decode(_payload, (uint256, uint256)); 
+            multiplier = _multiplier;
             multiplierNonce = _multiplierNonce;
         }
     }
@@ -45,9 +47,9 @@ contract BasicMessageReceiver is CCIPReceiver {
     function getLatestMessageDetails()
         public
         view
-        returns (bytes32, address, uint64, uint256, TokenVariant, uint256)
+        returns (bytes32, address, uint64, uint256, TokenVariant, uint256, uint256)
     {
-        return (latestMessageId, tokenReceiver, tokenId, amount, variant, multiplierNonce);
+        return (latestMessageId, tokenReceiver, tokenId, amount, variant, multiplier, multiplierNonce);
         
     }
 }

@@ -64,7 +64,7 @@ describe("Backed CCIP Receiver tests", () => {
       "BackedCCIPReceiver"
     );
     const backedCCIPReceiver =
-      await hre.upgrades.deployProxy(factory, [sourceRouter, systemWallet.address, 120_000]) as unknown as BackedCCIPReceiver;
+      await hre.upgrades.deployProxy(factory, [sourceRouter, systemWallet.address, 150_000]) as unknown as BackedCCIPReceiver;
     const backedCCIPReceiverAddress = await backedCCIPReceiver.getAddress();
 
     const basicReceiverFactory = await hre.ethers.getContractFactory(
@@ -417,17 +417,19 @@ describe("Backed CCIP Receiver tests", () => {
       it('should send multiplier nonce in CCIP message payload', async () => {
         const amountToTransfer = 200_000n;
 
-        const { newMultiplierNonce: currentMultiplierNonce } = await erc20AutoFee.getCurrentMultiplier();
+        const { newMultiplier: currentMultiplier, newMultiplierNonce: currentMultiplierNonce } = await erc20AutoFee.getCurrentMultiplier();
 
         await backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20AutoFeeAddress, amountToTransfer, { value: 1_000_000_000_000_000_000n });
 
-        const [lastMessageId, tokenReceiver, tokenId, amount, variant, multiplier] = await basicReceiver.getLatestMessageDetails();
+        const [lastMessageId, tokenReceiver, tokenId, amount, variant, multiplier, multiplierNonce] = await basicReceiver.getLatestMessageDetails();
 
         expect(tokenReceiver).to.deep.equal(client.address);
+
         expect(tokenId).to.deep.equal(ANOTHER_PRODUCT_ID);
         expect(amount).to.deep.equal(amount);
         expect(variant).to.deep.equal(AUTO_FEE_TOKEN);
-        expect(multiplier).to.deep.equal(currentMultiplierNonce);
+        expect(multiplier).to.deep.equal(currentMultiplier);
+        expect(multiplierNonce).to.deep.equal(currentMultiplierNonce);
       });
     })
 
