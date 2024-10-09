@@ -1,8 +1,4 @@
 import {
-  CCIP_BnM_ADDRESSES,
-  CCIP_LnM_ADDRESSES,
-  LINK_ADDRESSES,
-  PayFeesIn,
   routerConfig,
 } from "./constants";
 
@@ -10,6 +6,19 @@ export const getProviderRpcUrl = (network: string) => {
   let rpcUrl;
 
   switch (network) {
+    case "mainnet":
+      rpcUrl = process.env.ETHEREUM_MAINNET_RPC_URL;
+      break;
+    case "polygon":
+      rpcUrl = process.env.POLYGON_MAINNET_RPC_URL;
+      break;
+    case "avalanche":
+      rpcUrl = process.env.AVALANCHE_C_CHAIN_RPC_URL;
+      break;
+    case "gnosis":
+      rpcUrl = process.env.GNOSIS_MAINNET_RPC_URL;
+      break;
+
     case "ethereumSepolia":
       rpcUrl = process.env.ETHEREUM_SEPOLIA_RPC_URL;
       break;
@@ -74,6 +83,15 @@ export const getPrivateKey = () => {
 
 export const getRouterConfig = (network: string) => {
   switch (network) {
+    case "mainnet":
+      return routerConfig.mainnet;
+    case "polygon":
+      return routerConfig.polygon;
+    case "avalanche":
+      return routerConfig.avalanche;
+    case "gnosis":
+      return routerConfig.gnosis;
+
     case "ethereumSepolia":
       return routerConfig.ethereumSepolia;
     case "polygonAmoy":
@@ -103,72 +121,4 @@ export const getRouterConfig = (network: string) => {
     default:
       throw new Error("Unknown network: " + network);
   }
-};
-
-export const getCustodywallet = (network: string) => {
-  switch (network) {
-    case "ethereumSepolia":
-      return routerConfig.ethereumSepolia;
-    case "polygonAmoy":
-      return routerConfig.polygonAmoy;
-    case "optimismSepolia":
-      return routerConfig.optimismSepolia;
-    case "arbitrumSepolia":
-      return routerConfig.arbitrumSepolia;
-    case "avalancheFuji":
-      return routerConfig.avalancheFuji;
-    case "bnbChainTestnet":
-      return routerConfig.bnbChainTestnet;
-    case "baseSepolia":
-      return routerConfig.baseSepolia;
-    case "kromaSepolia":
-      return routerConfig.kromaSepolia;
-    case "wemixTestnet":
-      return routerConfig.wemixTestnet;
-    case "gnosisChiado":
-      return routerConfig.gnosisChiado;
-    case "celoAlfajores":
-      return routerConfig.celoAlfajores;
-    case "metisSepolia":
-      return routerConfig.metisSepolia;
-    case "zksyncSepolia":
-      return routerConfig.zksyncSepolia;
-    default:
-      throw new Error("Unknown network: " + network);
-  }
-};
-
-export const getPayFeesIn = (payFeesIn: string) => {
-  let fees;
-
-  switch (payFeesIn) {
-    case "Native":
-      fees = PayFeesIn.Native;
-      break;
-    case "native":
-      fees = PayFeesIn.Native;
-      break;
-    case "LINK":
-      fees = PayFeesIn.LINK;
-      break;
-    case "link":
-      fees = PayFeesIn.LINK;
-      break;
-    default:
-      fees = PayFeesIn.Native;
-      break;
-  }
-
-  return fees;
-};
-
-export const getFaucetTokensAddresses = (network: string) => {
-  return {
-    ccipBnM: CCIP_BnM_ADDRESSES[network],
-    ccipLnM: CCIP_LnM_ADDRESSES[network],
-  };
-};
-
-export const getLINKTokenAddress = (network: string) => {
-  return LINK_ADDRESSES[network];
 };
