@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.23;
 
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IAny2EVMMessageReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
@@ -9,9 +9,9 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 
 /// @title CCIPReceiverUpgradeable - Base upgradeable contract for CCIP applications that can receive messages.
 abstract contract CCIPReceiverUpgradeable is IAny2EVMMessageReceiver, IERC165, Initializable  {
-  address internal i_ccipRouter;
+  address private i_ccipRouter;
 
- function __CCIPReceiverUpgradeable_init(address router) internal onlyInitializing {
+  function __CCIPReceiverUpgradeable_init(address router) internal onlyInitializing {
       if (router == address(0)) revert InvalidRouter(address(0));
       i_ccipRouter = router;
   }
@@ -56,4 +56,9 @@ abstract contract CCIPReceiverUpgradeable is IAny2EVMMessageReceiver, IERC165, I
     if (msg.sender != address(i_ccipRouter)) revert InvalidRouter(msg.sender);
     _;
   }
+
+  /// @dev This empty reserved space is put in place to allow future versions to add new
+  /// variables without shifting down storage in the inheritance chain.
+  /// See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+  uint256[49] private __gap;
 }

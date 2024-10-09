@@ -14,9 +14,11 @@ task(
   `Registers message source chain in BackedCCIPReceiver smart contract`
 )
   .addParam(`sourceChainSelector`, `Registered source chain selector`)
+  .addParam(`sender`, `Source chain sender`)
   .setAction(
     async (taskArguments: TaskArguments, hre: HardhatRuntimeEnvironment) => {
       const sourceChainSelector = taskArguments.sourceChainSelector
+      const sender = taskArguments.sender
 
       const privateKey = getPrivateKey();
       const rpcProviderUrl = getProviderRpcUrl(hre.network.name);
@@ -39,7 +41,7 @@ task(
 
       const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
 
-      await contract.allowlistSourceChain(sourceChainSelector, true);
+      await contract.registerSourceChain(sourceChainSelector, sender);
 
       spinner.stop();
       console.log(

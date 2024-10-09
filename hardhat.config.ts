@@ -26,7 +26,7 @@ const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.19",
+  solidity: "0.8.23",
   etherscan: {
     apiKey: {
       sepolia: ETHERSCAN_API_KEY!,

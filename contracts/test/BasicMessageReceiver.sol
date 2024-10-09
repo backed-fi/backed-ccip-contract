@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity ^0.8.23;
 
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -14,6 +14,13 @@ contract BasicMessageReceiver is CCIPReceiver {
     address tokenReceiver;
     uint64 tokenId;
     uint256 amount;
+    uint256 multiplierNonce;
+    TokenVariant variant;
+      /// Variants of tokens that are supported by this bridge.
+    enum TokenVariant {
+        REGULAR,
+        AUTO_FEE
+    }
 
     constructor(address router) CCIPReceiver(router) {}
 
@@ -22,19 +29,25 @@ contract BasicMessageReceiver is CCIPReceiver {
     ) internal override {
         latestMessageId = message.messageId;
 
-        (address _tokenReceiver, uint64 _tokenId, uint256 _amount) = abi.decode(message.data, (address, uint64, uint256));
+        (address _tokenReceiver, uint64 _tokenId, uint256 _amount, TokenVariant _variant, bytes memory _payload) = abi.decode(message.data, (address, uint64, uint256, TokenVariant, bytes));
 
         tokenReceiver = _tokenReceiver;
         tokenId = _tokenId;
         amount = _amount;
+        variant = _variant;
+
+        if (variant == TokenVariant.AUTO_FEE) {
+            (uint256 _multiplierNonce) = abi.decode(_payload, (uint256));
+            multiplierNonce = _multiplierNonce;
+        }
     }
 
     function getLatestMessageDetails()
         public
         view
-        returns (bytes32, address, uint64, uint256)
+        returns (bytes32, address, uint64, uint256, TokenVariant, uint256)
     {
-        return (latestMessageId, tokenReceiver, tokenId, amount);
+        return (latestMessageId, tokenReceiver, tokenId, amount, variant, multiplierNonce);
         
     }
 }

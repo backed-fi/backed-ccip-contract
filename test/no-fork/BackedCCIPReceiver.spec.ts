@@ -5,6 +5,7 @@ import {
   BackedCCIPReceiver,
   BasicMessageReceiver,
   CustomFeeCCIPLocalSimulator,
+  ERC20AutoFeeMock,
   ERC20Mock,
 } from "../../typechain-types";
 import {
@@ -12,12 +13,30 @@ import {
 } from "../../helpers/utils";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { Client } from "../../typechain-types/@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver";
+import { nthRoot } from "../../helpers/nthRoot";
+import Decimal from "decimal.js";
 
 const token = {
   id: 1337,
   name: 'Backed IBTA',
   symbol: 'bIBTA'
 }
+
+const autoFeeToken = {
+  id: 999,
+  name: 'Backed nVIDIA',
+  symbol: 'bNVDA'
+}
+
+const REGULAR_TOKEN = 0n;
+const AUTO_FEE_TOKEN = 1n;
+const NOT_EXISTING_VARIANT_TOKEN = 99n;
+
+const PRODUCT_ID = 102392n;
+const ANOTHER_PRODUCT_ID = 34039n;
+
+const INITIAL_BALANCE = 1_000_000n;
+const MULTIPLIER = 0.5;
 
 describe("Backed CCIP Receiver tests", () => {
   // We define a fixture to reuse the same setup in every test.
@@ -45,7 +64,7 @@ describe("Backed CCIP Receiver tests", () => {
       "BackedCCIPReceiver"
     );
     const backedCCIPReceiver =
-      await hre.upgrades.deployProxy(factory, [sourceRouter, systemWallet.address, 100_000]) as unknown as BackedCCIPReceiver;
+      await hre.upgrades.deployProxy(factory, [sourceRouter, systemWallet.address, 120_000]) as unknown as BackedCCIPReceiver;
     const backedCCIPReceiverAddress = await backedCCIPReceiver.getAddress();
 
     const basicReceiverFactory = await hre.ethers.getContractFactory(
@@ -63,9 +82,15 @@ describe("Backed CCIP Receiver tests", () => {
     const erc20Address = await erc20.getAddress();
     const anotherErc20Address = await anotherErc20.getAddress();
 
+    const autoFeeTokenFactory = await hre.ethers.getContractFactory(
+      'ERC20AutoFeeMock'
+    );
+    const erc20AutoFee = await autoFeeTokenFactory.deploy(autoFeeToken.name, autoFeeToken.symbol)
+    const erc20AutoFeeAddress = await erc20AutoFee.getAddress();
+
     return {
       client, random, systemWallet, deployer, chainSelector, anotherChainSelector, sourceRouter,
-      backedCCIPReceiver, backedCCIPReceiverAddress, basicReceiver, basicReceiverAddress, erc20, erc20Address, anotherErc20Address
+      backedCCIPReceiver, backedCCIPReceiverAddress, basicReceiver, basicReceiverAddress, erc20, erc20Address, anotherErc20Address, erc20AutoFee, erc20AutoFeeAddress
     };
   }
 
@@ -90,10 +115,14 @@ describe("Backed CCIP Receiver tests", () => {
   let erc20Address: string;
   let anotherErc20Address: string;
 
+  let erc20AutoFee: ERC20AutoFeeMock;
+  let erc20AutoFeeAddress: string;
+
   beforeEach(async () => {
     ({
       client, random, systemWallet, deployer, chainSelector, anotherChainSelector, sourceRouter,
-      backedCCIPReceiver, backedCCIPReceiverAddress, basicReceiver, basicReceiverAddress, erc20, erc20Address, anotherErc20Address
+      backedCCIPReceiver, backedCCIPReceiverAddress, basicReceiver, basicReceiverAddress, erc20, erc20Address, anotherErc20Address,
+      erc20AutoFee, erc20AutoFeeAddress
     } = await loadFixture(deployFixture));
 
     await client.sendTransaction({
@@ -105,35 +134,37 @@ describe("Backed CCIP Receiver tests", () => {
       value: 1_000_000_000_000_000_000n,
     });
 
-    await erc20.mint(client, 1_000_000n);
+    await erc20.mint(client, INITIAL_BALANCE);
+    await erc20AutoFee.mint(client, INITIAL_BALANCE);
+
+    await erc20AutoFee.updateMultiplierValue(new Decimal(MULTIPLIER).mul(1e18).toString());
   });
 
   it('owner is deployer', async () => {
     expect(await backedCCIPReceiver.owner()).to.equal(deployer.address)
   });
-
   describe('#constructor', () => {
     describe('when `initialize` is called again', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.initialize(sourceRouter, systemWallet.address, 200_000)).to.revertedWith('Initializable: contract is already initialized')
+          backedCCIPReceiver.initialize(sourceRouter, systemWallet.address, 200_000)).to
+          .revertedWithCustomError(backedCCIPReceiver, 'InvalidInitialization')
       });
     });
   });
-
   describe('#registerDestinationChain', () => {
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).registerDestinationChain(chainSelector, backedCCIPReceiverAddress)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_receiver` is equal to zero address', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.registerDestinationChain(chainSelector, hre.ethers.ZeroAddress)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidReceiverAddress');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidAddress');
       });
     });
     it('should register `_receiver` for `_destinationChainSelector`', async () => {
@@ -150,7 +181,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).removeDestinationChain(chainSelector)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_destinationChainSelector` is not registered', () => {
@@ -177,36 +208,45 @@ describe("Backed CCIP Receiver tests", () => {
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(random).allowlistSourceChain(chainSelector, true)
-        ).to.revertedWith('Ownable: caller is not the owner');
+          backedCCIPReceiver.connect(random).registerSourceChain(chainSelector, backedCCIPReceiverAddress)
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     it('should update `_sourceChainSelector` value', async () => {
-      await backedCCIPReceiver.allowlistSourceChain(chainSelector, true);
+      await backedCCIPReceiver.registerSourceChain(chainSelector, backedCCIPReceiverAddress);
 
-      expect(await backedCCIPReceiver.allowlistedSourceChains(chainSelector)).to.be.true;
-
-      await backedCCIPReceiver.allowlistSourceChain(chainSelector, false);
-
-      expect(await backedCCIPReceiver.allowlistedSourceChains(chainSelector)).to.be.false;
+      expect(await backedCCIPReceiver.allowlistedSourceChains(chainSelector)).to.deep.equal(backedCCIPReceiverAddress);
     });
   });
-  describe('#allowlistSender', () => {
+  describe('#removeSourceChain', () => {
+    beforeEach(async () => {
+      await backedCCIPReceiver.registerSourceChain(chainSelector, backedCCIPReceiverAddress);
+    })
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(random).allowlistSender(backedCCIPReceiverAddress, true)
-        ).to.revertedWith('Ownable: caller is not the owner');
+          backedCCIPReceiver.connect(random).removeSourceChain(chainSelector)
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
+    describe('when `_sourceChainSelector` is not registered', () => {
+      it('should revert', async () => {
+        await expect(
+          backedCCIPReceiver.removeSourceChain(anotherChainSelector)
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'SourceChainNotAllowlisted');
+      });
+    });
+
     it('should update `_sender` value', async () => {
-      await backedCCIPReceiver.allowlistSender(backedCCIPReceiver, true);
+      let sourceChainSender = await backedCCIPReceiver.allowlistedSourceChains(chainSelector);
 
-      expect(await backedCCIPReceiver.allowlistedSenders(backedCCIPReceiver)).to.be.true;
+      expect(sourceChainSender).to.deep.equal(backedCCIPReceiverAddress);
 
-      await backedCCIPReceiver.allowlistSender(backedCCIPReceiver, false);
+      await backedCCIPReceiver.removeSourceChain(chainSelector);
 
-      expect(await backedCCIPReceiver.allowlistedSenders(backedCCIPReceiver)).to.be.false;
+      sourceChainSender = await backedCCIPReceiver.allowlistedDestinationChains(chainSelector);
+
+      expect(sourceChainSender).to.deep.equal(hre.ethers.ZeroAddress);
     });
   });
   describe('#updateCustodyWallet', () => {
@@ -214,7 +254,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).updateCustodyWallet(random.address)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     it('should update custody wallet to `_custodyWallet`', async () => {
@@ -228,7 +268,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).updateGasLimit(300_000)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount')
       });
     });
     it('should update default gas limit to `_gasLimit`', async () => {
@@ -241,60 +281,69 @@ describe("Backed CCIP Receiver tests", () => {
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(random).registerToken(erc20Address, 1)
-        ).to.revertedWith('Ownable: caller is not the owner');
+          backedCCIPReceiver.connect(random).registerToken(erc20Address, 1, 0)
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_tokenId` is equal 0', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(erc20Address, 0)
+          backedCCIPReceiver.registerToken(erc20Address, 0, REGULAR_TOKEN)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
       });
     });
     describe('when `_tokenId` is already registered', () => {
       beforeEach(async () => {
-        await backedCCIPReceiver.registerToken(erc20Address, 1);
+        await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
       })
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(anotherErc20Address, 1)
+          backedCCIPReceiver.registerToken(anotherErc20Address, PRODUCT_ID, REGULAR_TOKEN)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
       });
     });
     describe('when `_token` is equal zero address', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(hre.ethers.ZeroAddress, 1)
+          backedCCIPReceiver.registerToken(hre.ethers.ZeroAddress, PRODUCT_ID, REGULAR_TOKEN)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
     describe('when `_token` is already registered', () => {
       beforeEach(async () => {
-        await backedCCIPReceiver.registerToken(erc20Address, 2);
+        await backedCCIPReceiver.registerToken(erc20Address, ANOTHER_PRODUCT_ID, REGULAR_TOKEN);
       })
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(erc20Address, 1)
+          backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN)
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
-    it('should set mapping from `_tokenId` to `_token`', async () => {
-      await backedCCIPReceiver.registerToken(erc20Address, 1);
+    describe('when `_variant` is not supported', () => {
+      it('should revert', async () => {
+        await expect(
+          backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, NOT_EXISTING_VARIANT_TOKEN)
+        ).to.revertedWithoutReason();
+      })
+    });
+    it('should set mapping from `_tokenId` to `_token` and from `_token` to `tokenInfo`', async () => {
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
+      const [tokenId, variant] = await backedCCIPReceiver.tokenInfos(erc20Address)
 
-      expect(await backedCCIPReceiver.tokenIds(erc20Address)).to.be.equal(1);
-      expect(await backedCCIPReceiver.tokens(1)).to.be.equal(erc20Address);
+      expect(tokenId).to.eq(PRODUCT_ID);
+      expect(variant).to.eq(REGULAR_TOKEN);
+      expect(await backedCCIPReceiver.tokens(PRODUCT_ID)).to.be.equal(erc20Address);
     });
   });
   describe('#removeToken', () => {
     beforeEach(async () => {
-      await backedCCIPReceiver.registerToken(erc20Address, 1);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
     })
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).removeToken(erc20Address)
-        ).to.revertedWith('Ownable: caller is not the owner');
+        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_token` is not registered', () => {
@@ -306,12 +355,12 @@ describe("Backed CCIP Receiver tests", () => {
     });
 
     it('should remove token', async () => {
-      let tokenId = await backedCCIPReceiver.tokenIds(erc20Address);
+      let [tokenId] = await backedCCIPReceiver.tokenInfos(erc20Address);
 
-      expect(tokenId).to.deep.equal(1);
+      expect(tokenId).to.deep.equal(PRODUCT_ID);
 
       await backedCCIPReceiver.removeToken(erc20Address);
-      tokenId = await backedCCIPReceiver.tokenIds(erc20Address);
+      [tokenId] = await backedCCIPReceiver.tokenInfos(erc20Address);
 
       expect(tokenId).to.deep.equal(0);
     });
@@ -327,9 +376,11 @@ describe("Backed CCIP Receiver tests", () => {
   describe('#send', () => {
     beforeEach(async () => {
       await backedCCIPReceiver.registerDestinationChain(chainSelector, basicReceiverAddress);
-      await backedCCIPReceiver.registerToken(erc20Address, 1);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20AutoFeeAddress, ANOTHER_PRODUCT_ID, AUTO_FEE_TOKEN);
 
-      await erc20.connect(client).approve(backedCCIPReceiverAddress, 1_000_000n);
+      await erc20.connect(client).approve(backedCCIPReceiverAddress, INITIAL_BALANCE);
+      await erc20AutoFee.connect(client).approve(backedCCIPReceiverAddress, INITIAL_BALANCE / 2n);
     });
     describe('and `_destinationChainSelector` is not registered', () => {
       it('should revert', async () => {
@@ -355,7 +406,6 @@ describe("Backed CCIP Receiver tests", () => {
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
-
     describe('and `msg.value` is lower than CCIP fee costs', () => {
       it('should revert', async () => {
         await expect(
@@ -363,98 +413,215 @@ describe("Backed CCIP Receiver tests", () => {
         ).to.revertedWithCustomError(backedCCIPReceiver, 'InsufficientMessageValue')
       });
     });
+    describe('and token variant is `AUTO_FEE`', () => {
+      it('should send multiplier nonce in CCIP message payload', async () => {
+        const amountToTransfer = 200_000n;
+
+        const { newMultiplierNonce: currentMultiplierNonce } = await erc20AutoFee.getCurrentMultiplier();
+
+        await backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20AutoFeeAddress, amountToTransfer, { value: 1_000_000_000_000_000_000n });
+
+        const [lastMessageId, tokenReceiver, tokenId, amount, variant, multiplier] = await basicReceiver.getLatestMessageDetails();
+
+        expect(tokenReceiver).to.deep.equal(client.address);
+        expect(tokenId).to.deep.equal(ANOTHER_PRODUCT_ID);
+        expect(amount).to.deep.equal(amount);
+        expect(variant).to.deep.equal(AUTO_FEE_TOKEN);
+        expect(multiplier).to.deep.equal(currentMultiplierNonce);
+      });
+    })
 
     it('should send tokens to custody wallet', async () => {
-      await backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20Address, 200_000n, { value: 1 });
+      const bridgeAmount = 200_000n;
+      await backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20Address, bridgeAmount, { value: 1 });
       const clientBalance = await erc20.balanceOf(client.address);
       const custodyBalance = await erc20.balanceOf(systemWallet.address);
 
-      expect(clientBalance).to.equal(1_000_000n - 200_000n);
-      expect(custodyBalance).to.equal(200_000n);
+      expect(clientBalance).to.equal(INITIAL_BALANCE - bridgeAmount);
+      expect(custodyBalance).to.equal(bridgeAmount);
     });
 
     it('should send CCIP message', async () => {
-      const tx = await backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20Address, 200_000n, { value: 1_000_000_000_000_000_000n });
+      const bridgeAmount = 200_000n;
+      const tx = await backedCCIPReceiver.connect(client).send(chainSelector, client.address, erc20Address, bridgeAmount, { value: 1_000_000_000_000_000_000n });
 
       const [lastMessageId, tokenReceiver, tokenId, amount] = await basicReceiver.getLatestMessageDetails();
 
       expect(tokenReceiver).to.deep.equal(client.address);
-      expect(tokenId).to.deep.equal(1);
-      expect(amount).to.deep.equal(200_000n);
+      expect(tokenId).to.deep.equal(PRODUCT_ID);
+      expect(amount).to.deep.equal(bridgeAmount);
     });
   });
   describe('#receiveCCIP', () => {
     const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
+    const bridgeAmount = 200_000n;
 
     let ccipMessage: Client.Any2EVMMessageStruct;
+    let router: SignerWithAddress;
     beforeEach(async () => {
       ccipMessage = {
         messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
         sourceChainSelector: chainSelector,
         sender: defaultAbiCoder.encode(["address"], [backedCCIPReceiverAddress]),
-        data: defaultAbiCoder.encode(["address", "uint64", "uint256"], [client.address, 1, 200_000n]), // no data
+        data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, PRODUCT_ID, bridgeAmount, REGULAR_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
         destTokenAmounts: [],
       };
+      router = await hre.ethers.getImpersonatedSigner(sourceRouter);
 
-      await backedCCIPReceiver.allowlistSourceChain(chainSelector, true);
-      await backedCCIPReceiver.allowlistSender(backedCCIPReceiverAddress, true);
+      await backedCCIPReceiver.registerSourceChain(chainSelector, backedCCIPReceiverAddress);
 
-      await backedCCIPReceiver.registerToken(erc20Address, 1);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20AutoFeeAddress, ANOTHER_PRODUCT_ID, AUTO_FEE_TOKEN);
 
-      await erc20.mint(systemWallet, 1_000_000n);
-      await erc20.connect(systemWallet).approve(backedCCIPReceiver, 1_000_000n);
+      await erc20.mint(systemWallet, INITIAL_BALANCE);
+      await erc20.connect(systemWallet).approve(backedCCIPReceiver, INITIAL_BALANCE);
+
+      await erc20AutoFee.mint(systemWallet, INITIAL_BALANCE);
+      await erc20AutoFee.connect(systemWallet).approve(backedCCIPReceiver, INITIAL_BALANCE);
     })
     describe('and `msg.sender` is not CCIP rounter', () => {
-      beforeEach(() => {
-
-      })
       it('should revert', async () => {
         await expect(backedCCIPReceiver.ccipReceive(ccipMessage))
           .to.revertedWithCustomError(backedCCIPReceiver, 'InvalidRouter')
       });
     });
     describe('and CCIP message sender is not registered', () => {
-      it('should revert', async () => {
-        const router = await hre.ethers.getImpersonatedSigner(sourceRouter);
-
+      it('should emit `InvalidMessageReceived` with `SOURCE_SENDER_NOT_ALLOWLISTED`', async () => {
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
           sender: defaultAbiCoder.encode(["address"], [random.address])
         }))
-          .to.revertedWithCustomError(backedCCIPReceiver, 'SenderNotAllowlisted')
+          .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+          .withArgs(ccipMessage.messageId, 1)
       });
     });
     describe('and source chain is not registered', () => {
-      it('should revert', async () => {
-        const router = await hre.ethers.getImpersonatedSigner(sourceRouter);
-
+      it('should emit `InvalidMessageReceived` with `SOURCE_CHAIN_SELECTOR_NOT_ALLOWLISTED`', async () => {
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
           sourceChainSelector: anotherChainSelector
         }))
-          .to.revertedWithCustomError(backedCCIPReceiver, 'SourceChainNotAllowlisted')
+          .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+          .withArgs(ccipMessage.messageId, 0)
       });
     });
 
     describe('and token is not registered', () => {
-      it('should revert', async () => {
-        const router = await hre.ethers.getImpersonatedSigner(sourceRouter);
-
+      it('should emit `InvalidMessageReceived` with `TOKEN_NOT_REGISTERED`', async () => {
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
-          data: defaultAbiCoder.encode(["address", "uint64", "uint256"], [client.address, 2, 200_000n]), // no data
-        })).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, 2, 200_000n, REGULAR_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
+        }))
+          .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+          .withArgs(ccipMessage.messageId, 2)
       })
     });
+    describe('and token receiver is not valid address', () => {
+      it('should emit `InvalidMessageReceived` with `TOKEN_RECEIVER_INVALID`', async () => {
+        await expect(backedCCIPReceiver.connect(router).ccipReceive({
+          ...ccipMessage,
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [hre.ethers.ZeroAddress, PRODUCT_ID, 200_000n, REGULAR_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
+        }))
+          .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+          .withArgs(ccipMessage.messageId, 3)
+      })
+    })
+    describe('and token variant does not match', () => {
+      it('should emit `InvalidMessageReceived` with `TOKEN_VARIANT_MISMATCH`', async () => {
+        await expect(backedCCIPReceiver.connect(router).ccipReceive({
+          ...ccipMessage,
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, PRODUCT_ID, 200_000n, AUTO_FEE_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
+        }))
+          .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+          .withArgs(ccipMessage.messageId, 4)
+      })
+    })
+    describe('and token is `AUTO_FEE` variant', () => {
+      describe('and source multiplier nonce is lower than destination multiplier nonce', () => {
+        it('should send amount based on current multiplier from custody account', async () => {
+          const sourceMultiplierNonce = 10;
+          const sourceMultiplier = new Decimal(0.5);
+          await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.4).mul(1e18).toString(), sourceMultiplierNonce + 1);
+
+          const payload = defaultAbiCoder.encode(["uint256", "uint256"], [sourceMultiplier.mul(1e18).toString(), sourceMultiplierNonce]);
+          const amount = 200_000n;
+
+          await backedCCIPReceiver.connect(router).ccipReceive({
+            ...ccipMessage,
+            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]),
+          });
+
+          const { newMultiplier } = await erc20AutoFee.getCurrentMultiplier();
+          const multiplier = new Decimal(newMultiplier.toString()).div(1e18);
+
+          const clientBalance = await erc20AutoFee.balanceOf(client.address);
+
+          expect(new Decimal(clientBalance.toString())).to.deep.equal(new Decimal(INITIAL_BALANCE.toString()).mul(multiplier).add(new Decimal(amount.toString()).mul(multiplier).div(sourceMultiplier)));
+        })
+      })
+
+      describe('and source multiplier nonce is higher than destination multiplier nonce', () => {
+        it('should revert with `InvalidMultiplierNonce`', async () => {
+          const sourceMultiplierNonce = 10;
+          const sourceMultiplier = new Decimal(0.5).mul(1e18);
+
+          await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.3).mul(1e18).toString(), sourceMultiplierNonce - 1);
+
+          const payload = defaultAbiCoder.encode(["uint256", "uint256"], [sourceMultiplier.toString(), sourceMultiplierNonce]);
+          const amount = 200_000n;
+
+          await expect(backedCCIPReceiver.connect(router).ccipReceive({
+            ...ccipMessage,
+            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]),
+          })).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidMultiplierNonce');
+        })
+      })
+      describe('and source multiplier nonce matches destination multiplier nonce but multpiliers do not match', () => {
+        it('should emit `InvalidMessageReceived` with `MULTIPLIER_MISMATCH`', async () => {
+          const sourceMultiplierNonce = 10;
+          const sourceMultiplier = new Decimal(0.5).mul(1e18);
+
+          await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.4).mul(1e18).toString(), sourceMultiplierNonce);
+
+          const payload = defaultAbiCoder.encode(["uint256", "uint256"], [sourceMultiplier.toString(), sourceMultiplierNonce]);
+          await expect(backedCCIPReceiver.connect(router).ccipReceive({
+            ...ccipMessage,
+            data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, 200_000n, AUTO_FEE_TOKEN, payload]),
+          }))
+            .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
+            .withArgs(ccipMessage.messageId, 6)
+        })
+      })
+
+      it('should send token from custody to receiver', async () => {
+        const sourceMultiplierNonce = 10;
+        const sourceMultiplier = new Decimal(0.4).mul(1e18);
+
+        await erc20AutoFee.updateMultiplierWithNonce(new Decimal(0.4).mul(1e18).toString(), sourceMultiplierNonce);
+
+        const payload = defaultAbiCoder.encode(["uint256", "uint256"], [sourceMultiplier.toString(), sourceMultiplierNonce]);
+        const amount = 200_000n;
+
+        await backedCCIPReceiver.connect(router).ccipReceive({
+          ...ccipMessage,
+          data: defaultAbiCoder.encode(["address", "uint64", "uint256", "uint8", "bytes"], [client.address, ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]),
+        });
+
+        const { newMultiplier } = await erc20AutoFee.getCurrentMultiplier();
+        const multiplier = new Decimal(newMultiplier.toString()).div(1e18);
+
+        const clientBalance = await erc20AutoFee.balanceOf(client.address);
+
+        expect(new Decimal(clientBalance.toString())).to.deep.equal(new Decimal(INITIAL_BALANCE.toString()).mul(multiplier).add(amount.toString()));
+      });
+    })
 
     it('should send token from custody to receiver', async () => {
-      const router = await hre.ethers.getImpersonatedSigner(sourceRouter);
-
       await backedCCIPReceiver.connect(router).ccipReceive(ccipMessage);
 
       const clientBalance = await erc20.balanceOf(client.address);
 
-      expect(clientBalance).to.deep.equal(1_000_000n + 200_000n)
+      expect(clientBalance).to.deep.equal(INITIAL_BALANCE + bridgeAmount)
     });
   })
 });
