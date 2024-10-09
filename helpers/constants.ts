@@ -27,10 +27,10 @@ export const supportedNetworks = [
 ];
 
 export const CUSTODY_ADDRESS: AddressMap = {
-    [`mainnet`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
-    [`polygon`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
-    [`avalanche`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
-    [`gnosis`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
+    [`mainnet`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
+    [`polygon`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
+    [`avalanche`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
+    [`gnosis`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
 
     /// Testnets
     [`ethereumSepolia`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
