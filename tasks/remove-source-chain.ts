@@ -10,17 +10,13 @@ import { Spinner } from "../helpers/spinner";
 import { BACKED_CCIP_RECEIVER } from "../helpers/constants";
 
 task(
-  `register-token`,
-  `Registers token in BackedCCIPReceiver smart contract`
+  `remove-source-chain`,
+  `Removes source chain from BackedCCIPReceiver smart contract`
 )
-  .addParam(`token`, `The address of the token`)
-  .addParam(`tokenId`, `Arbitrary token id`)
-  .addOptionalParam('tokenVariant', 'Token variant')
+  .addParam(`sourceChainSelector`, `Registered source chain selector`)
   .setAction(
     async (taskArguments: TaskArguments, hre: HardhatRuntimeEnvironment) => {
-      const token = taskArguments.token
-      const tokenId = taskArguments.tokenId
-      const tokenVariant = taskArguments.tokenVariant ?? 0;
+      const sourceChainSelector = taskArguments.sourceChainSelector
 
       const privateKey = getPrivateKey();
       const rpcProviderUrl = getProviderRpcUrl(hre.network.name);
@@ -32,7 +28,7 @@ task(
       const spinner: Spinner = new Spinner();
 
       console.log(
-        `ℹ️  Attempting to register token ${token} (variant: ${tokenVariant}) in BackedCCIPReceiver on the ${hre.network.name} blockchain using tokenId: ${tokenId} provided as constructor argument`
+        `ℹ️  Attempting to remove source chain selector: ${sourceChainSelector} from BackedCCIPReceiver on the ${hre.network.name} blockchain`
       );
       spinner.start();
 
@@ -43,11 +39,11 @@ task(
 
       const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
 
-      await contract.registerToken(token, tokenId, tokenVariant);
+      await contract.removeSourceChain(sourceChainSelector);
 
       spinner.stop();
       console.log(
-        `✅ Token ${token} registered in BackedReceiverCCIP at tokenId: ${tokenId} on ${hre.network.name} blockchain`
+        `✅ Removed source chain: ${sourceChainSelector} from BackedReceiverCCIP on ${hre.network.name} blockchain`
       );
     }
   );

@@ -3,25 +3,17 @@ import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types";
 import { getPrivateKey, getProviderRpcUrl } from "../helpers/utils";
 import { Wallet, JsonRpcProvider } from "ethers";
 import {
-  BackedCCIPReceiver__factory,
-  BackedCCIPReceiver,
+  BackedCCIPReceiver__factory
 } from "../typechain-types";
 import { Spinner } from "../helpers/spinner";
 import { BACKED_CCIP_RECEIVER } from "../helpers/constants";
 
 task(
-  `register-token`,
-  `Registers token in BackedCCIPReceiver smart contract`
+  `upgrade-backed-ccip-receiver`,
+  `Upgrades the BackedCCIPReceiver smart contract`
 )
-  .addParam(`token`, `The address of the token`)
-  .addParam(`tokenId`, `Arbitrary token id`)
-  .addOptionalParam('tokenVariant', 'Token variant')
   .setAction(
     async (taskArguments: TaskArguments, hre: HardhatRuntimeEnvironment) => {
-      const token = taskArguments.token
-      const tokenId = taskArguments.tokenId
-      const tokenVariant = taskArguments.tokenVariant ?? 0;
-
       const privateKey = getPrivateKey();
       const rpcProviderUrl = getProviderRpcUrl(hre.network.name);
 
@@ -30,9 +22,9 @@ task(
       const deployer = wallet.connect(provider);
 
       const spinner: Spinner = new Spinner();
-
+      const contractAddress = BACKED_CCIP_RECEIVER[hre.network.name]
       console.log(
-        `ℹ️  Attempting to register token ${token} (variant: ${tokenVariant}) in BackedCCIPReceiver on the ${hre.network.name} blockchain using tokenId: ${tokenId} provided as constructor argument`
+        `ℹ️  Attempting to upgrade BackedCCIPReceiver ${contractAddress}on the ${hre.network.name}`
       );
       spinner.start();
 
@@ -41,13 +33,14 @@ task(
           "BackedCCIPReceiver"
         )) as BackedCCIPReceiver__factory;
 
-      const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
-
-      await contract.registerToken(token, tokenId, tokenVariant);
+      const proxy = await hre.upgrades.upgradeProxy(contractAddress, factory);
+      await proxy.waitForDeployment();
+      const proxyAddress =
+        await proxy.getAddress();
 
       spinner.stop();
       console.log(
-        `✅ Token ${token} registered in BackedReceiverCCIP at tokenId: ${tokenId} on ${hre.network.name} blockchain`
+        `✅ BackedReceiverCCIP proxy upgraded at address ${proxyAddress} on ${hre.network.name} blockchain`
       );
     }
   );

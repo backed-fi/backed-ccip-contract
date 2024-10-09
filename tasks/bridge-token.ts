@@ -44,9 +44,9 @@ task(
       let tx = await erc20.approve(BACKED_CCIP_RECEIVER[hre.network.name], amount);
       await tx.wait();
 
-      const fees = await contract.getDeliveryFeeCost(destinationChainSelector, token, amount);
+      const fees = await contract.getDeliveryFeeCost(destinationChainSelector, wallet.address, token, amount);
 
-      tx = await contract.send(destinationChainSelector, token, amount, { value: fees });
+      tx = await contract.send(destinationChainSelector, wallet.address, token, amount, { value: fees });
       await tx.wait();
 
       spinner.stop();

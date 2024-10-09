@@ -1,9 +1,12 @@
 import './faucet'
+import './upgrade-backed-ccip-receiver';
 import './deploy-backed-ccip-receiver';
 import './bridge-token';
 import './register-token';
 import './register-source-chain';
 import './register-destination-chain';
+import './remove-destination-chain';
+import './remove-source-chain';
+import './remove-token';
 import './withdraw';
-import './get-message';
 import './fill-sender';

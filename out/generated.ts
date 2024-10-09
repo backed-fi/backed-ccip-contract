@@ -50,6 +50,7 @@ export const backedCcipReceiverAbi = [
   },
   { type: 'error', inputs: [], name: 'InvalidAddress' },
   { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'InvalidMultiplierNonce' },
   {
     type: 'error',
     inputs: [{ name: 'router', internalType: 'address', type: 'address' }],
@@ -87,6 +88,7 @@ export const backedCcipReceiverAbi = [
     inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
     name: 'TokenNotRegistered',
   },
+  { type: 'error', inputs: [], name: 'TokenVariantNotSupported' },
   {
     type: 'event',
     anonymous: false,
@@ -212,11 +214,18 @@ export const backedCcipReceiverAbi = [
         indexed: false,
       },
       {
+        name: 'variant',
+        internalType: 'enum BackedCCIPReceiver.TokenVariant',
+        type: 'uint8',
+        indexed: false,
+      },
+      {
         name: 'tokenReceiver',
         internalType: 'address',
         type: 'address',
         indexed: false,
       },
+      { name: 'payload', internalType: 'bytes', type: 'bytes', indexed: false },
     ],
     name: 'MessageReceived',
   },
@@ -261,11 +270,12 @@ export const backedCcipReceiverAbi = [
         indexed: false,
       },
       {
-        name: 'fees',
-        internalType: 'uint256',
-        type: 'uint256',
+        name: 'variant',
+        internalType: 'enum BackedCCIPReceiver.TokenVariant',
+        type: 'uint8',
         indexed: false,
       },
+      { name: 'payload', internalType: 'bytes', type: 'bytes', indexed: false },
     ],
     name: 'MessageSent',
   },
@@ -532,6 +542,11 @@ export const backedCcipReceiverAbi = [
     inputs: [
       { name: '_token', internalType: 'address', type: 'address' },
       { name: '_tokenId', internalType: 'uint64', type: 'uint64' },
+      {
+        name: '_variant',
+        internalType: 'enum BackedCCIPReceiver.TokenVariant',
+        type: 'uint8',
+      },
     ],
     name: 'registerToken',
     outputs: [],
@@ -599,8 +614,15 @@ export const backedCcipReceiverAbi = [
   {
     type: 'function',
     inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'tokenIds',
-    outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    name: 'tokenInfos',
+    outputs: [
+      { name: 'id', internalType: 'uint64', type: 'uint64' },
+      {
+        name: 'variant',
+        internalType: 'enum BackedCCIPReceiver.TokenVariant',
+        type: 'uint8',
+      },
+    ],
     stateMutability: 'view',
   },
   {
@@ -908,12 +930,13 @@ export const readBackedCcipReceiverSupportsInterface =
   })
 
 /**
- * Wraps __{@link readContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"tokenIds"`
+ * Wraps __{@link readContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"tokenInfos"`
  */
-export const readBackedCcipReceiverTokenIds = /*#__PURE__*/ createReadContract({
-  abi: backedCcipReceiverAbi,
-  functionName: 'tokenIds',
-})
+export const readBackedCcipReceiverTokenInfos =
+  /*#__PURE__*/ createReadContract({
+    abi: backedCcipReceiverAbi,
+    functionName: 'tokenInfos',
+  })
 
 /**
  * Wraps __{@link readContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"tokens"`
@@ -1609,12 +1632,12 @@ export const useReadBackedCcipReceiverSupportsInterface =
   })
 
 /**
- * Wraps __{@link useReadContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"tokenIds"`
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link backedCcipReceiverAbi}__ and `functionName` set to `"tokenInfos"`
  */
-export const useReadBackedCcipReceiverTokenIds =
+export const useReadBackedCcipReceiverTokenInfos =
   /*#__PURE__*/ createUseReadContract({
     abi: backedCcipReceiverAbi,
-    functionName: 'tokenIds',
+    functionName: 'tokenInfos',
   })
 
 /**

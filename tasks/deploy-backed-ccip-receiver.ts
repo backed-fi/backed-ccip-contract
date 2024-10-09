@@ -54,6 +54,10 @@ task(
       const proxyAddress =
         await proxy.getAddress();
 
+      await hre.run("verify:verify", {
+        address: proxyAddress,
+      });
+
       spinner.stop();
       console.log(
         `✅ BackedReceiverCCIP proxy deployed at address ${proxyAddress} on ${hre.network.name} blockchain`
