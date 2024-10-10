@@ -18,15 +18,18 @@ task(
   .setAction(
     async (taskArguments: TaskArguments, hre: HardhatRuntimeEnvironment) => {
       const privateKey = getPrivateKey();
+
       const rpcProviderUrl = getProviderRpcUrl(hre.network.name);
 
       const provider = new JsonRpcProvider(rpcProviderUrl);
       const wallet = new Wallet(privateKey);
+      const deployer = wallet.connect(provider);
 
       const spinner: Spinner = new Spinner();
       const factory: BackedCCIPReceiver__factory =
         (await hre.ethers.getContractFactory(
-          "BackedCCIPReceiver"
+          "BackedCCIPReceiver",
+          deployer
         )) as BackedCCIPReceiver__factory;
 
       const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;

@@ -6,6 +6,9 @@ export const getProviderRpcUrl = (network: string) => {
   let rpcUrl;
 
   switch (network) {
+    case "localhost":
+      rpcUrl = 'http://127.0.0.1:8545';
+      break;
     case "mainnet":
       rpcUrl = process.env.ETHEREUM_MAINNET_RPC_URL;
       break;
@@ -83,6 +86,9 @@ export const getPrivateKey = () => {
 
 export const getRouterConfig = (network: string) => {
   switch (network) {
+    case "localhost":
+      return routerConfig.polygon;
+
     case "mainnet":
       return routerConfig.mainnet;
     case "polygon":

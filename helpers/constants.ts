@@ -27,6 +27,8 @@ export const supportedNetworks = [
 ];
 
 export const CUSTODY_ADDRESS: AddressMap = {
+    [`localhost`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
+
     [`mainnet`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
     [`polygon`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
     [`avalanche`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
@@ -49,6 +51,8 @@ export const CUSTODY_ADDRESS: AddressMap = {
 };
 
 export const BACKED_CCIP_RECEIVER: AddressMap = {
+    [`localhost`]: `0x1b8418FE3a74e25Da72570418dffa6A2A6788494`,
+
     [`ethereumSepolia`]: `0xb5C3Ebc3Ea9A32CF7F8901f9aBD4C2109B9BaE9c`,
     [`polygonAmoy`]: `0xC336D4732C9f9D29700D599DE89fdFBAe0569623`,
     [`arbitrumSepolia`]: `0x2b7eFF082f571f4DE1afC67ee707De065d7f2Bb6`,
@@ -66,21 +70,51 @@ export const BACKED_TOKENS: BackedToken[] = [
             {
                 "network": "Ethereum",
                 "chainId": 1,
-                "address": "0x7212088a11b4d8f6fc90fbb3dfe793b45dd72323"
+                "address": "0x7212088A11b4d8f6FC90fbB3dfE793B45dd72323"
+            },
+            {
+                "network": "Polygon",
+                "chainId": 137,
+                "address": "0x7212088A11b4d8f6FC90fbB3dfE793B45dd72323"
+            },
+            {
+                "network": "Gnosis",
+                "chainId": 100,
+                "address": "0x7212088A11b4d8f6FC90fbB3dfE793B45dd72323"
+            },
+            {
+                "network": "Avalanche",
+                "chainId": 43114,
+                "address": "0x7212088A11b4d8f6FC90fbB3dfE793B45dd72323"
             }
         ]
     },
     {
-        "name": "Backed Microsoft Corp",
-        "symbol": "bMSFT",
-        "productId": 114727055,
+        "name": "Backed MicroStrategy Inc",
+        "symbol": "bMSTR",
+        "productId": 114333055,
         "decimals": 18,
         "variant": 1,
         "deployments": [
             {
                 "network": "Ethereum",
                 "chainId": 1,
-                "address": "0x374a457967ba24fd3ae66294cab08244185574b0"
+                "address": "0xaC28C9178ACc8BA4A11A29E013a3A2627086e422"
+            },
+            {
+                "network": "Polygon",
+                "chainId": 137,
+                "address": "0xaC28C9178ACc8BA4A11A29E013a3A2627086e422"
+            },
+            {
+                "network": "Gnosis",
+                "chainId": 100,
+                "address": "0xaC28C9178ACc8BA4A11A29E013a3A2627086e422"
+            },
+            {
+                "network": "Avalanche",
+                "chainId": 43114,
+                "address": "0xaC28C9178ACc8BA4A11A29E013a3A2627086e422"
             }
         ]
     },
@@ -92,8 +126,24 @@ export const BACKED_TOKENS: BackedToken[] = [
         "variant": 1,
         "deployments": [
             {
+
                 "network": "Ethereum",
                 "chainId": 1,
+                "address": "0xEbee37Aaf2905b7BdA7E3b928043862e982E8F32"
+            },
+            {
+                "network": "Polygon",
+                "chainId": 137,
+                "address": "0xEbee37Aaf2905b7BdA7E3b928043862e982E8F32"
+            },
+            {
+                "network": "Gnosis",
+                "chainId": 100,
+                "address": "0xEbee37Aaf2905b7BdA7E3b928043862e982E8F32"
+            },
+            {
+                "network": "Avalanche",
+                "chainId": 43114,
                 "address": "0xEbee37Aaf2905b7BdA7E3b928043862e982E8F32"
             }
         ]
@@ -186,7 +236,22 @@ export const BACKED_TOKENS: BackedToken[] = [
             {
                 "network": "Ethereum",
                 "chainId": 1,
-                "address": "0xa34c5e0abe843e10461e2c9586ea03e55dbcc495"
+                "address": "0xA34C5e0AbE843E10461E2C9586Ea03E55Dbcc495"
+            },
+            {
+                "network": "Polygon",
+                "chainId": 137,
+                "address": "0xA34C5e0AbE843E10461E2C9586Ea03E55Dbcc495"
+            },
+            {
+                "network": "Gnosis",
+                "chainId": 100,
+                "address": "0xA34C5e0AbE843E10461E2C9586Ea03E55Dbcc495"
+            },
+            {
+                "network": "Avalanche",
+                "chainId": 43114,
+                "address": "0xA34C5e0AbE843E10461E2C9586Ea03E55Dbcc495"
             }
         ]
     },
@@ -200,7 +265,22 @@ export const BACKED_TOKENS: BackedToken[] = [
             {
                 "network": "Ethereum",
                 "chainId": 1,
-                "address": "0x14a5f2872396802c3cc8942a39ab3e4118ee5038"
+                "address": "0x14A5f2872396802C3Cc8942A39Ab3E4118EE5038"
+            },
+            {
+                "network": "Polygon",
+                "chainId": 137,
+                "address": "0x14A5f2872396802C3Cc8942A39Ab3E4118EE5038"
+            },
+            {
+                "network": "Gnosis",
+                "chainId": 100,
+                "address": "0x14A5f2872396802C3Cc8942A39Ab3E4118EE5038"
+            },
+            {
+                "network": "Avalanche",
+                "chainId": 43114,
+                "address": "0x14A5f2872396802C3Cc8942A39Ab3E4118EE5038"
             }
         ]
     },

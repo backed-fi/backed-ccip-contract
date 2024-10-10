@@ -16,8 +16,8 @@ task(
   .setAction(
     async (taskArguments: TaskArguments, hre: HardhatRuntimeEnvironment) => {
       const privateKey = getPrivateKey();
-      const rpcProviderUrl = getProviderRpcUrl(hre.network.name);
 
+      const rpcProviderUrl = getProviderRpcUrl(hre.network.name);
       const provider = new JsonRpcProvider(rpcProviderUrl);
       const wallet = new Wallet(privateKey);
       const deployer = wallet.connect(provider);
@@ -28,6 +28,7 @@ task(
         const deployment = token.deployments.find(d => d.chainId === hre.network.config.chainId!);
         if (!deployment) {
           console.log(`🚨 Skipping deployment ${token.name} on ${hre.network.name} as it is not deployed on this network.`);
+          continue;
         }
 
         console.log(
@@ -37,7 +38,8 @@ task(
 
         const factory: BackedCCIPReceiver__factory =
           (await hre.ethers.getContractFactory(
-            "BackedCCIPReceiver"
+            "BackedCCIPReceiver",
+            deployer
           )) as BackedCCIPReceiver__factory;
 
         const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
@@ -45,7 +47,7 @@ task(
         await contract.registerToken(deployment!.address, token.productId, token.variant);
 
         console.log(
-          `✅ Token ${token} registered in BackedReceiverCCIP at tokenId: ${token.productId} on ${hre.network.name} blockchain`
+          `✅ Token ${token.name} registered in BackedReceiverCCIP at tokenId: ${token.productId} on ${hre.network.name} blockchain`
         );
       }
 
