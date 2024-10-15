@@ -51,7 +51,11 @@ export const CUSTODY_ADDRESS: AddressMap = {
 };
 
 export const BACKED_CCIP_RECEIVER: AddressMap = {
-    [`localhost`]: `0x1b8418FE3a74e25Da72570418dffa6A2A6788494`,
+    [`localhost`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
+    [`gnosis`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
+    [`polygon`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
+    [`mainnet`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
+    [`avalanche`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
 
     [`ethereumSepolia`]: `0xb5C3Ebc3Ea9A32CF7F8901f9aBD4C2109B9BaE9c`,
     [`polygonAmoy`]: `0xC336D4732C9f9D29700D599DE89fdFBAe0569623`,

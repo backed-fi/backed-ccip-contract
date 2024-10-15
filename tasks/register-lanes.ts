@@ -9,7 +9,6 @@ import {
 import { Spinner } from "../helpers/spinner";
 import { BACKED_CCIP_RECEIVER } from "../helpers/constants";
 
-const networks: string[] = [];
 
 task(
   `register-lanes`,
@@ -34,6 +33,7 @@ task(
 
       const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
       spinner.start();
+      const networks: string[] = ['mainnet', 'polygon', 'gnosis', 'avalanche'].filter(x => x !== hre.network.name);
 
       console.log(
         `ℹ️ Attempting to register lanes for ${networks.join(' ')} in BackedCCIPReceiver on the ${hre.network.name}`
@@ -46,8 +46,8 @@ task(
         console.log(
           `ℹ️  Attempting to register receiver and sender at ${backedReceiverAddress} address in BackedCCIPReceiver on the ${hre.network.name} blockchain using destination chain ${network} with selector: ${chainSelector}`
         );
-        await contract.registerDestinationChain(chainSelector, backedReceiverAddress);
-        await contract.registerSourceChain(chainSelector, backedReceiverAddress);
+        await (await contract.registerDestinationChain(chainSelector, backedReceiverAddress)).wait(2);
+        await (await contract.registerSourceChain(chainSelector, backedReceiverAddress)).wait(2);
         console.log(
           `✅ Receiver and sender at ${backedReceiverAddress} address registered in BackedReceiverCCIP at destination chain selector: ${chainSelector} on ${hre.network.name} blockchain`
         );

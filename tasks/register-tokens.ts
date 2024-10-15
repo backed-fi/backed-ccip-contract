@@ -21,11 +21,12 @@ task(
       const provider = new JsonRpcProvider(rpcProviderUrl);
       const wallet = new Wallet(privateKey);
       const deployer = wallet.connect(provider);
+      const chainID = (await provider.getNetwork()).chainId;
 
       const spinner: Spinner = new Spinner();
 
       for (let token of BACKED_TOKENS) {
-        const deployment = token.deployments.find(d => d.chainId === hre.network.config.chainId!);
+        const deployment = token.deployments.find(d => d.chainId === Number(chainID.toString()!));
         if (!deployment) {
           console.log(`🚨 Skipping deployment ${token.name} on ${hre.network.name} as it is not deployed on this network.`);
           continue;
@@ -44,7 +45,7 @@ task(
 
         const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
 
-        await contract.registerToken(deployment!.address, token.productId, token.variant);
+        await (await contract.registerToken(deployment!.address, token.productId, token.variant)).wait(2);
 
         console.log(
           `✅ Token ${token.name} registered in BackedReceiverCCIP at tokenId: ${token.productId} on ${hre.network.name} blockchain`
