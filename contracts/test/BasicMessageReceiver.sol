@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.24;
 
-import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
-import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-
+import {CCIPReceiver} from "@chainlink/contracts-ccip/contracts/applications/CCIPReceiver.sol";
+import {Client} from "@chainlink/contracts-ccip/contracts/libraries/Client.sol";
+import { Bytes } from "@openzeppelin/contracts/utils/Bytes.sol";
 /**
  * THIS IS AN EXAMPLE CONTRACT THAT USES HARDCODED VALUES FOR CLARITY.
  * THIS IS AN EXAMPLE CONTRACT THAT USES UN-AUDITED CODE.
  * DO NOT USE THIS CODE IN PRODUCTION.
  */
 contract BasicMessageReceiver is CCIPReceiver {
+    using Bytes for bytes;
     bytes32 latestMessageId;
     address tokenReceiver;
     uint64 tokenId;
@@ -30,7 +31,11 @@ contract BasicMessageReceiver is CCIPReceiver {
     ) internal override {
         latestMessageId = message.messageId;
 
-        (address _tokenReceiver, uint64 _tokenId, uint256 _amount, TokenVariant _variant, bytes memory _payload) = abi.decode(message.data, (address, uint64, uint256, TokenVariant, bytes));
+        address _tokenReceiver = address(uint160(uint256(bytes32(message.data.slice(0, 32)))));
+        uint64 _tokenId = uint64(bytes8(message.data.slice(32, 40)));
+        uint256 _amount = uint256(bytes32(message.data.slice(40, 72)));
+        TokenVariant _variant = TokenVariant(uint8(bytes1(message.data.slice(72, 73))));
+        bytes memory _payload = message.data.slice(73);
 
         tokenReceiver = _tokenReceiver;
         tokenId = _tokenId;

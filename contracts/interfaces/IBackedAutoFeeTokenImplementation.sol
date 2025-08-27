@@ -34,7 +34,7 @@
  * For more information and restrictions please refer to the issuer's [Website](https://www.backedassets.fi/legal-documentation)
  */
 
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.24;
 
 /**
  * @dev

@@ -1,14 +1,19 @@
-
 export type AddressMap = { [blockchain: string]: string };
+export type ChainVariantMap = { [blockchain: string]: bigint};
+export type ChainDefaultGasMap = { [blockchain: string]: bigint};
 export type TokenAmounts = { token: string, amount: string };
 export type BackedTokenDeployment = { network: string, chainId: number, address: string };
 export type BackedToken = { name: string, symbol: string, productId: number, decimals: number, variant: number, deployments: BackedTokenDeployment[] };
+export type LanesMap = { [blockchain: string]: string[] };
 
 export const supportedNetworks = [
     `mainnet`,
     `polygon`,
     `avalanche`,
     `gnosis`,
+    `arbitrum`,
+    'base',
+    'sonic',
 
     /// Testnets
     `ethereumSepolia`,
@@ -23,7 +28,8 @@ export const supportedNetworks = [
     `gnosisChiado`,
     `celoAlfajores`,
     `metisSepolia`,
-    `zksyncSepolia`
+    `zksyncSepolia`,
+    'solanaDevnet'
 ];
 
 export const CUSTODY_ADDRESS: AddressMap = {
@@ -32,7 +38,10 @@ export const CUSTODY_ADDRESS: AddressMap = {
     [`mainnet`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
     [`polygon`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
     [`avalanche`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
+    [`arbitrum`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
     [`gnosis`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
+    [`base`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
+    [`sonic`]: `0x5f7a4c11bde4f218f0025ef444c369d838ffa2ad`,
 
     /// Testnets
     [`ethereumSepolia`]: `0xcf8a9d1e489c58f4c3d69b45380fb4a6c03ada47`,
@@ -56,11 +65,57 @@ export const BACKED_CCIP_RECEIVER: AddressMap = {
     [`polygon`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
     [`mainnet`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
     [`avalanche`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
+    [`arbitrum`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
+    [`base`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
+    [`sonic`]: `0xBCCb121bcC240DeF73C111211F18c23b81ff8b2E`,
 
     [`ethereumSepolia`]: `0xb5C3Ebc3Ea9A32CF7F8901f9aBD4C2109B9BaE9c`,
     [`polygonAmoy`]: `0xC336D4732C9f9D29700D599DE89fdFBAe0569623`,
     [`arbitrumSepolia`]: `0x2b7eFF082f571f4DE1afC67ee707De065d7f2Bb6`,
-    [`baseSepolia`]: `0xa337fa5D85e8850F31D0E6Ad5E02b0f55A8cDDCF`
+    [`baseSepolia`]: `0xa337fa5D85e8850F31D0E6Ad5E02b0f55A8cDDCF`,
+    [`bnbChainTestnet`]: `0x5Ba05efb297c1982f64b11ba164f6e72CB36BeB2`,
+    [`solanaDevnet`]: `0x0b5a5ff109c547a0eebc03e5d8943f0c333de2549ef61324e51183cd869551c7`
+};
+
+const EVM_CHAIN_VARIANT = 0n;
+const SVM_CHAIN_VARIANT = 1n;
+
+export const CHAIN_VARIANT: ChainVariantMap = {
+    [`localhost`]: EVM_CHAIN_VARIANT,
+    [`gnosis`]: EVM_CHAIN_VARIANT,
+    [`polygon`]: EVM_CHAIN_VARIANT,
+    [`mainnet`]: EVM_CHAIN_VARIANT,
+    [`avalanche`]: EVM_CHAIN_VARIANT,
+    [`arbitrum`]: EVM_CHAIN_VARIANT,
+    [`base`]: EVM_CHAIN_VARIANT,
+    [`sonic`]: EVM_CHAIN_VARIANT,
+
+    [`ethereumSepolia`]: EVM_CHAIN_VARIANT,
+    [`polygonAmoy`]: EVM_CHAIN_VARIANT,
+    [`arbitrumSepolia`]: EVM_CHAIN_VARIANT,
+    [`baseSepolia`]: EVM_CHAIN_VARIANT,
+    [`bnbChainTestnet`]: EVM_CHAIN_VARIANT,
+    
+    [`solanaDevnet`]: SVM_CHAIN_VARIANT
+}
+
+export const CHAIN_DEFAULT_GAS: ChainDefaultGasMap = {
+    [`localhost`]: 200_000n,
+    [`gnosis`]: 200_000n,
+    [`polygon`]: 200_000n,
+    [`mainnet`]: 200_000n,
+    [`avalanche`]: 200_000n,
+    [`arbitrum`]: 200_000n,
+    [`base`]: 200_000n,
+    [`sonic`]: 200_000n,
+
+    [`ethereumSepolia`]: 200_000n,
+    [`polygonAmoy`]: 200_000n,
+    [`arbitrumSepolia`]: 200_000n,
+    [`baseSepolia`]: 200_000n,
+    [`bnbChainTestnet`]: 200_000n,
+
+    [`solanaDevnet`]: 200_000n
 }
 
 export const BACKED_TOKENS: BackedToken[] = [
@@ -90,6 +145,65 @@ export const BACKED_TOKENS: BackedToken[] = [
                 "network": "Avalanche",
                 "chainId": 43114,
                 "address": "0x7212088A11b4d8f6FC90fbB3dfE793B45dd72323"
+            },
+            {
+                "network": "Arbitrum",
+                "chainId": 42161,
+                "address": "0x7212088A11b4d8f6FC90fbB3dfE793B45dd72323"
+            },
+            {
+                "network": "Base",
+                "chainId": 8453,
+                "address": "0x7212088A11b4d8f6FC90fbB3dfE793B45dd72323"
+            },
+            {
+                "network": "Sonic",
+                "chainId": 146,
+                "address": "0x7212088A11b4d8f6FC90fbB3dfE793B45dd72323"
+            }
+        ]
+    },
+    {
+        "name": "Backed Microsoft Corp",
+        "symbol": "bMSFT",
+        "productId": 114727055,
+        "decimals": 18,
+        "variant": 1,
+        "deployments": [
+            {
+                "network": "Ethereum",
+                "chainId": 1,
+                "address": "0x374a457967ba24fd3ae66294cab08244185574b0"
+            },
+            {
+                "network": "Polygon",
+                "chainId": 137,
+                "address": "0x374a457967ba24fd3ae66294cab08244185574b0"
+            },
+            {
+                "network": "Gnosis",
+                "chainId": 100,
+                "address": "0x374a457967ba24fd3ae66294cab08244185574b0"
+            },
+            {
+                "network": "Avalanche",
+                "chainId": 43114,
+                "address": "0x374a457967ba24fd3ae66294cab08244185574b0"
+            },
+            {
+                "network": "Arbitrum",
+                "chainId": 42161,
+                "address": "0x374a457967ba24fd3ae66294cab08244185574b0"
+            },
+            {
+                "network": "Base",
+                "chainId": 8453,
+                "address": "0x374a457967ba24fd3ae66294cab08244185574b0"
+            },
+            {
+                "network": "Sonic",
+                "chainId": 146,
+                "address": "0x374a457967ba24fd3ae66294cab08244185574b0"
             }
         ]
     },
@@ -118,6 +232,21 @@ export const BACKED_TOKENS: BackedToken[] = [
             {
                 "network": "Avalanche",
                 "chainId": 43114,
+                "address": "0xaC28C9178ACc8BA4A11A29E013a3A2627086e422"
+            },
+            {
+                "network": "Arbitrum",
+                "chainId": 42161,
+                "address": "0xaC28C9178ACc8BA4A11A29E013a3A2627086e422"
+            },
+            {
+                "network": "Base",
+                "chainId": 8453,
+                "address": "0xaC28C9178ACc8BA4A11A29E013a3A2627086e422"
+            },
+            {
+                "network": "Sonic",
+                "chainId": 146,
                 "address": "0xaC28C9178ACc8BA4A11A29E013a3A2627086e422"
             }
         ]
@@ -148,6 +277,21 @@ export const BACKED_TOKENS: BackedToken[] = [
             {
                 "network": "Avalanche",
                 "chainId": 43114,
+                "address": "0xEbee37Aaf2905b7BdA7E3b928043862e982E8F32"
+            },
+            {
+                "network": "Arbitrum",
+                "chainId": 42161,
+                "address": "0xEbee37Aaf2905b7BdA7E3b928043862e982E8F32"
+            },
+            {
+                "network": "Base",
+                "chainId": 8453,
+                "address": "0xEbee37Aaf2905b7BdA7E3b928043862e982E8F32"
+            },
+            {
+                "network": "Sonic",
+                "chainId": 146,
                 "address": "0xEbee37Aaf2905b7BdA7E3b928043862e982E8F32"
             }
         ]
@@ -227,7 +371,12 @@ export const BACKED_TOKENS: BackedToken[] = [
                 "network": "Base",
                 "chainId": 8453,
                 "address": "0xc3ce78b037dda1b966d31ec7979d3f3a38571a8e"
-            }
+            },
+            {
+                "network": "Sonic",
+                "chainId": 146,
+                "address": "0x1e2c4fb7ede391d116e6b41cd0608260e8801d59"
+            },
         ]
     },
     {
@@ -255,6 +404,21 @@ export const BACKED_TOKENS: BackedToken[] = [
             {
                 "network": "Avalanche",
                 "chainId": 43114,
+                "address": "0xA34C5e0AbE843E10461E2C9586Ea03E55Dbcc495"
+            },
+            {
+                "network": "Arbitrum",
+                "chainId": 42161,
+                "address": "0xA34C5e0AbE843E10461E2C9586Ea03E55Dbcc495"
+            },
+            {
+                "network": "Base",
+                "chainId": 8453,
+                "address": "0xA34C5e0AbE843E10461E2C9586Ea03E55Dbcc495"
+            },
+            {
+                "network": "Sonic",
+                "chainId": 146,
                 "address": "0xA34C5e0AbE843E10461E2C9586Ea03E55Dbcc495"
             }
         ]
@@ -284,6 +448,21 @@ export const BACKED_TOKENS: BackedToken[] = [
             {
                 "network": "Avalanche",
                 "chainId": 43114,
+                "address": "0x14A5f2872396802C3Cc8942A39Ab3E4118EE5038"
+            },
+            {
+                "network": "Arbitrum",
+                "chainId": 42161,
+                "address": "0x14A5f2872396802C3Cc8942A39Ab3E4118EE5038"
+            },
+            {
+                "network": "Base",
+                "chainId": 8453,
+                "address": "0x14A5f2872396802C3Cc8942A39Ab3E4118EE5038"
+            },
+            {
+                "network": "Sonic",
+                "chainId": 146,
                 "address": "0x14A5f2872396802C3Cc8942A39Ab3E4118EE5038"
             }
         ]
@@ -326,6 +505,25 @@ export const BACKED_TOKENS: BackedToken[] = [
                 "address": "0xca30c93b02514f86d5c86a6e375e3a330b435fb5"
             }
         ]
+    },
+    {
+        "name": "bridgeTestName",
+        "symbol": "bridgeTestSymbol",
+        "productId": 1872080,
+        "decimals": 18,
+        "variant": 1,
+        "deployments": [
+            {
+                "network": "bnbChainTestnet",
+                "chainId": 97,
+                "address": "0x4dd1773f28aca5acd22be6bca43dba57709235b8"
+            },
+            {
+                "network": "solanaDevnet",
+                "chainId": 103,
+                "address": "tXXZsvX2tihP9chH5P2cUtGhjLB34cDtX8KFaYrYvuU"
+            }
+        ]
     }
 ]
 
@@ -343,9 +541,21 @@ export const routerConfig = {
         address: '0xF4c7E640EdA248ef95972845a62bdC74237805dB',
         chainSelector: '6433500567565415381',
     },
+    arbitrum: {
+        address: '0x141fa059441E0ca23ce184B6A78bafD2A517DdE8',
+        chainSelector: '4949039107694359620',
+    },
     gnosis: {
         address: '0x4aAD6071085df840abD9Baf1697d5D5992bDadce',
         chainSelector: '465200170687744372',
+    },
+    base: {
+        address: '0x881e3A65B4d4a04dD529061dd0071cf975F58bCD',
+        chainSelector: '15971525489660198786',
+    },
+    sonic: {
+        address: '0xB4e1Ff7882474BB93042be9AD5E1fA387949B860',
+        chainSelector: '1673871237479749969',
     },
 
     /// Testnets
@@ -401,4 +611,20 @@ export const routerConfig = {
         address: `0xA1fdA8aa9A8C4b945C45aD30647b01f07D7A0B16`,
         chainSelector: `6898391096552792247`,
     },
+    solanaDevnet: {
+        address: `Ccip842gzYHhvdDkSyi2YVCoAWPbYJoApMFzSxQroE9C`,
+        chainSelector: `16423721717087811551`,
+    },
+}
+
+
+export const lanesConfig: LanesMap = {
+    mainnet: ['polygon', 'gnosis', 'avalanche', 'arbitrum', 'base', 'sonic'],
+    polygon: ['mainnet', 'gnosis', 'avalanche', 'arbitrum', 'base'],
+    gnosis: ['mainnet', 'polygon', 'avalanche', 'arbitrum', 'base'],
+    avalanche: ['mainnet', 'polygon', 'gnosis', 'arbitrum', 'base'],
+    arbitrum: ['mainnet', 'polygon', 'gnosis', 'avalanche', 'base', 'sonic'],
+    base: ['mainnet', 'polygon', 'gnosis', 'avalanche', 'arbitrum', 'sonic'],
+    sonic: ['mainnet', 'arbitrum', 'base'],
+    bnbChainTestnet: ['solanaDevnet']
 }

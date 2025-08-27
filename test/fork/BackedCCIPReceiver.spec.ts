@@ -21,7 +21,7 @@ const token = {
 }
 
 describe("CCIP Integration", function () {
-  it("Should transfer tokens through CCIP from EOA to EOA", async function () {
+ it("Should transfer tokens through CCIP from EOA to EOA", async function () {
     const [client, systemWallet] = await hre.ethers.getSigners();
     const [source, destination] = ["baseSepolia", "arbitrumSepolia"];
 

@@ -31,12 +31,6 @@ task(
           console.log(`🚨 Skipping deployment ${token.name} on ${hre.network.name} as it is not deployed on this network.`);
           continue;
         }
-
-        console.log(
-          `ℹ️  Attempting to register token ${token.name} (variant: ${token.variant}) in BackedCCIPReceiver on the ${hre.network.name} blockchain using tokenId: ${token.productId}`
-        );
-        spinner.start();
-
         const factory: BackedCCIPReceiver__factory =
           (await hre.ethers.getContractFactory(
             "BackedCCIPReceiver",
@@ -44,6 +38,16 @@ task(
           )) as BackedCCIPReceiver__factory;
 
         const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
+        if ((await contract.tokenInfos(deployment.address)).id !== 0n) {
+          console.log(`🚨 Skipping deployment ${token.name} on ${hre.network.name} as it was already deployed on this network`);
+          continue;
+        }
+
+        console.log(
+          `ℹ️  Attempting to register token ${token.name} (variant: ${token.variant}) in BackedCCIPReceiver on the ${hre.network.name} blockchain using tokenId: ${token.productId}`
+        );
+        spinner.start();
+
 
         await (await contract.registerToken(deployment!.address, token.productId, token.variant)).wait(2);
 

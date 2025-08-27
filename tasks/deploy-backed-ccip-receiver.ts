@@ -48,7 +48,7 @@ task(
         )) as BackedCCIPReceiver__factory;
 
       const proxy =
-        await hre.upgrades.deployProxy(factory, [routerAddress, custodyWallet, gasLimit]) as unknown as BackedCCIPReceiver;
+        await hre.upgrades.deployProxy(factory, [routerAddress, custodyWallet]) as unknown as BackedCCIPReceiver;
       await proxy.waitForDeployment();
 
       const proxyAddress =

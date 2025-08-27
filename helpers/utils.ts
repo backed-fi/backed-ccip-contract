@@ -21,6 +21,15 @@ export const getProviderRpcUrl = (network: string) => {
     case "gnosis":
       rpcUrl = process.env.GNOSIS_MAINNET_RPC_URL;
       break;
+    case "arbitrum":
+      rpcUrl = process.env.ARBITRUM_MAINNET_RPC_URL;
+      break;
+    case "base":
+      rpcUrl = process.env.BASE_MAINNET_RPC_URL;
+      break;
+    case "sonic":
+      rpcUrl = process.env.SONIC_MAINNET_RPC_URL;
+      break;
 
     case "ethereumSepolia":
       rpcUrl = process.env.ETHEREUM_SEPOLIA_RPC_URL;
@@ -87,7 +96,7 @@ export const getPrivateKey = () => {
 export const getRouterConfig = (network: string) => {
   switch (network) {
     case "localhost":
-      return routerConfig.polygon;
+      return routerConfig.sonic;
 
     case "mainnet":
       return routerConfig.mainnet;
@@ -95,11 +104,19 @@ export const getRouterConfig = (network: string) => {
       return routerConfig.polygon;
     case "avalanche":
       return routerConfig.avalanche;
+    case "arbitrum":
+      return routerConfig.arbitrum;
     case "gnosis":
       return routerConfig.gnosis;
+    case "base":
+      return routerConfig.base;
+    case "sonic":
+      return routerConfig.sonic;
 
     case "ethereumSepolia":
       return routerConfig.ethereumSepolia;
+    case "solanaDevnet":
+      return routerConfig.solanaDevnet;
     case "polygonAmoy":
       return routerConfig.polygonAmoy;
     case "optimismSepolia":

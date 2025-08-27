@@ -7,7 +7,7 @@ import {
   BackedCCIPReceiver,
 } from "../typechain-types";
 import { Spinner } from "../helpers/spinner";
-import { BACKED_CCIP_RECEIVER } from "../helpers/constants";
+import { BACKED_CCIP_RECEIVER, CHAIN_DEFAULT_GAS, CHAIN_VARIANT, lanesConfig } from "../helpers/constants";
 
 
 task(
@@ -23,7 +23,6 @@ task(
       const provider = new JsonRpcProvider(rpcProviderUrl);
       const wallet = new Wallet(privateKey);
       const deployer = wallet.connect(provider);
-
       const spinner: Spinner = new Spinner();
       const factory: BackedCCIPReceiver__factory =
         (await hre.ethers.getContractFactory(
@@ -33,7 +32,7 @@ task(
 
       const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
       spinner.start();
-      const networks: string[] = ['mainnet', 'polygon', 'gnosis', 'avalanche'].filter(x => x !== hre.network.name);
+      const networks: string[] = lanesConfig[hre.network.name];
 
       console.log(
         `ℹ️ Attempting to register lanes for ${networks.join(' ')} in BackedCCIPReceiver on the ${hre.network.name}`
@@ -42,11 +41,26 @@ task(
       for (let network of networks) {
         const chainSelector = getRouterConfig(network).chainSelector;
         const backedReceiverAddress = BACKED_CCIP_RECEIVER[network];
+        const chainVariant = CHAIN_VARIANT[network];
+        const defaultGas = CHAIN_DEFAULT_GAS[network];
+        
+        if((await contract.allowlistedSourceChains(chainSelector)).toLowerCase() === backedReceiverAddress.toLowerCase()) {
+          console.log(`🚨 Skipping registering network ${network} as it was already registered on this bridge`);
+          continue;
+        }
 
         console.log(
           `ℹ️  Attempting to register receiver and sender at ${backedReceiverAddress} address in BackedCCIPReceiver on the ${hre.network.name} blockchain using destination chain ${network} with selector: ${chainSelector}`
         );
-        await (await contract.registerDestinationChain(chainSelector, backedReceiverAddress)).wait(2);
+        console.log(JSON.stringify(await Promise.all([
+          contract.interface.encodeFunctionData('registerDestinationChain',[chainSelector, backedReceiverAddress, chainVariant, defaultGas]),
+          contract.interface.encodeFunctionData('registerSourceChain',[chainSelector, backedReceiverAddress])
+        ].map(async data => ({
+          to: await contract.getAddress(),
+          value: '0',
+          data: data
+        }))), null, 2))
+        await (await contract.registerDestinationChain(chainSelector, '0x92b9865c8a6fea71902f8347014fecfbfd41f6d0fdb0f2310e3265cfc36ea5e8', chainVariant, defaultGas)).wait(2); //Allow for different address for source and destination
         await (await contract.registerSourceChain(chainSelector, backedReceiverAddress)).wait(2);
         console.log(
           `✅ Receiver and sender at ${backedReceiverAddress} address registered in BackedReceiverCCIP at destination chain selector: ${chainSelector} on ${hre.network.name} blockchain`
