@@ -44,13 +44,10 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-      chainId: 146,
-      forking: {
-        url: SONIC_MAINNET_RPC_URL!
-      },
+      chainId: 31337,
       mining: {
         auto: true,
-        interval: 1
+        interval: 1000
       }
     },
 

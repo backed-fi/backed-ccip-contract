@@ -42,10 +42,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MerkleMultiProof__factory>;
     getContractFactory(
-      name: "MockCCIPRouter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.MockCCIPRouter__factory>;
-    getContractFactory(
       name: "ConfirmedOwner",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ConfirmedOwner__factory>;
@@ -110,13 +106,13 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC165__factory>;
     getContractFactory(
+      name: "IERC165",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC165__factory>;
+    getContractFactory(
       name: "BurnMintERC677Helper",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.BurnMintERC677Helper__factory>;
-    getContractFactory(
-      name: "CCIPLocalSimulator",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.CCIPLocalSimulator__factory>;
     getContractFactory(
       name: "LinkToken",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -133,10 +129,6 @@ declare module "hardhat/types/runtime" {
       name: "Initializable",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Initializable__factory>;
-    getContractFactory(
-      name: "ERC20Upgradeable",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ERC20Upgradeable__factory>;
     getContractFactory(
       name: "ContextUpgradeable",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -173,6 +165,10 @@ declare module "hardhat/types/runtime" {
       name: "IERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC20__factory>;
+    getContractFactory(
+      name: "SafeCast",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SafeCast__factory>;
     getContractFactory(
       name: "BackedCCIPReceiver",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -242,11 +238,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.MerkleMultiProof>;
     getContractAt(
-      name: "MockCCIPRouter",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.MockCCIPRouter>;
-    getContractAt(
       name: "ConfirmedOwner",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -327,15 +318,15 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC165>;
     getContractAt(
+      name: "IERC165",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC165>;
+    getContractAt(
       name: "BurnMintERC677Helper",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.BurnMintERC677Helper>;
-    getContractAt(
-      name: "CCIPLocalSimulator",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.CCIPLocalSimulator>;
     getContractAt(
       name: "LinkToken",
       address: string | ethers.Addressable,
@@ -356,11 +347,6 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.Initializable>;
-    getContractAt(
-      name: "ERC20Upgradeable",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ERC20Upgradeable>;
     getContractAt(
       name: "ContextUpgradeable",
       address: string | ethers.Addressable,
@@ -406,6 +392,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.IERC20>;
+    getContractAt(
+      name: "SafeCast",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SafeCast>;
     getContractAt(
       name: "BackedCCIPReceiver",
       address: string | ethers.Addressable,
@@ -476,10 +467,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MerkleMultiProof>;
     deployContract(
-      name: "MockCCIPRouter",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.MockCCIPRouter>;
-    deployContract(
       name: "ConfirmedOwner",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ConfirmedOwner>;
@@ -544,13 +531,13 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC165>;
     deployContract(
+      name: "IERC165",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC165>;
+    deployContract(
       name: "BurnMintERC677Helper",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.BurnMintERC677Helper>;
-    deployContract(
-      name: "CCIPLocalSimulator",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.CCIPLocalSimulator>;
     deployContract(
       name: "LinkToken",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -567,10 +554,6 @@ declare module "hardhat/types/runtime" {
       name: "Initializable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Initializable>;
-    deployContract(
-      name: "ERC20Upgradeable",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ERC20Upgradeable>;
     deployContract(
       name: "ContextUpgradeable",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -607,6 +590,10 @@ declare module "hardhat/types/runtime" {
       name: "IERC20",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC20>;
+    deployContract(
+      name: "SafeCast",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SafeCast>;
     deployContract(
       name: "BackedCCIPReceiver",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -676,11 +663,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MerkleMultiProof>;
     deployContract(
-      name: "MockCCIPRouter",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.MockCCIPRouter>;
-    deployContract(
       name: "ConfirmedOwner",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -761,15 +743,15 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC165>;
     deployContract(
+      name: "IERC165",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC165>;
+    deployContract(
       name: "BurnMintERC677Helper",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.BurnMintERC677Helper>;
-    deployContract(
-      name: "CCIPLocalSimulator",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.CCIPLocalSimulator>;
     deployContract(
       name: "LinkToken",
       args: any[],
@@ -790,11 +772,6 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Initializable>;
-    deployContract(
-      name: "ERC20Upgradeable",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.ERC20Upgradeable>;
     deployContract(
       name: "ContextUpgradeable",
       args: any[],
@@ -840,6 +817,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC20>;
+    deployContract(
+      name: "SafeCast",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SafeCast>;
     deployContract(
       name: "BackedCCIPReceiver",
       args: any[],
