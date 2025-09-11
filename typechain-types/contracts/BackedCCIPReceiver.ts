@@ -63,6 +63,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
       | "allowlistedDestinationChains"
       | "allowlistedSourceChains"
       | "ccipReceive"
+      | "chainInfos"
       | "custodyWallet"
       | "gasLimit"
       | "getDeliveryFeeCost"
@@ -122,29 +123,36 @@ export interface BackedCCIPReceiverInterface extends Interface {
     values: [Client.Any2EVMMessageStruct]
   ): string;
   encodeFunctionData(
+    functionFragment: "chainInfos",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "custodyWallet",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: "gasLimit", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "gasLimit",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "getDeliveryFeeCost",
-    values: [BigNumberish, AddressLike, AddressLike, BigNumberish]
+    values: [BigNumberish, BytesLike, AddressLike, BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "initialize",
-    values: [AddressLike, AddressLike, BigNumberish]
+    values: [AddressLike, AddressLike]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "registerDestinationChain",
-    values: [BigNumberish, AddressLike]
+    values: [BigNumberish, BytesLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "registerSourceChain",
-    values: [BigNumberish, AddressLike]
+    values: [BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "registerToken",
@@ -168,7 +176,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "send",
-    values: [BigNumberish, AddressLike, AddressLike, BigNumberish]
+    values: [BigNumberish, BytesLike, AddressLike, BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -193,7 +201,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "updateGasLimit",
-    values: [BigNumberish]
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "withdraw",
@@ -216,6 +224,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
     functionFragment: "ccipReceive",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "chainInfos", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "custodyWallet",
     data: BytesLike
@@ -300,7 +309,7 @@ export namespace CustodyWalletUpdatedEvent {
 export namespace DestinationChainRegisteredEvent {
   export type InputTuple = [
     destinationChainSelector: BigNumberish,
-    destinationChainReceiver: AddressLike
+    destinationChainReceiver: BytesLike
   ];
   export type OutputTuple = [
     destinationChainSelector: bigint,
@@ -329,9 +338,10 @@ export namespace DestinationChainRemovedEvent {
 }
 
 export namespace GasLimitUpdatedEvent {
-  export type InputTuple = [newGasLimit: BigNumberish];
-  export type OutputTuple = [newGasLimit: bigint];
+  export type InputTuple = [chainId: BigNumberish, newGasLimit: BigNumberish];
+  export type OutputTuple = [chainId: bigint, newGasLimit: bigint];
   export interface OutputObject {
+    chainId: bigint;
     newGasLimit: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -369,7 +379,7 @@ export namespace MessageReceivedEvent {
   export type InputTuple = [
     messageId: BytesLike,
     sourceChainSelector: BigNumberish,
-    sender: AddressLike,
+    sender: BytesLike,
     token: AddressLike,
     amount: BigNumberish,
     variant: BigNumberish,
@@ -406,8 +416,8 @@ export namespace MessageSentEvent {
   export type InputTuple = [
     messageId: BytesLike,
     destinationChainSelector: BigNumberish,
-    receiver: AddressLike,
-    tokenReceiver: AddressLike,
+    receiver: BytesLike,
+    tokenReceiver: BytesLike,
     tokenId: BigNumberish,
     amount: BigNumberish,
     variant: BigNumberish,
@@ -467,7 +477,7 @@ export namespace PausedEvent {
 export namespace SourceChainRegisteredEvent {
   export type InputTuple = [
     sourceChainSelector: BigNumberish,
-    sourceChainSender: AddressLike
+    sourceChainSender: BytesLike
   ];
   export type OutputTuple = [
     sourceChainSelector: bigint,
@@ -594,16 +604,23 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
 
+  chainInfos: TypedContractMethod<
+    [arg0: BigNumberish],
+    [[bigint, bigint] & { variant: bigint; defaultGasLimit: bigint }],
+    "view"
+  >;
+
   custodyWallet: TypedContractMethod<[], [string], "view">;
 
-  gasLimit: TypedContractMethod<[], [bigint], "view">;
+  gasLimit: TypedContractMethod<[_chainId: BigNumberish], [bigint], "view">;
 
   getDeliveryFeeCost: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
-      _tokenReceiver: AddressLike,
+      _tokenReceiver: BytesLike,
       _token: AddressLike,
-      _amount: BigNumberish
+      _amount: BigNumberish,
+      _chainSpecificArgs: BytesLike
     ],
     [bigint],
     "view"
@@ -612,7 +629,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   getRouter: TypedContractMethod<[], [string], "view">;
 
   initialize: TypedContractMethod<
-    [_router: AddressLike, _custody: AddressLike, _gasLimit: BigNumberish],
+    [_router: AddressLike, _custody: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -626,14 +643,16 @@ export interface BackedCCIPReceiver extends BaseContract {
   registerDestinationChain: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
-      _destinationChainReceiver: AddressLike
+      _destinationChainReceiver: BytesLike,
+      _destinationChainVariant: BigNumberish,
+      _destinationDefaultGasLimit: BigNumberish
     ],
     [void],
     "nonpayable"
   >;
 
   registerSourceChain: TypedContractMethod<
-    [_sourceChainSelector: BigNumberish, _sourceChainSender: AddressLike],
+    [_sourceChainSelector: BigNumberish, _sourceChainSender: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -663,9 +682,10 @@ export interface BackedCCIPReceiver extends BaseContract {
   send: TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
-      _tokenReceiver: AddressLike,
+      _tokenReceiver: BytesLike,
       _token: AddressLike,
-      _amount: BigNumberish
+      _amount: BigNumberish,
+      _chainSpecificArgs: BytesLike
     ],
     [string],
     "payable"
@@ -700,7 +720,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   >;
 
   updateGasLimit: TypedContractMethod<
-    [_gasLimit: BigNumberish],
+    [_chainId: BigNumberish, _gasLimit: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -735,19 +755,27 @@ export interface BackedCCIPReceiver extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "chainInfos"
+  ): TypedContractMethod<
+    [arg0: BigNumberish],
+    [[bigint, bigint] & { variant: bigint; defaultGasLimit: bigint }],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "custodyWallet"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "gasLimit"
-  ): TypedContractMethod<[], [bigint], "view">;
+  ): TypedContractMethod<[_chainId: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "getDeliveryFeeCost"
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
-      _tokenReceiver: AddressLike,
+      _tokenReceiver: BytesLike,
       _token: AddressLike,
-      _amount: BigNumberish
+      _amount: BigNumberish,
+      _chainSpecificArgs: BytesLike
     ],
     [bigint],
     "view"
@@ -758,7 +786,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   getFunction(
     nameOrSignature: "initialize"
   ): TypedContractMethod<
-    [_router: AddressLike, _custody: AddressLike, _gasLimit: BigNumberish],
+    [_router: AddressLike, _custody: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -776,7 +804,9 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
-      _destinationChainReceiver: AddressLike
+      _destinationChainReceiver: BytesLike,
+      _destinationChainVariant: BigNumberish,
+      _destinationDefaultGasLimit: BigNumberish
     ],
     [void],
     "nonpayable"
@@ -784,7 +814,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   getFunction(
     nameOrSignature: "registerSourceChain"
   ): TypedContractMethod<
-    [_sourceChainSelector: BigNumberish, _sourceChainSender: AddressLike],
+    [_sourceChainSelector: BigNumberish, _sourceChainSender: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -820,9 +850,10 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): TypedContractMethod<
     [
       _destinationChainSelector: BigNumberish,
-      _tokenReceiver: AddressLike,
+      _tokenReceiver: BytesLike,
       _token: AddressLike,
-      _amount: BigNumberish
+      _amount: BigNumberish,
+      _chainSpecificArgs: BytesLike
     ],
     [string],
     "payable"
@@ -851,7 +882,11 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): TypedContractMethod<[_custody: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "updateGasLimit"
-  ): TypedContractMethod<[_gasLimit: BigNumberish], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [_chainId: BigNumberish, _gasLimit: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "withdraw"
   ): TypedContractMethod<[_beneficiary: AddressLike], [void], "nonpayable">;
@@ -981,7 +1016,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       CustodyWalletUpdatedEvent.OutputObject
     >;
 
-    "DestinationChainRegistered(uint64,address)": TypedContractEvent<
+    "DestinationChainRegistered(uint64,bytes32)": TypedContractEvent<
       DestinationChainRegisteredEvent.InputTuple,
       DestinationChainRegisteredEvent.OutputTuple,
       DestinationChainRegisteredEvent.OutputObject
@@ -1003,7 +1038,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       DestinationChainRemovedEvent.OutputObject
     >;
 
-    "GasLimitUpdated(uint256)": TypedContractEvent<
+    "GasLimitUpdated(uint64,uint256)": TypedContractEvent<
       GasLimitUpdatedEvent.InputTuple,
       GasLimitUpdatedEvent.OutputTuple,
       GasLimitUpdatedEvent.OutputObject
@@ -1036,7 +1071,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       InvalidMessageReceivedEvent.OutputObject
     >;
 
-    "MessageReceived(bytes32,uint64,address,address,uint256,uint8,address,bytes)": TypedContractEvent<
+    "MessageReceived(bytes32,uint64,bytes32,address,uint256,uint8,address,bytes)": TypedContractEvent<
       MessageReceivedEvent.InputTuple,
       MessageReceivedEvent.OutputTuple,
       MessageReceivedEvent.OutputObject
@@ -1047,7 +1082,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       MessageReceivedEvent.OutputObject
     >;
 
-    "MessageSent(bytes32,uint64,address,address,uint64,uint256,uint8,bytes)": TypedContractEvent<
+    "MessageSent(bytes32,uint64,bytes32,bytes32,uint64,uint256,uint8,bytes)": TypedContractEvent<
       MessageSentEvent.InputTuple,
       MessageSentEvent.OutputTuple,
       MessageSentEvent.OutputObject
@@ -1080,7 +1115,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       PausedEvent.OutputObject
     >;
 
-    "SourceChainRegistered(uint64,address)": TypedContractEvent<
+    "SourceChainRegistered(uint64,bytes32)": TypedContractEvent<
       SourceChainRegisteredEvent.InputTuple,
       SourceChainRegisteredEvent.OutputTuple,
       SourceChainRegisteredEvent.OutputObject

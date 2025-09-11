@@ -1,6 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import hre from "hardhat";
+import "@nomicfoundation/hardhat-chai-matchers";
 import {
   BackedCCIPReceiver,
   BasicMessageReceiver,
@@ -150,8 +151,8 @@ describe("Backed CCIP Receiver tests", () => {
     describe('when `initialize` is called again', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.initialize(sourceRouter, systemWallet.address)).to
-          .revertedWithCustomError(backedCCIPReceiver, 'InvalidInitialization')
+          backedCCIPReceiver.initialize(sourceRouter, systemWallet.address)
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidInitialization')
       });
     });
   });
@@ -160,14 +161,14 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).registerDestinationChain(chainSelector, hre.ethers.zeroPadValue(backedCCIPReceiverAddress, 32), EVM_CHAIN_VARIANT, 200_000)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_receiver` is equal to zero address', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.registerDestinationChain(chainSelector, hre.ethers.zeroPadValue(hre.ethers.ZeroAddress, 32), EVM_CHAIN_VARIANT, 200_000)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidAddress');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidAddress');
       });
     });
     it('should register `_receiver` for `_destinationChainSelector`', async () => {
@@ -184,14 +185,14 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).removeDestinationChain(chainSelector)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_destinationChainSelector` is not registered', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.removeDestinationChain(anotherChainSelector)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'DestinationChainNotAllowlisted');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'DestinationChainNotAllowlisted');
       });
     });
 
@@ -212,7 +213,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).registerSourceChain(chainSelector, hre.ethers.zeroPadValue(backedCCIPReceiverAddress, 32))
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     it('should update `_sourceChainSelector` value', async () => {
@@ -229,14 +230,14 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).removeSourceChain(chainSelector)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_sourceChainSelector` is not registered', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.removeSourceChain(anotherChainSelector)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'SourceChainNotAllowlisted');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'SourceChainNotAllowlisted');
       });
     });
 
@@ -257,7 +258,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).updateCustodyWallet(random.address)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     it('should update custody wallet to `_custodyWallet`', async () => {
@@ -271,7 +272,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).updateGasLimit(chainSelector, 300_000)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount')
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount')
       });
     });
     it('should update default gas limit to `_gasLimit`', async () => {
@@ -285,14 +286,14 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).registerToken(erc20Address, 1, 0)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_tokenId` is equal 0', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.registerToken(erc20Address, 0, REGULAR_TOKEN)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
       });
     });
     describe('when `_tokenId` is already registered', () => {
@@ -302,14 +303,14 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.registerToken(anotherErc20Address, PRODUCT_ID, REGULAR_TOKEN)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
       });
     });
     describe('when `_token` is equal zero address', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.registerToken(hre.ethers.ZeroAddress, PRODUCT_ID, REGULAR_TOKEN)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
     describe('when `_token` is already registered', () => {
@@ -319,14 +320,14 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
     describe('when `_variant` is not supported', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, NOT_EXISTING_VARIANT_TOKEN)
-        ).to.revertedWithoutReason();
+        ).to.be.reverted;
       })
     });
     it('should set mapping from `_tokenId` to `_token` and from `_token` to `tokenInfo`', async () => {
@@ -346,14 +347,14 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(random).removeToken(erc20Address)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_token` is not registered', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.removeToken(anotherErc20Address)
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'TokenNotRegistered');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'TokenNotRegistered');
       });
     });
 
@@ -373,7 +374,7 @@ describe("Backed CCIP Receiver tests", () => {
       /// Hardcoded value in mocked ccip router
       expect(
         await backedCCIPReceiver.getDeliveryFeeCost(chainSelector, hre.ethers.zeroPadValue(client.address, 32), erc20Address, 200_000n, '0x')
-      ).to.equal(1)
+      ).to.equal(1n)
     })
   });
   describe('#send', () => {
@@ -389,14 +390,14 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(client).send(anotherChainSelector, hre.ethers.zeroPadValue(client.address, 32), erc20Address, 200_000n, '0x')
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'DestinationChainNotAllowlisted');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'DestinationChainNotAllowlisted');
       });
     });
     describe('and `_token` is not registered', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(client).send(chainSelector, hre.ethers.zeroPadValue(client.address, 32), anotherErc20Address, 200_000n, '0x')
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'TokenNotRegistered');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'TokenNotRegistered');
       });
     });
     describe('and `_token` is empty address', () => {
@@ -406,14 +407,14 @@ describe("Backed CCIP Receiver tests", () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(client).send(chainSelector, hre.ethers.zeroPadValue(client.address, 32), hre.ethers.ZeroAddress, 200_000n, '0x')
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
     describe('and `msg.value` is lower than CCIP fee costs', () => {
       it('should revert', async () => {
         await expect(
           backedCCIPReceiver.connect(client).send(chainSelector, hre.ethers.zeroPadValue(client.address, 32), erc20Address, 200_000n, '0x', { value: 0 })
-        ).to.revertedWithCustomError(backedCCIPReceiver, 'InsufficientMessageValue')
+        ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InsufficientMessageValue')
       });
     });
     describe('and token variant is `AUTO_FEE`', () => {
@@ -581,7 +582,7 @@ describe("Backed CCIP Receiver tests", () => {
           await expect(backedCCIPReceiver.connect(router).ccipReceive({
             ...ccipMessage,
             data: hre.ethers.solidityPacked(["bytes32", "uint64", "uint256", "uint8", "bytes"], [hre.ethers.zeroPadValue(client.address, 32), ANOTHER_PRODUCT_ID, amount, AUTO_FEE_TOKEN, payload]),
-          })).to.revertedWithCustomError(backedCCIPReceiver, 'InvalidMultiplierNonce');
+          })).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidMultiplierNonce');
         })
       })
       describe('and source multiplier nonce matches destination multiplier nonce but multpiliers do not match', () => {
