@@ -250,12 +250,13 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
 
     /// @dev Removes _destinationChainSelector from the allowlist.
     /// @param _destinationChainSelector The identifier (aka selector) for the destination blockchain.
-    function removeDestinationChain(uint64 _destinationChainSelector) 
-        external 
+    function removeDestinationChain(uint64 _destinationChainSelector)
+        external
         onlyOwner
         onlyAllowlistedDestinationChain(_destinationChainSelector)
     {
         allowlistedDestinationChains[_destinationChainSelector] = bytes32(0);
+        delete chainInfos[_destinationChainSelector];
 
         emit DestinationChainRemoved(_destinationChainSelector);
     }
@@ -367,7 +368,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             payload = bytes("");
         } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
             (uint256 multiplier, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
-            payload = abi.encodePacked(multiplier, multiplierNonce);
+            payload = abi.encode(multiplier, multiplierNonce);
         } else {
             revert TokenVariantNotSupported();
         }
@@ -411,7 +412,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             payload = bytes("");
         } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
             (uint256 multiplier, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
-            payload = abi.encodePacked(multiplier, multiplierNonce);
+            payload = abi.encode(multiplier, multiplierNonce);
         }
         data = abi.encodePacked(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, payload);
 
