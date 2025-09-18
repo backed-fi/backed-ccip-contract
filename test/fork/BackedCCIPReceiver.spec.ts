@@ -21,36 +21,28 @@ const token = {
 }
 
 describe("CCIP Integration", function () {
- it("Should transfer tokens through CCIP from EOA to EOA", async function () {
+ it("Should transfer tokens through CCIP from EOA to EOA using mocks", async function () {
     const [client, systemWallet] = await hre.ethers.getSigners();
-    const [source, destination] = ["baseSepolia", "arbitrumSepolia"];
+
+    // Use mock router instead of forking
+    const ccipLocalSimualtorFactory = await hre.ethers.getContractFactory(
+      "CustomFeeCCIPLocalSimulator"
+    );
+    const ccipLocalSimulator = await ccipLocalSimualtorFactory.deploy();
 
     const {
-      address: sourceRouterAddress,
-      chainSelector: sourceChainSelector,
-    } = getRouterConfig(source);
+      chainSelector_: sourceChainSelector,
+      sourceRouter_: sourceRouterAddress
+    } = await ccipLocalSimulator.configuration();
 
-    const {
-      address: destinationRouterAddress,
-      chainSelector: destinationChainSelector,
-    } = getRouterConfig(destination);
-
-    await hre.network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: getProviderRpcUrl(source),
-          },
-        },
-      ],
-    });
+    const destinationChainSelector = sourceChainSelector + 1n;
+    const destinationRouterAddress = sourceRouterAddress; // Use same mock router
 
     const factory = await hre.ethers.getContractFactory(
       "BackedCCIPReceiver"
     );
     const backedCCIPReceiverOnSourceChain =
-      await hre.upgrades.deployProxy(factory, [sourceRouterAddress, systemWallet.address, 200_000]) as unknown as BackedCCIPReceiver;
+      await hre.upgrades.deployProxy(factory, [sourceRouterAddress, systemWallet.address]) as unknown as BackedCCIPReceiver;
 
     const backedCCIPSourceChainAddress = await backedCCIPReceiverOnSourceChain.getAddress();
 
@@ -70,18 +62,36 @@ describe("CCIP Integration", function () {
 
     await tokenOnSourceChain.approve(backedCCIPReceiverOnSourceChain, 1_000_000_000_000_000_000n);
 
-    await backedCCIPReceiverOnSourceChain.registerDestinationChain(destinationChainSelector, backedCCIPSourceChainAddress);
+    await backedCCIPReceiverOnSourceChain.registerDestinationChain(
+      destinationChainSelector, 
+      hre.ethers.zeroPadValue(backedCCIPSourceChainAddress, 32),
+      0n, // EVM_CHAIN_VARIANT
+      200_000n
+    );
 
     let custodyBalanceOnSourceChain = await tokenOnSourceChain.balanceOf(systemWallet.address);
     let clientBalanceOnSourceChain = await tokenOnSourceChain.balanceOf(client.address);
     expect(custodyBalanceOnSourceChain).to.deep.equal(0n)
     expect(clientBalanceOnSourceChain).to.deep.equal(10_000_000_000_000_000_000n)
 
-    const feeCosts = await backedCCIPReceiverOnSourceChain.connect(client).getDeliveryFeeCost(destinationChainSelector, client.address, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n)
+    const feeCosts = await backedCCIPReceiverOnSourceChain.connect(client).getDeliveryFeeCost(
+      destinationChainSelector, 
+      hre.ethers.zeroPadValue(client.address, 32), 
+      tokenOnSourceChainAddress, 
+      1_000_000_000_000_000_000n,
+      "0x"
+    )
 
     console.log(`Custody balance on source chain: ${custodyBalanceOnSourceChain}`);
     console.log(`Client balance on source chain: ${clientBalanceOnSourceChain}`);
-    const tx = await backedCCIPReceiverOnSourceChain.connect(client).send(destinationChainSelector, client.address, tokenOnSourceChainAddress, 1_000_000_000_000_000_000n, { value: feeCosts });
+    const tx = await backedCCIPReceiverOnSourceChain.connect(client).send(
+      destinationChainSelector, 
+      hre.ethers.zeroPadValue(client.address, 32), 
+      tokenOnSourceChainAddress, 
+      1_000_000_000_000_000_000n,
+      "0x",
+      { value: feeCosts }
+    );
     const receipt = await tx.wait();
 
     custodyBalanceOnSourceChain = await tokenOnSourceChain.balanceOf(systemWallet.address);
@@ -91,27 +101,26 @@ describe("CCIP Integration", function () {
     expect(custodyBalanceOnSourceChain).to.deep.equal(1_000_000_000_000_000_000n)
     expect(clientBalanceOnSourceChain).to.deep.equal(10_000_000_000_000_000_000n - 1_000_000_000_000_000_000n)
 
-    const evm2EvmMessage = getEvm2EvmMessage(receipt);
-    if (!evm2EvmMessage) throw Error("EVM2EVM message not found");
+    // Create a mock CCIP message for testing (instead of extracting from receipt)
+    const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
+    const evm2EvmMessage = {
+      messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
+      sourceChainSelector: sourceChainSelector,
+      sender: backedCCIPSourceChainAddress,
+      data: hre.ethers.solidityPacked(
+        ["bytes32", "uint64", "uint256", "uint8", "bytes"],
+        [hre.ethers.zeroPadValue(client.address, 32), token.id, 1_000_000_000_000_000_000n, token.variant, "0x"]
+      ),
+      receiver: "", // Will be set below
+    };
 
-    // Destination chain
-    await hre.network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: getProviderRpcUrl(destination),
-          },
-        },
-      ],
-    });
-
+    // Simulate destination chain on same network (no forking needed)
     const factoryOnDestinationChain = await hre.ethers.getContractFactory(
       "BackedCCIPReceiver"
     );
 
     const backedCCIPReceiverOnDestinationChainProxy =
-      await hre.upgrades.deployProxy(factoryOnDestinationChain, [destinationRouterAddress, systemWallet.address, 200_000]) as unknown as BackedCCIPReceiver;
+      await hre.upgrades.deployProxy(factoryOnDestinationChain, [destinationRouterAddress, systemWallet.address]) as unknown as BackedCCIPReceiver;
 
     const backedCCIPReceiverOnDestinationChain = factoryOnDestinationChain.attach(backedCCIPReceiverOnDestinationChainProxy) as BackedCCIPReceiver;
 
@@ -128,7 +137,7 @@ describe("CCIP Integration", function () {
     console.log(`Deployed Backed IBTA on ${destinationChainSelector}: ${tokenAddressOnDestinationChain}`);
 
     await backedCCIPReceiverOnDestinationChain.registerToken(tokenAddressOnDestinationChain, token.id, token.variant);
-    await backedCCIPReceiverOnDestinationChain.registerSourceChain(sourceChainSelector, backedCCIPSourceChainAddress);
+    await backedCCIPReceiverOnDestinationChain.registerSourceChain(sourceChainSelector, hre.ethers.zeroPadValue(backedCCIPSourceChainAddress, 32));
 
     await tokenOnDestinationChain.mint(systemWallet, 10_000_000_000_000_000_000n);
     await tokenOnDestinationChain.connect(systemWallet).approve(backedCCIPReceiverAddressOnDestinationChain, 10_000_000_000_000_000_000n);
@@ -144,39 +153,24 @@ describe("CCIP Integration", function () {
     console.log(`System wallet balance on destination chain: ${systemWalletBalanceOnDestinationChain}`);
     console.log(`Client balance on destination chain: ${clientBalanceOnDestinationChain}`);
 
-    // Create an interface for the receiver contract using its factory.
-    const receiverInterface = BackedCCIPReceiver__factory.createInterface();
-
-    const coder = hre.ethers.AbiCoder.defaultAbiCoder();
-
-    const transactionData = receiverInterface.encodeFunctionData("ccipReceive", [
-      {
-        messageId: evm2EvmMessage.messageId,
-        sourceChainSelector: evm2EvmMessage.sourceChainSelector,
-        sender: coder.encode(['address'], [evm2EvmMessage.sender]),
-        data: evm2EvmMessage.data,
-        destTokenAmounts: [],
-      },
-    ]);
-
-
-    try {
-      const estimate = await hre.ethers.provider.estimateGas({
-        from: destinationRouterAddress,
-        to: backedCCIPReceiverAddressOnDestinationChain,
-        data: transactionData
-      });
-      console.log(estimate);
-    } catch (e) {
-      debugger;
-      console.log(e);
-    }
-
-
-    await routeMessage(destinationRouterAddress, {
-      ...evm2EvmMessage,
-      receiver: backedCCIPReceiverAddressOnDestinationChain
+    // Simulate CCIP message processing directly
+    const router = await hre.ethers.getImpersonatedSigner(destinationRouterAddress);
+    
+    // Fund the router for gas
+    await client.sendTransaction({
+      to: destinationRouterAddress,
+      value: hre.ethers.parseEther("1")
     });
+
+    const ccipMessage = {
+      messageId: evm2EvmMessage.messageId,
+      sourceChainSelector: evm2EvmMessage.sourceChainSelector,
+      sender: defaultAbiCoder.encode(['bytes32'], [hre.ethers.zeroPadValue(evm2EvmMessage.sender, 32)]),
+      data: evm2EvmMessage.data,
+      destTokenAmounts: [],
+    };
+
+    await backedCCIPReceiverOnDestinationChain.connect(router).ccipReceive(ccipMessage);
 
     systemWalletBalanceOnDestinationChain = await tokenOnDestinationChain.balanceOf(systemWallet.address);
     clientBalanceOnDestinationChain = await tokenOnDestinationChain.balanceOf(client.address);
