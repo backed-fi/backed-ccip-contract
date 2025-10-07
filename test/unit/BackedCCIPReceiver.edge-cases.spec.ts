@@ -84,7 +84,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
         chainSelector, receiver, EVM_CHAIN_VARIANT, 200000n
       );
       await backedCCIPReceiver.connect(owner).registerToken(
-        await erc20.getAddress(), tokenId, REGULAR_TOKEN
+        await erc20.getAddress(), tokenId
       );
     });
 
@@ -138,11 +138,11 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       const newToken = await (await hre.ethers.getContractFactory('ERC20Mock')).deploy("Max Token", "MAX");
 
       await backedCCIPReceiver.connect(owner).registerToken(
-        await newToken.getAddress(), maxTokenId, REGULAR_TOKEN
+        await newToken.getAddress(), maxTokenId
       );
 
       const tokenInfo = await backedCCIPReceiver.tokenInfos(await newToken.getAddress());
-      expect(tokenInfo.id).to.equal(maxTokenId);
+      expect(tokenInfo).to.equal(maxTokenId);
     });
 
     it("should handle maximum gas limit values", async () => {
@@ -174,7 +174,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
         chainSelector, receiver, EVM_CHAIN_VARIANT, 200000n
       );
       await backedCCIPReceiver.connect(owner).registerToken(
-        await erc20AutoFee.getAddress(), tokenId, AUTO_FEE_TOKEN
+        await erc20AutoFee.getAddress(), tokenId
       );
 
       // Setup token balances and approvals
@@ -203,7 +203,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, AUTO_FEE_TOKEN, payload]
+          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
         ),
         destTokenAmounts: [],
       };
@@ -222,7 +222,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       ccipMessage.messageId = "0x92a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf";
       ccipMessage.data = hre.ethers.solidityPacked(
         ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-        [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, AUTO_FEE_TOKEN, payload]
+        [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
       );
 
       await expect(
@@ -253,7 +253,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, AUTO_FEE_TOKEN, payload]
+          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
         ),
         destTokenAmounts: [],
       };
@@ -281,7 +281,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, AUTO_FEE_TOKEN, payload]
+          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
         ),
         destTokenAmounts: [],
       };
@@ -318,7 +318,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, AUTO_FEE_TOKEN, payload]
+          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
         ),
         destTokenAmounts: [],
       };
@@ -380,7 +380,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       );
 
       await backedCCIPReceiver.connect(owner).registerToken(
-        await erc20.getAddress(), tokenId, REGULAR_TOKEN
+        await erc20.getAddress(), tokenId
       );
 
       await erc20.mint(client, 1000000n);
@@ -471,11 +471,11 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       const tokenId2 = 200n;
 
       // Register token
-      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, tokenId1, REGULAR_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, tokenId1);
 
       // Verify registration
       const tokenInfo1 = await backedCCIPReceiver.tokenInfos(tokenAddress);
-      expect(tokenInfo1.id).to.equal(tokenId1);
+      expect(tokenInfo1).to.equal(tokenId1);
       expect(await backedCCIPReceiver.tokens(tokenId1)).to.equal(tokenAddress);
 
       // Remove token
@@ -485,15 +485,14 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
 
       // Verify removal
       const removedTokenInfo = await backedCCIPReceiver.tokenInfos(tokenAddress);
-      expect(removedTokenInfo.id).to.equal(0n);
+      expect(removedTokenInfo).to.equal(0n);
       expect(await backedCCIPReceiver.tokens(tokenId1)).to.equal(hre.ethers.ZeroAddress);
 
       // Re-register with different ID and variant
-      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, tokenId2, AUTO_FEE_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, tokenId2);
 
       const tokenInfo2 = await backedCCIPReceiver.tokenInfos(tokenAddress);
-      expect(tokenInfo2.id).to.equal(tokenId2);
-      expect(tokenInfo2.variant).to.equal(AUTO_FEE_TOKEN);
+      expect(tokenInfo2).to.equal(tokenId2);
       expect(await backedCCIPReceiver.tokens(tokenId2)).to.equal(tokenAddress);
     });
 
@@ -511,15 +510,14 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
 
         await backedCCIPReceiver.connect(owner).registerToken(
           await token.getAddress(),
-          tokenId,
-          i % 2 === 0 ? AUTO_FEE_TOKEN : REGULAR_TOKEN
+          tokenId
         );
       }
 
       // Verify all registrations
       for (let i = 0; i < tokens.length; i++) {
         const tokenInfo = await backedCCIPReceiver.tokenInfos(await tokens[i].getAddress());
-        expect(tokenInfo.id).to.equal(tokenIds[i]);
+        expect(tokenInfo).to.equal(tokenIds[i]);
         expect(await backedCCIPReceiver.tokens(tokenIds[i])).to.equal(await tokens[i].getAddress());
       }
 
@@ -532,9 +530,9 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       for (let i = 0; i < tokens.length; i++) {
         const tokenInfo = await backedCCIPReceiver.tokenInfos(await tokens[i].getAddress());
         if (i % 2 === 0) {
-          expect(tokenInfo.id).to.equal(0n); // Removed
+          expect(tokenInfo).to.equal(0n); // Removed
         } else {
-          expect(tokenInfo.id).to.equal(tokenIds[i]); // Still registered
+          expect(tokenInfo).to.equal(tokenIds[i]); // Still registered
         }
       }
     });
@@ -585,14 +583,14 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       const receiver = hre.ethers.zeroPadValue("0x1234567890abcdef1234567890abcdef12345678", 32);
 
       await backedCCIPReceiver.connect(owner).registerSourceChain(chainSelector, receiver);
-      await backedCCIPReceiver.connect(owner).registerToken(await erc20.getAddress(), 1337n, REGULAR_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(await erc20.getAddress(), 1337n);
 
       // Create very long payload
       const longPayload = "0x" + "ff".repeat(10000); // 10KB of data
 
       const longData = hre.ethers.solidityPacked(
         ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-        [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, REGULAR_TOKEN, longPayload]
+        [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, longPayload]
       );
 
       const ccipMessage: Client.Any2EVMMessageStruct = {
@@ -623,15 +621,14 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
         chainSelector, receiver, EVM_CHAIN_VARIANT, 200000n
       );
       await backedCCIPReceiver.connect(owner).registerSourceChain(chainSelector, receiver);
-      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1337n, REGULAR_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1337n);
 
       // Verify state before "upgrade"
       expect(await backedCCIPReceiver.allowlistedDestinationChains(chainSelector)).to.equal(receiver);
       expect(await backedCCIPReceiver.allowlistedSourceChains(chainSelector)).to.equal(receiver);
 
       const tokenInfo = await backedCCIPReceiver.tokenInfos(tokenAddress);
-      expect(tokenInfo.id).to.equal(1337n);
-      expect(tokenInfo.variant).to.equal(REGULAR_TOKEN);
+      expect(tokenInfo).to.equal(1337n);
 
       const chainInfo = await backedCCIPReceiver.chainInfos(chainSelector);
       expect(chainInfo.variant).to.equal(EVM_CHAIN_VARIANT);

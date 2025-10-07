@@ -101,7 +101,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
       const tokenAddress = await erc20.getAddress();
       
       await expect(
-        backedCCIPReceiver.connect(attacker).registerToken(tokenAddress, 1n, REGULAR_TOKEN)
+        backedCCIPReceiver.connect(attacker).registerToken(tokenAddress, 1n)
       ).to.be.revertedWithCustomError(backedCCIPReceiver, "OwnableUnauthorizedAccount");
     });
 
@@ -162,7 +162,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
 
     it("should reject zero address for token registration", async () => {
       await expect(
-        backedCCIPReceiver.connect(owner).registerToken(hre.ethers.ZeroAddress, 1n, REGULAR_TOKEN)
+        backedCCIPReceiver.connect(owner).registerToken(hre.ethers.ZeroAddress, 1n)
       ).to.be.revertedWithCustomError(backedCCIPReceiver, "InvalidTokenAddress");
     });
 
@@ -170,7 +170,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
       const tokenAddress = await erc20.getAddress();
       
       await expect(
-        backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 0n, REGULAR_TOKEN)
+        backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 0n)
       ).to.be.revertedWithCustomError(backedCCIPReceiver, "InvalidTokenId");
     });
 
@@ -179,20 +179,20 @@ describe("Backed CCIP Receiver - Security Tests", () => {
       const tokenAddress2 = await erc20AutoFee.getAddress();
       const tokenId = 1337n;
 
-      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress1, tokenId, REGULAR_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress1, tokenId);
 
       await expect(
-        backedCCIPReceiver.connect(owner).registerToken(tokenAddress2, tokenId, REGULAR_TOKEN)
+        backedCCIPReceiver.connect(owner).registerToken(tokenAddress2, tokenId)
       ).to.be.revertedWithCustomError(backedCCIPReceiver, "InvalidTokenId");
     });
 
     it("should reject duplicate token address registration", async () => {
       const tokenAddress = await erc20.getAddress();
 
-      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1n, REGULAR_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1n);
 
       await expect(
-        backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 2n, REGULAR_TOKEN)
+        backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 2n)
       ).to.be.revertedWithCustomError(backedCCIPReceiver, "InvalidTokenAddress");
     });
   });
@@ -214,7 +214,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
       const receiver = hre.ethers.zeroPadValue("0x1234567890abcdef1234567890abcdef12345678", 32);
       
       await backedCCIPReceiver.connect(owner).registerSourceChain(chainSelector, receiver);
-      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1337n, REGULAR_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1337n);
       
       // Mint tokens to custody wallet and approve
       await erc20.mint(systemWallet, 1000000n);
@@ -232,7 +232,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), 1337n, bridgeAmount, REGULAR_TOKEN, "0x"]
+          [hre.ethers.zeroPadValue(client.address, 32), 1337n, bridgeAmount, "0x"]
         ),
         destTokenAmounts: [],
       };
@@ -264,7 +264,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
       const receiver = hre.ethers.zeroPadValue("0x1234567890abcdef1234567890abcdef12345678", 32);
       
       await backedCCIPReceiver.connect(owner).registerSourceChain(chainSelector, receiver);
-      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1337n, REGULAR_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1337n);
       
       await erc20.mint(systemWallet, 1000000n);
       await erc20.connect(systemWallet).approve(await backedCCIPReceiver.getAddress(), 1000000n);
@@ -280,7 +280,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, REGULAR_TOKEN, "0x"]
+          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, "0x"]
         ),
         destTokenAmounts: [],
       };
@@ -301,7 +301,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, REGULAR_TOKEN, "0x"]
+          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, "0x"]
         ),
         destTokenAmounts: [],
       };
@@ -323,7 +323,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [unauthorizedSender]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, REGULAR_TOKEN, "0x"]
+          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, "0x"]
         ),
         destTokenAmounts: [],
       };
@@ -346,7 +346,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), unregisteredTokenId, 100000n, REGULAR_TOKEN, "0x"]
+          [hre.ethers.zeroPadValue(client.address, 32), unregisteredTokenId, 100000n, "0x"]
         ),
         destTokenAmounts: [],
       };
@@ -368,7 +368,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.ZeroHash, 1337n, 100000n, REGULAR_TOKEN, "0x"]
+          [hre.ethers.ZeroHash, 1337n, 100000n, "0x"]
         ),
         destTokenAmounts: [],
       };
@@ -391,7 +391,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, AUTO_FEE_TOKEN, "0x"]
+          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, "0x"]
         ),
         destTokenAmounts: [],
       };
@@ -421,7 +421,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
       const receiver = hre.ethers.zeroPadValue("0x1234567890abcdef1234567890abcdef12345678", 32);
       
       await backedCCIPReceiver.connect(owner).registerSourceChain(chainSelector, receiver);
-      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, tokenId, AUTO_FEE_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, tokenId);
       
       await erc20AutoFee.mint(systemWallet, 1000000n);
       await erc20AutoFee.connect(systemWallet).approve(await backedCCIPReceiver.getAddress(), 1000000n);
@@ -450,7 +450,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, 100000n, AUTO_FEE_TOKEN, payload]
+          [hre.ethers.zeroPadValue(client.address, 32), tokenId, 100000n, payload]
         ),
         destTokenAmounts: [],
       };
@@ -483,7 +483,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, 100000n, AUTO_FEE_TOKEN, payload]
+          [hre.ethers.zeroPadValue(client.address, 32), tokenId, 100000n, payload]
         ),
         destTokenAmounts: [],
       };
@@ -504,7 +504,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
       await backedCCIPReceiver.connect(owner).registerDestinationChain(
         chainSelector, receiver, EVM_CHAIN_VARIANT, 200000n
       );
-      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1337n, REGULAR_TOKEN);
+      await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, 1337n);
       
       await erc20.mint(client, 1000000n);
       await erc20.connect(client).approve(await backedCCIPReceiver.getAddress(), 1000000n);
@@ -568,7 +568,7 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
           ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, REGULAR_TOKEN, "0x"]
+          [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, "0x"]
         ),
         destTokenAmounts: [],
       };

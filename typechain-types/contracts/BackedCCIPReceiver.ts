@@ -156,7 +156,7 @@ export interface BackedCCIPReceiverInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "registerToken",
-    values: [AddressLike, BigNumberish, BigNumberish]
+    values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "removeDestinationChain",
@@ -381,30 +381,24 @@ export namespace MessageReceivedEvent {
     sourceChainSelector: BigNumberish,
     sender: BytesLike,
     token: AddressLike,
-    amount: BigNumberish,
-    variant: BigNumberish,
-    tokenReceiver: AddressLike,
-    payload: BytesLike
+    sharesAmount: BigNumberish,
+    tokenReceiver: AddressLike
   ];
   export type OutputTuple = [
     messageId: string,
     sourceChainSelector: bigint,
     sender: string,
     token: string,
-    amount: bigint,
-    variant: bigint,
-    tokenReceiver: string,
-    payload: string
+    sharesAmount: bigint,
+    tokenReceiver: string
   ];
   export interface OutputObject {
     messageId: string;
     sourceChainSelector: bigint;
     sender: string;
     token: string;
-    amount: bigint;
-    variant: bigint;
+    sharesAmount: bigint;
     tokenReceiver: string;
-    payload: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -419,9 +413,7 @@ export namespace MessageSentEvent {
     receiver: BytesLike,
     tokenReceiver: BytesLike,
     tokenId: BigNumberish,
-    amount: BigNumberish,
-    variant: BigNumberish,
-    payload: BytesLike
+    sharesAmount: BigNumberish
   ];
   export type OutputTuple = [
     messageId: string,
@@ -429,9 +421,7 @@ export namespace MessageSentEvent {
     receiver: string,
     tokenReceiver: string,
     tokenId: bigint,
-    amount: bigint,
-    variant: bigint,
-    payload: string
+    sharesAmount: bigint
   ];
   export interface OutputObject {
     messageId: string;
@@ -439,9 +429,7 @@ export namespace MessageSentEvent {
     receiver: string;
     tokenReceiver: string;
     tokenId: bigint;
-    amount: bigint;
-    variant: bigint;
-    payload: string;
+    sharesAmount: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -658,7 +646,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   >;
 
   registerToken: TypedContractMethod<
-    [_token: AddressLike, _tokenId: BigNumberish, _variant: BigNumberish],
+    [_token: AddressLike, _tokenId: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -697,11 +685,7 @@ export interface BackedCCIPReceiver extends BaseContract {
     "view"
   >;
 
-  tokenInfos: TypedContractMethod<
-    [arg0: AddressLike],
-    [[bigint, bigint] & { id: bigint; variant: bigint }],
-    "view"
-  >;
+  tokenInfos: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
 
   tokens: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
 
@@ -821,7 +805,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   getFunction(
     nameOrSignature: "registerToken"
   ): TypedContractMethod<
-    [_token: AddressLike, _tokenId: BigNumberish, _variant: BigNumberish],
+    [_token: AddressLike, _tokenId: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -863,11 +847,7 @@ export interface BackedCCIPReceiver extends BaseContract {
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "tokenInfos"
-  ): TypedContractMethod<
-    [arg0: AddressLike],
-    [[bigint, bigint] & { id: bigint; variant: bigint }],
-    "view"
-  >;
+  ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
   getFunction(
     nameOrSignature: "tokens"
   ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
@@ -1071,7 +1051,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       InvalidMessageReceivedEvent.OutputObject
     >;
 
-    "MessageReceived(bytes32,uint64,bytes32,address,uint256,uint8,address,bytes)": TypedContractEvent<
+    "MessageReceived(bytes32,uint64,bytes32,address,uint256,address)": TypedContractEvent<
       MessageReceivedEvent.InputTuple,
       MessageReceivedEvent.OutputTuple,
       MessageReceivedEvent.OutputObject
@@ -1082,7 +1062,7 @@ export interface BackedCCIPReceiver extends BaseContract {
       MessageReceivedEvent.OutputObject
     >;
 
-    "MessageSent(bytes32,uint64,bytes32,bytes32,uint64,uint256,uint8,bytes)": TypedContractEvent<
+    "MessageSent(bytes32,uint64,bytes32,bytes32,uint64,uint256)": TypedContractEvent<
       MessageSentEvent.InputTuple,
       MessageSentEvent.OutputTuple,
       MessageSentEvent.OutputObject

@@ -56,7 +56,7 @@ describe("CCIP Integration", function () {
 
     console.log(`Deployed Backed IBTA on ${sourceChainSelector}: ${tokenOnSourceChainAddress}`);
 
-    await backedCCIPReceiverOnSourceChain.registerToken(tokenOnSourceChainAddress, token.id, token.variant);
+    await backedCCIPReceiverOnSourceChain.registerToken(tokenOnSourceChainAddress, token.id);
 
     await tokenOnSourceChain.mint(client, 10_000_000_000_000_000_000n);
 
@@ -136,7 +136,7 @@ describe("CCIP Integration", function () {
 
     console.log(`Deployed Backed IBTA on ${destinationChainSelector}: ${tokenAddressOnDestinationChain}`);
 
-    await backedCCIPReceiverOnDestinationChain.registerToken(tokenAddressOnDestinationChain, token.id, token.variant);
+    await backedCCIPReceiverOnDestinationChain.registerToken(tokenAddressOnDestinationChain, token.id);
     await backedCCIPReceiverOnDestinationChain.registerSourceChain(sourceChainSelector, hre.ethers.zeroPadValue(backedCCIPSourceChainAddress, 32));
 
     await tokenOnDestinationChain.mint(systemWallet, 10_000_000_000_000_000_000n);

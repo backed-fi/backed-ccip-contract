@@ -285,63 +285,62 @@ describe("Backed CCIP Receiver tests", () => {
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.connect(random).registerToken(erc20Address, 1, 0)
+          backedCCIPReceiver.connect(random).registerToken(erc20Address, 1)
         ).to.be.revertedWithCustomError(backedCCIPReceiver, 'OwnableUnauthorizedAccount');
       });
     });
     describe('when `_tokenId` is equal 0', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(erc20Address, 0, REGULAR_TOKEN)
+          backedCCIPReceiver.registerToken(erc20Address, 0)
         ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
       });
     });
     describe('when `_tokenId` is already registered', () => {
       beforeEach(async () => {
-        await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
+        await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID);
       })
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(anotherErc20Address, PRODUCT_ID, REGULAR_TOKEN)
+          backedCCIPReceiver.registerToken(anotherErc20Address, PRODUCT_ID)
         ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenId');
       });
     });
     describe('when `_token` is equal zero address', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(hre.ethers.ZeroAddress, PRODUCT_ID, REGULAR_TOKEN)
+          backedCCIPReceiver.registerToken(hre.ethers.ZeroAddress, PRODUCT_ID)
         ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
     describe('when `_token` is already registered', () => {
       beforeEach(async () => {
-        await backedCCIPReceiver.registerToken(erc20Address, ANOTHER_PRODUCT_ID, REGULAR_TOKEN);
+        await backedCCIPReceiver.registerToken(erc20Address, ANOTHER_PRODUCT_ID);
       })
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN)
+          backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID)
         ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
     describe('when `_variant` is not supported', () => {
       it('should revert', async () => {
         await expect(
-          backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, NOT_EXISTING_VARIANT_TOKEN)
+          backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID)
         ).to.be.reverted;
       })
     });
     it('should set mapping from `_tokenId` to `_token` and from `_token` to `tokenInfo`', async () => {
-      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
-      const [tokenId, variant] = await backedCCIPReceiver.tokenInfos(erc20Address)
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID);
+      const tokenId = await backedCCIPReceiver.tokenInfos(erc20Address)
 
       expect(tokenId).to.eq(PRODUCT_ID);
-      expect(variant).to.eq(REGULAR_TOKEN);
       expect(await backedCCIPReceiver.tokens(PRODUCT_ID)).to.be.equal(erc20Address);
     });
   });
   describe('#removeToken', () => {
     beforeEach(async () => {
-      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID);
     })
     describe('when `msg.sender` is not owner', () => {
       it('should revert', async () => {
@@ -359,12 +358,12 @@ describe("Backed CCIP Receiver tests", () => {
     });
 
     it('should remove token', async () => {
-      let [tokenId] = await backedCCIPReceiver.tokenInfos(erc20Address);
+      let tokenId = await backedCCIPReceiver.tokenInfos(erc20Address);
 
       expect(tokenId).to.deep.equal(PRODUCT_ID);
 
       await backedCCIPReceiver.removeToken(erc20Address);
-      [tokenId] = await backedCCIPReceiver.tokenInfos(erc20Address);
+      tokenId = await backedCCIPReceiver.tokenInfos(erc20Address);
 
       expect(tokenId).to.deep.equal(0);
     });
@@ -380,8 +379,8 @@ describe("Backed CCIP Receiver tests", () => {
   describe('#send', () => {
     beforeEach(async () => {
       await backedCCIPReceiver.registerDestinationChain(chainSelector, hre.ethers.zeroPadValue(basicReceiverAddress, 32), EVM_CHAIN_VARIANT, 200_000);
-      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
-      await backedCCIPReceiver.registerToken(erc20AutoFeeAddress, ANOTHER_PRODUCT_ID, AUTO_FEE_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID);
+      await backedCCIPReceiver.registerToken(erc20AutoFeeAddress, ANOTHER_PRODUCT_ID);
 
       await erc20.connect(client).approve(backedCCIPReceiverAddress, INITIAL_BALANCE);
       await erc20AutoFee.connect(client).approve(backedCCIPReceiverAddress, INITIAL_BALANCE / 2n);
@@ -472,15 +471,15 @@ describe("Backed CCIP Receiver tests", () => {
         messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
         sourceChainSelector: chainSelector,
         sender: defaultAbiCoder.encode(["address"], [backedCCIPReceiverAddress]),
-        data: hre.ethers.solidityPacked(["bytes32", "uint64", "uint256", "uint8", "bytes"], [hre.ethers.zeroPadValue(client.address, 32), PRODUCT_ID, bridgeAmount, REGULAR_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
+        data: hre.ethers.solidityPacked(["bytes32", "uint64", "uint256", "uint8", "bytes"], [hre.ethers.zeroPadValue(client.address, 32), PRODUCT_ID, bridgeAmount, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
         destTokenAmounts: [],
       };
       router = await hre.ethers.getImpersonatedSigner(sourceRouter);
 
       await backedCCIPReceiver.registerSourceChain(chainSelector, hre.ethers.zeroPadValue(backedCCIPReceiverAddress, 32));
 
-      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID, REGULAR_TOKEN);
-      await backedCCIPReceiver.registerToken(erc20AutoFeeAddress, ANOTHER_PRODUCT_ID, AUTO_FEE_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20Address, PRODUCT_ID);
+      await backedCCIPReceiver.registerToken(erc20AutoFeeAddress, ANOTHER_PRODUCT_ID);
 
       await erc20.mint(systemWallet, INITIAL_BALANCE);
       await erc20.connect(systemWallet).approve(backedCCIPReceiver, INITIAL_BALANCE);
@@ -519,7 +518,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should emit `InvalidMessageReceived` with `TOKEN_NOT_REGISTERED`', async () => {
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
-          data: hre.ethers.solidityPacked(["bytes32", "uint64", "uint256", "uint8", "bytes"], [hre.ethers.zeroPadValue(client.address, 32), 2, 200_000n, REGULAR_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
+          data: hre.ethers.solidityPacked(["bytes32", "uint64", "uint256", "uint8", "bytes"], [hre.ethers.zeroPadValue(client.address, 32), 2, 200_000n, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
         }))
           .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
           .withArgs(ccipMessage.messageId, 2)
@@ -529,7 +528,7 @@ describe("Backed CCIP Receiver tests", () => {
       it('should emit `InvalidMessageReceived` with `TOKEN_RECEIVER_INVALID`', async () => {
         await expect(backedCCIPReceiver.connect(router).ccipReceive({
           ...ccipMessage,
-          data: hre.ethers.solidityPacked(["bytes32", "uint64", "uint256", "uint8", "bytes"], [hre.ethers.zeroPadValue(hre.ethers.ZeroAddress, 32), PRODUCT_ID, 200_000n, REGULAR_TOKEN, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
+          data: hre.ethers.solidityPacked(["bytes32", "uint64", "uint256", "uint8", "bytes"], [hre.ethers.zeroPadValue(hre.ethers.ZeroAddress, 32), PRODUCT_ID, 200_000n, defaultAbiCoder.encode(["bytes"], ["0x"])]), // no data
         }))
           .to.emit(backedCCIPReceiver, 'InvalidMessageReceived')
           .withArgs(ccipMessage.messageId, 3)

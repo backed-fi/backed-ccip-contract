@@ -50,12 +50,12 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
       EVM_CHAIN_VARIANT,
       200_000n
     );
-    await sourceChainReceiver.registerToken(await sourceToken.getAddress(), tokenId, REGULAR_TOKEN);
+    await sourceChainReceiver.registerToken(await sourceToken.getAddress(), tokenId);
     await destinationChainReceiver.registerSourceChain(
       chainSelector,
       hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)
     );
-    await destinationChainReceiver.registerToken(await destinationToken.getAddress(), tokenId, REGULAR_TOKEN);
+    await destinationChainReceiver.registerToken(await destinationToken.getAddress(), tokenId);
 
     // Setup balances
     await sourceToken.mint(client, 10_000_000_000_000_000_000n);
@@ -141,19 +141,19 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
       EVM_CHAIN_VARIANT,
       200_000n
     );
-    await sourceChainReceiver.registerToken(await sourceAutoFeeToken.getAddress(), tokenId, AUTO_FEE_TOKEN);
+    await sourceChainReceiver.registerToken(await sourceAutoFeeToken.getAddress(), tokenId);
     await destinationChainReceiver.registerSourceChain(
       chainSelector,
       hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)
     );
-    await destinationChainReceiver.registerToken(await destinationAutoFeeToken.getAddress(), tokenId, AUTO_FEE_TOKEN);
+    await destinationChainReceiver.registerToken(await destinationAutoFeeToken.getAddress(), tokenId);
 
     // Test the integration completes without reverting
     const sourceTokenInfo = await sourceChainReceiver.tokenInfos(await sourceAutoFeeToken.getAddress());
     const destTokenInfo = await destinationChainReceiver.tokenInfos(await destinationAutoFeeToken.getAddress());
 
-    expect(sourceTokenInfo.variant).to.equal(AUTO_FEE_TOKEN);
-    expect(destTokenInfo.variant).to.equal(AUTO_FEE_TOKEN);
+    expect(sourceTokenInfo).to.equal(tokenId);
+    expect(destTokenInfo).to.equal(tokenId);
   });
 
   it("Should handle multiple token types in single integration", async function () {
@@ -171,17 +171,15 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     const autoFeeToken = await autoFeeTokenFactory.deploy("Auto Fee Token", "AUTO");
 
     // Register different token types
-    await receiver.registerToken(await regularToken.getAddress(), 100n, REGULAR_TOKEN);
-    await receiver.registerToken(await autoFeeToken.getAddress(), 200n, AUTO_FEE_TOKEN);
+    await receiver.registerToken(await regularToken.getAddress(), 100n);
+    await receiver.registerToken(await autoFeeToken.getAddress(), 200n);
 
     // Verify both types registered correctly
     const regularTokenInfo = await receiver.tokenInfos(await regularToken.getAddress());
     const autoFeeTokenInfo = await receiver.tokenInfos(await autoFeeToken.getAddress());
 
-    expect(regularTokenInfo.variant).to.equal(REGULAR_TOKEN);
-    expect(autoFeeTokenInfo.variant).to.equal(AUTO_FEE_TOKEN);
-    expect(regularTokenInfo.id).to.equal(100n);
-    expect(autoFeeTokenInfo.id).to.equal(200n);
+    expect(regularTokenInfo).to.equal(100n);
+    expect(autoFeeTokenInfo).to.equal(200n);
   });
 
   it("Should handle chain variant configurations", async function () {
@@ -254,7 +252,7 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     const tokenFactory = await hre.ethers.getContractFactory('ERC20Mock');
     const token = await tokenFactory.deploy("Test Token", "TEST");
 
-    await receiver.registerToken(await token.getAddress(), 1337n, REGULAR_TOKEN);
+    await receiver.registerToken(await token.getAddress(), 1337n);
     await receiver.registerDestinationChain(
       chainSelector + 1n,
       hre.ethers.zeroPadValue("0x1111111111111111111111111111111111111111", 32),
@@ -273,8 +271,7 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     const postUpgradeTokenInfo = await receiver.tokenInfos(await token.getAddress());
     const postUpgradeChainInfo = await receiver.chainInfos(chainSelector + 1n);
 
-    expect(postUpgradeTokenInfo.id).to.equal(initialTokenInfo.id);
-    expect(postUpgradeTokenInfo.variant).to.equal(initialTokenInfo.variant);
+    expect(postUpgradeTokenInfo).to.equal(initialTokenInfo);
     expect(postUpgradeChainInfo.variant).to.equal(initialChainInfo.variant);
     expect(postUpgradeChainInfo.defaultGasLimit).to.equal(initialChainInfo.defaultGasLimit);
   });

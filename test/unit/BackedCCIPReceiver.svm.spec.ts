@@ -148,7 +148,7 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
         SVM_CHAIN_VARIANT,
         defaultGasLimit
       );
-      await backedCCIPReceiver.registerToken(erc20Address, tokenId, REGULAR_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20Address, tokenId);
     });
 
     it("should calculate delivery fees for SVM destination with proper chain-specific args", async () => {
@@ -233,7 +233,7 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
         SVM_CHAIN_VARIANT,
         defaultGasLimit
       );
-      await backedCCIPReceiver.registerToken(erc20Address, tokenId, REGULAR_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20Address, tokenId);
       await erc20.connect(client).approve(await backedCCIPReceiver.getAddress(), transferAmount);
     });
 
@@ -314,7 +314,7 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
         defaultGasLimit
       );
 
-      await backedCCIPReceiver.registerToken(erc20Address, tokenId, REGULAR_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20Address, tokenId);
     });
 
     it("should handle both EVM and SVM chain registrations", async () => {
@@ -380,7 +380,7 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
     });
 
     it("should reject invalid chain-specific args format", async () => {
-      await backedCCIPReceiver.registerToken(erc20Address, 1337n, REGULAR_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20Address, 1337n);
       await erc20.connect(client).approve(await backedCCIPReceiver.getAddress(), 100000n);
 
       // Invalid chain-specific args (missing required fields)
@@ -430,7 +430,7 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
       );
 
       // This should not revert for fee calculation
-      await backedCCIPReceiver.registerToken(erc20Address, 1337n, REGULAR_TOKEN);
+      await backedCCIPReceiver.registerToken(erc20Address, 1337n);
       
       const feeCost = await backedCCIPReceiver.getDeliveryFeeCost(
         chainSelector,
