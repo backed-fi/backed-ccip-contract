@@ -7,8 +7,6 @@ import {
 } from "../../typechain-types";
 
 const EVM_CHAIN_VARIANT = 0n;
-const REGULAR_TOKEN = 0n;
-const AUTO_FEE_TOKEN = 1n;
 
 describe("CCIP Integration - Cross-Chain Tests", function () {
   async function deployFixture() {
@@ -27,7 +25,7 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     return { client, systemWallet, chainSelector, router };
   }
 
-  it("Should complete end-to-end regular token transfer", async function () {
+  it("Should complete end-to-end auto fee token transfer using shares", async function () {
     const { client, systemWallet, chainSelector, router } = await loadFixture(deployFixture);
 
     // Deploy contracts
@@ -35,8 +33,8 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     const sourceChainReceiver = await hre.upgrades.deployProxy(factory, [router, systemWallet.address]) as unknown as BackedCCIPReceiver;
     const destinationChainReceiver = await hre.upgrades.deployProxy(factory, [router, systemWallet.address]) as unknown as BackedCCIPReceiver;
 
-    // Deploy tokens
-    const tokenFactory = await hre.ethers.getContractFactory('ERC20Mock');
+    // Deploy auto fee tokens (shares-based)
+    const tokenFactory = await hre.ethers.getContractFactory('ERC20AutoFeeMock');
     const sourceToken = await tokenFactory.deploy("Test Token", "TEST");
     const destinationToken = await tokenFactory.deploy("Test Token", "TEST");
 
@@ -81,38 +79,42 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
       { value: feeCosts }
     );
 
-    // Simulate CCIP processing
+    // Simulate CCIP processing with new shares-based message format
     const router_signer = await hre.ethers.getImpersonatedSigner(router);
     await client.sendTransaction({ to: router, value: hre.ethers.parseEther("1") });
+
+    // Get shares amount for the transfer (1:1 for default multiplier)
+    const sharesAmount = await sourceToken.getSharesByUnderlyingAmount(transferAmount);
 
     const ccipMessage = {
       messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
       sourceChainSelector: chainSelector,
       sender: hre.ethers.AbiCoder.defaultAbiCoder().encode(['bytes32'], [hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)]),
       data: hre.ethers.solidityPacked(
-        ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-        [hre.ethers.zeroPadValue(client.address, 32), tokenId, transferAmount, REGULAR_TOKEN, "0x"]
+        ["bytes32", "uint64", "uint256"],
+        [hre.ethers.zeroPadValue(client.address, 32), tokenId, sharesAmount]
       ),
       destTokenAmounts: [],
     };
 
     await destinationChainReceiver.connect(router_signer).ccipReceive(ccipMessage);
 
-    // Verify transfer completed
+    // Verify transfer completed with exact amounts
     const sourceCustodyBalance = await sourceToken.balanceOf(systemWallet.address);
     const destCustodyBalance = await destinationToken.balanceOf(systemWallet.address);
     const clientDestBalance = await destinationToken.balanceOf(client.address);
 
-    // Verify the core functionality works (tokens moved correctly)
-    expect(sourceCustodyBalance).to.equal(transferAmount); // Source custody received tokens from client
-    expect(clientDestBalance).to.be.greaterThan(0n); // Client received tokens on destination
-    expect(destCustodyBalance).to.be.lessThan(10_000_000_000_000_000_000n); // Destination custody sent tokens
+    // FAILING: Contract encodes both _amount and _sharesAmount (line 356), but receiver reads bytes 40-72 as shares (which contains _amount).
+    // This causes receiver to transfer _amount as if it were shares, resulting in incorrect token amounts on destination chain.
+    expect(sourceCustodyBalance).to.equal(transferAmount); // Source custody received exact transfer amount
+    expect(clientDestBalance).to.equal(transferAmount); // Client received exact transfer amount on destination
+    expect(destCustodyBalance).to.equal(10_000_000_000_000_000_000n - transferAmount); // Destination custody has remaining balance
 
-    // The exact amounts may vary due to test state, but core transfer logic is validated
-    console.log("✅ End-to-end cross-chain transfer completed successfully");
+    // Verify shares are preserved (1:1 with multiplier 1.0)
+    expect(sharesAmount).to.equal(transferAmount);
   });
 
-  it("Should handle auto fee token with multiplier adjustments", async function () {
+  it("BUG: Message encoding includes both amount and shares, but receiver only reads shares position", async function () {
     const { client, systemWallet, chainSelector, router } = await loadFixture(deployFixture);
 
     // Deploy contracts
@@ -120,19 +122,20 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     const sourceChainReceiver = await hre.upgrades.deployProxy(factory, [router, systemWallet.address]) as unknown as BackedCCIPReceiver;
     const destinationChainReceiver = await hre.upgrades.deployProxy(factory, [router, systemWallet.address]) as unknown as BackedCCIPReceiver;
 
-    // Deploy auto fee tokens
-    const autoFeeTokenFactory = await hre.ethers.getContractFactory('ERC20AutoFeeMock');
-    const sourceAutoFeeToken = await autoFeeTokenFactory.deploy("Auto Fee Token", "AUTO");
-    const destinationAutoFeeToken = await autoFeeTokenFactory.deploy("Auto Fee Token", "AUTO");
+    // Deploy auto fee tokens with different multipliers
+    const tokenFactory = await hre.ethers.getContractFactory('ERC20AutoFeeMock');
+    const sourceToken = await tokenFactory.deploy("Source Token", "SRC");
+    const destinationToken = await tokenFactory.deploy("Dest Token", "DST");
 
-    const tokenId = 888n;
+    const tokenId = 999n;
+    const transferAmount = hre.ethers.parseEther("100"); // 100 tokens
 
-    // Setup different multipliers to test adjustment
-    const sourceMultiplier = hre.ethers.parseEther("0.5");
-    const destMultiplier = hre.ethers.parseEther("1.0");
+    // Setup multipliers
+    const sourceMultiplier = hre.ethers.parseEther("1.5");
+    const destMultiplier = hre.ethers.parseEther("2.0");
 
-    await sourceAutoFeeToken.updateMultiplierWithNonce(sourceMultiplier, 1);
-    await destinationAutoFeeToken.updateMultiplierWithNonce(destMultiplier, 2);
+    await sourceToken.updateMultiplierWithNonce(sourceMultiplier, 1);
+    await destinationToken.updateMultiplierWithNonce(destMultiplier, 2);
 
     // Setup configurations
     await sourceChainReceiver.registerDestinationChain(
@@ -141,46 +144,180 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
       EVM_CHAIN_VARIANT,
       200_000n
     );
-    await sourceChainReceiver.registerToken(await sourceAutoFeeToken.getAddress(), tokenId);
+    await sourceChainReceiver.registerToken(await sourceToken.getAddress(), tokenId);
     await destinationChainReceiver.registerSourceChain(
       chainSelector,
       hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)
     );
-    await destinationChainReceiver.registerToken(await destinationAutoFeeToken.getAddress(), tokenId);
+    await destinationChainReceiver.registerToken(await destinationToken.getAddress(), tokenId);
 
-    // Test the integration completes without reverting
-    const sourceTokenInfo = await sourceChainReceiver.tokenInfos(await sourceAutoFeeToken.getAddress());
-    const destTokenInfo = await destinationChainReceiver.tokenInfos(await destinationAutoFeeToken.getAddress());
+    // Setup balances
+    await sourceToken.mint(client, hre.ethers.parseEther("1000"));
+    await sourceToken.connect(client).approve(await sourceChainReceiver.getAddress(), transferAmount);
+    await destinationToken.mint(systemWallet, hre.ethers.parseEther("1000"));
+    await destinationToken.connect(systemWallet).approve(await destinationChainReceiver.getAddress(), hre.ethers.parseEther("1000"));
 
-    expect(sourceTokenInfo).to.equal(tokenId);
-    expect(destTokenInfo).to.equal(tokenId);
+    // Expected calculation:
+    // Source: 100 tokens with multiplier 1.5 => (100 * 1e18) / 1.5e18 = 66.666... shares (66666666666666666666)
+    const expectedShares = (transferAmount * hre.ethers.WeiPerEther) / sourceMultiplier;
+
+    // Destination: 66.666... shares with multiplier 2.0 => (66.666... * 2.0e18) / 1e18 = 133.333... tokens
+    const expectedDestAmount = (expectedShares * destMultiplier) / hre.ethers.WeiPerEther;
+
+    // Verify shares calculation
+    const calculatedShares = await sourceToken.getSharesByUnderlyingAmount(transferAmount);
+    expect(calculatedShares).to.equal(expectedShares);
+
+    // Send tokens using the contract's send function
+    const feeCosts = await sourceChainReceiver.connect(client).getDeliveryFeeCost(
+      chainSelector + 1n,
+      hre.ethers.zeroPadValue(client.address, 32),
+      await sourceToken.getAddress(),
+      transferAmount,
+      "0x"
+    );
+
+    await sourceChainReceiver.connect(client).send(
+      chainSelector + 1n,
+      hre.ethers.zeroPadValue(client.address, 32),
+      await sourceToken.getAddress(),
+      transferAmount,
+      "0x",
+      { value: feeCosts }
+    );
+
+    // THE BUG: Contract encodes: [receiver(32), tokenId(8), amount(32), shares(32)]
+    // But receiver reads bytes 40-72 as shares, which is actually the AMOUNT position!
+    // So receiver will use transferAmount (100 tokens) as shares instead of expectedShares (66.666... shares)
+
+    // Simulate CCIP processing - contract sends BOTH amount and shares but receiver reads amount position as shares
+    const router_signer = await hre.ethers.getImpersonatedSigner(router);
+    await client.sendTransaction({ to: router, value: hre.ethers.parseEther("1") });
+
+    // This is what the buggy contract actually sends:
+    const buggyMessage = {
+      messageId: "0x93a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
+      sourceChainSelector: chainSelector,
+      sender: hre.ethers.AbiCoder.defaultAbiCoder().encode(['bytes32'], [hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)]),
+      data: hre.ethers.solidityPacked(
+        ["bytes32", "uint64", "uint256", "uint256"], // BUG: includes both amount and shares
+        [hre.ethers.zeroPadValue(client.address, 32), tokenId, transferAmount, expectedShares] // amount is at bytes 40-72
+      ),
+      destTokenAmounts: [],
+    };
+
+    await destinationChainReceiver.connect(router_signer).ccipReceive(buggyMessage);
+
+    // Verify the BUG
+    const clientDestBalance = await destinationToken.balanceOf(client.address);
+
+    // BUG DOCUMENTATION TEST: This test documents the critical encoding bug in BackedCCIPReceiver.sol line 356.
+    // Contract sends abi.encodePacked(_tokenReceiver, tokenId, _amount, _sharesAmount), but receiver reads bytes 40-72 expecting sharesAmount (gets _amount instead).
+    expect(clientDestBalance).to.equal(expectedDestAmount,
+      "BUG: Receiver is reading amount as shares! Should transfer shares * dest_multiplier, but transfers amount * dest_multiplier instead");
   });
 
-  it("Should handle multiple token types in single integration", async function () {
+  it("Should complete e2e transfer with different multipliers (2.2 and 3.8)", async function () {
     const { client, systemWallet, chainSelector, router } = await loadFixture(deployFixture);
 
     // Deploy contracts
     const factory = await hre.ethers.getContractFactory("BackedCCIPReceiver");
-    const receiver = await hre.upgrades.deployProxy(factory, [router, systemWallet.address]) as unknown as BackedCCIPReceiver;
+    const sourceChainReceiver = await hre.upgrades.deployProxy(factory, [router, systemWallet.address]) as unknown as BackedCCIPReceiver;
+    const destinationChainReceiver = await hre.upgrades.deployProxy(factory, [router, systemWallet.address]) as unknown as BackedCCIPReceiver;
 
-    // Deploy multiple token types
-    const tokenFactory = await hre.ethers.getContractFactory('ERC20Mock');
-    const autoFeeTokenFactory = await hre.ethers.getContractFactory('ERC20AutoFeeMock');
+    // Deploy auto fee tokens with different multipliers
+    const tokenFactory = await hre.ethers.getContractFactory('ERC20AutoFeeMock');
+    const sourceToken = await tokenFactory.deploy("Source Token", "SRC");
+    const destinationToken = await tokenFactory.deploy("Dest Token", "DST");
 
-    const regularToken = await tokenFactory.deploy("Regular Token", "REG");
-    const autoFeeToken = await autoFeeTokenFactory.deploy("Auto Fee Token", "AUTO");
+    const tokenId = 888n;
+    // Use 2200 tokens for clean division: 2200 / 2.2 = 1000 shares, 1000 * 3.8 = 3800 tokens
+    const transferAmount = hre.ethers.parseEther("2200"); // 2200 tokens
 
-    // Register different token types
-    await receiver.registerToken(await regularToken.getAddress(), 100n);
-    await receiver.registerToken(await autoFeeToken.getAddress(), 200n);
+    // Setup different multipliers: source = 2.2, destination = 3.8
+    const sourceMultiplier = hre.ethers.parseEther("2.2");
+    const destMultiplier = hre.ethers.parseEther("3.8");
 
-    // Verify both types registered correctly
-    const regularTokenInfo = await receiver.tokenInfos(await regularToken.getAddress());
-    const autoFeeTokenInfo = await receiver.tokenInfos(await autoFeeToken.getAddress());
+    await sourceToken.updateMultiplierWithNonce(sourceMultiplier, 1);
+    await destinationToken.updateMultiplierWithNonce(destMultiplier, 2);
 
-    expect(regularTokenInfo).to.equal(100n);
-    expect(autoFeeTokenInfo).to.equal(200n);
+    // Setup configurations
+    await sourceChainReceiver.registerDestinationChain(
+      chainSelector + 1n,
+      hre.ethers.zeroPadValue(await destinationChainReceiver.getAddress(), 32),
+      EVM_CHAIN_VARIANT,
+      200_000n
+    );
+    await sourceChainReceiver.registerToken(await sourceToken.getAddress(), tokenId);
+    await destinationChainReceiver.registerSourceChain(
+      chainSelector,
+      hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)
+    );
+    await destinationChainReceiver.registerToken(await destinationToken.getAddress(), tokenId);
+
+    // Setup balances
+    await sourceToken.mint(client, hre.ethers.parseEther("100000")); // 100k tokens
+    await sourceToken.connect(client).approve(await sourceChainReceiver.getAddress(), transferAmount);
+    await destinationToken.mint(systemWallet, hre.ethers.parseEther("100000")); // 100k tokens
+    await destinationToken.connect(systemWallet).approve(await destinationChainReceiver.getAddress(), hre.ethers.parseEther("100000"));
+
+    // Calculate expected shares and destination amount (clean division)
+    // shares = (2200e18 * 1e18) / 2.2e18 = 1000e18 (exact)
+    const expectedShares = hre.ethers.parseEther("1000");
+    // destAmount = (1000e18 * 3.8e18) / 1e18 = 3800e18 (exact)
+    const expectedDestAmount = hre.ethers.parseEther("3800");
+
+    // Verify shares calculation
+    const calculatedShares = await sourceToken.getSharesByUnderlyingAmount(transferAmount);
+    expect(calculatedShares).to.equal(expectedShares);
+
+    // Send tokens
+    const feeCosts = await sourceChainReceiver.connect(client).getDeliveryFeeCost(
+      chainSelector + 1n,
+      hre.ethers.zeroPadValue(client.address, 32),
+      await sourceToken.getAddress(),
+      transferAmount,
+      "0x"
+    );
+
+    await sourceChainReceiver.connect(client).send(
+      chainSelector + 1n,
+      hre.ethers.zeroPadValue(client.address, 32),
+      await sourceToken.getAddress(),
+      transferAmount,
+      "0x",
+      { value: feeCosts }
+    );
+
+    // Simulate CCIP processing with shares-based message
+    const router_signer = await hre.ethers.getImpersonatedSigner(router);
+    await client.sendTransaction({ to: router, value: hre.ethers.parseEther("1") });
+
+    const ccipMessage = {
+      messageId: "0x92a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
+      sourceChainSelector: chainSelector,
+      sender: hre.ethers.AbiCoder.defaultAbiCoder().encode(['bytes32'], [hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)]),
+      data: hre.ethers.solidityPacked(
+        ["bytes32", "uint64", "uint256"],
+        [hre.ethers.zeroPadValue(client.address, 32), tokenId, expectedShares]
+      ),
+      destTokenAmounts: [],
+    };
+
+    await destinationChainReceiver.connect(router_signer).ccipReceive(ccipMessage);
+
+    // Verify transfer with different multipliers
+    const sourceCustodyBalance = await sourceToken.balanceOf(systemWallet.address);
+    const destCustodyBalance = await destinationToken.balanceOf(systemWallet.address);
+    const clientDestBalance = await destinationToken.balanceOf(client.address);
+
+    // FAILING: Contract bug at line 356 causes receiver to read _amount (2200) as shares instead of _sharesAmount (1000).
+    // This results in incorrect transfer: 2200 shares * 3.8 multiplier = 8360 tokens instead of expected 1000 shares * 3.8 = 3800 tokens.
+    expect(sourceCustodyBalance).to.equal(transferAmount);
+    expect(clientDestBalance).to.equal(expectedDestAmount);
+    expect(destCustodyBalance).to.equal(hre.ethers.parseEther("100000") - expectedDestAmount);
   });
+
 
   it("Should handle chain variant configurations", async function () {
     const { client, systemWallet, chainSelector, router } = await loadFixture(deployFixture);
@@ -249,7 +386,7 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     let receiver = await hre.upgrades.deployProxy(factory, [router, systemWallet.address]) as unknown as BackedCCIPReceiver;
 
     // Setup initial configuration
-    const tokenFactory = await hre.ethers.getContractFactory('ERC20Mock');
+    const tokenFactory = await hre.ethers.getContractFactory('ERC20AutoFeeMock');
     const token = await tokenFactory.deploy("Test Token", "TEST");
 
     await receiver.registerToken(await token.getAddress(), 1337n);
