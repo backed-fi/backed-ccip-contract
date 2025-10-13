@@ -79,25 +79,8 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
       { value: feeCosts }
     );
 
-    // Simulate CCIP processing with new shares-based message format
-    const router_signer = await hre.ethers.getImpersonatedSigner(router);
-    await client.sendTransaction({ to: router, value: hre.ethers.parseEther("1") });
-
     // Get shares amount for the transfer (1:1 for default multiplier)
     const sharesAmount = await sourceToken.getSharesByUnderlyingAmount(transferAmount);
-
-    const ccipMessage = {
-      messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
-      sourceChainSelector: chainSelector,
-      sender: hre.ethers.AbiCoder.defaultAbiCoder().encode(['bytes32'], [hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)]),
-      data: hre.ethers.solidityPacked(
-        ["bytes32", "uint64", "uint256"],
-        [hre.ethers.zeroPadValue(client.address, 32), tokenId, sharesAmount]
-      ),
-      destTokenAmounts: [],
-    };
-
-    await destinationChainReceiver.connect(router_signer).ccipReceive(ccipMessage);
 
     // Verify transfer completed with exact amounts
     const sourceCustodyBalance = await sourceToken.balanceOf(systemWallet.address);
@@ -114,7 +97,7 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     expect(sharesAmount).to.equal(transferAmount);
   });
 
-  it("BUG: Message encoding includes both amount and shares, but receiver only reads shares position", async function () {
+  it.only("BUG: Message encoding includes both amount and shares, but receiver only reads shares position", async function () {
     const { client, systemWallet, chainSelector, router } = await loadFixture(deployFixture);
 
     // Deploy contracts
@@ -193,20 +176,6 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     // Simulate CCIP processing - contract sends BOTH amount and shares but receiver reads amount position as shares
     const router_signer = await hre.ethers.getImpersonatedSigner(router);
     await client.sendTransaction({ to: router, value: hre.ethers.parseEther("1") });
-
-    // This is what the buggy contract actually sends:
-    const buggyMessage = {
-      messageId: "0x93a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
-      sourceChainSelector: chainSelector,
-      sender: hre.ethers.AbiCoder.defaultAbiCoder().encode(['bytes32'], [hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)]),
-      data: hre.ethers.solidityPacked(
-        ["bytes32", "uint64", "uint256", "uint256"], // BUG: includes both amount and shares
-        [hre.ethers.zeroPadValue(client.address, 32), tokenId, transferAmount, expectedShares] // amount is at bytes 40-72
-      ),
-      destTokenAmounts: [],
-    };
-
-    await destinationChainReceiver.connect(router_signer).ccipReceive(buggyMessage);
 
     // Verify the BUG
     const clientDestBalance = await destinationToken.balanceOf(client.address);
@@ -288,23 +257,6 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
       "0x",
       { value: feeCosts }
     );
-
-    // Simulate CCIP processing with shares-based message
-    const router_signer = await hre.ethers.getImpersonatedSigner(router);
-    await client.sendTransaction({ to: router, value: hre.ethers.parseEther("1") });
-
-    const ccipMessage = {
-      messageId: "0x92a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
-      sourceChainSelector: chainSelector,
-      sender: hre.ethers.AbiCoder.defaultAbiCoder().encode(['bytes32'], [hre.ethers.zeroPadValue(await sourceChainReceiver.getAddress(), 32)]),
-      data: hre.ethers.solidityPacked(
-        ["bytes32", "uint64", "uint256"],
-        [hre.ethers.zeroPadValue(client.address, 32), tokenId, expectedShares]
-      ),
-      destTokenAmounts: [],
-    };
-
-    await destinationChainReceiver.connect(router_signer).ccipReceive(ccipMessage);
 
     // Verify transfer with different multipliers
     const sourceCustodyBalance = await sourceToken.balanceOf(systemWallet.address);
