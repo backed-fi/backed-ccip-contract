@@ -353,7 +353,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         messageId = _sendMessagePayNative(
             _destinationChainSelector,
             receiver,
-            abi.encodePacked(_tokenReceiver, tokenInfo.id, _amount, _sharesAmount),
+            abi.encodePacked(_tokenReceiver, tokenInfo.id, _sharesAmount),
             defaultGasLimit, 
             _chainSpecificArgs
         );
