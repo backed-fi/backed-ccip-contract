@@ -1,6 +1,6 @@
 # BackedCCIPReceiver Test Suite
 
-This directory contains comprehensive tests for the BackedCCIPReceiver contract, covering the new SVM destination support and extensive edge cases.
+This directory contains comprehensive tests for the BackedCCIPReceiver contract, covering shares-based token transfers, SVM destination support, and extensive edge cases.
 
 ## Test Structure
 
@@ -21,14 +21,16 @@ Comprehensive security test suite:
 - Input validation and sanitization
 - Reentrancy protection testing
 - CCIP message validation and authentication
-- Auto fee token security scenarios
+- SVM chain security scenarios
+- Token interface validation (shares-based requirements)
 - Pause mechanism security
 - Fund withdrawal security
 
 #### 3. BackedCCIPReceiver.edge-cases.spec.ts
-Edge cases and auto fee token scenarios:
-- Extreme value testing (max uint256, min values)
-- Auto fee token multiplier synchronization
+Edge cases and extreme value scenarios:
+- Extreme value testing (max safe amounts, overflow protection)
+- Maximum/minimum token amounts (1 wei to MaxUint256 / 1e18)
+- Auto fee token scenarios
 - Complex chain variant scenarios
 - Token management edge cases
 - Message data validation
@@ -40,73 +42,85 @@ Performance and gas optimization tests:
 - Batch operations performance
 - Message processing efficiency
 - Storage access optimization
-- Large-scale operations testing
+- Large-scale operations testing (50+ chains, 100+ tokens)
 - Memory usage optimization
 
 ### Integration Tests (`/test/integration/`)
 
 #### BackedCCIPReceiver.integration.spec.ts
 Comprehensive cross-chain integration tests:
-- EVM to EVM token transfers
-- Auto fee token cross-chain transfers with multiplier sync
-- Mixed chain variant integration (EVM to SVM simulation)
-- High volume integration tests
-- Error handling in integration environment
+- End-to-end auto fee token transfers using shares
+- Auto fee token cross-chain transfers with different multipliers
+- Mixed chain variant integration (EVM and SVM)
+- Error recovery scenarios
 - Upgrade compatibility integration
 
-### Legacy Tests
+### Core Tests
 
 #### `/test/fork/BackedCCIPReceiver.spec.ts`
-Original fork-based integration test for basic cross-chain functionality.
+Fork-based integration test for basic cross-chain functionality.
 
 #### `/test/no-fork/BackedCCIPReceiver.spec.ts`
-Original unit tests covering basic contract functionality.
+Unit tests covering basic contract functionality and message flow.
+
+## Test Tolerance
+
+Integration tests use a tolerance of 0.0001% (1 part per million) for assertions involving shares calculations to account for rounding errors in integer division.
 
 ## Key Features Tested
 
+### Shares-Based Architecture
+- Shares calculation with getSharesByUnderlyingAmount()
+- Shares transfer with transferSharesFrom()
+- Economic value preservation across chains
+- Maximum safe amounts (MaxUint256 / 1e18)
+- Overflow protection validation
+
+### Token Interface Requirements
+- Only tokens with shares interface are supported
+- Regular ERC20 tokens fail predictably (registration succeeds, operations fail)
+- Auto fee token validation and operations
+
 ### SVM Support
-- ✅ SVM chain registration with proper parameters
-- ✅ SVM-specific extra args encoding (accountIsWritableBitmap, accounts array)
-- ✅ Gas limit configuration for SVM chains
-- ✅ Fee calculation differences between EVM and SVM
-- ✅ Mixed chain variant scenarios
+- SVM chain registration with proper parameters
+- SVM-specific extra args encoding (accountIsWritableBitmap, accounts array)
+- Gas limit configuration for SVM chains
+- Fee calculation differences between EVM and SVM
+- Mixed chain variant scenarios
+- DoS protection for excessive accounts arrays
 
 ### Security
-- ✅ Comprehensive access control validation
-- ✅ Input sanitization and validation
-- ✅ Reentrancy protection
-- ✅ Message authentication and validation
-- ✅ Pause mechanism functionality
-- ✅ Secure fund management
+- Comprehensive access control validation
+- Input sanitization and validation
+- Reentrancy protection
+- Message authentication and validation
+- Pause mechanism functionality
+- Secure fund management
 
 ### Edge Cases
-- ✅ Extreme value handling (max/min values)
-- ✅ Auto fee token multiplier edge cases
-- ✅ Complex configuration scenarios
-- ✅ Large payload handling
-- ✅ Storage optimization scenarios
+- Extreme value handling (max/min values)
+- Arithmetic overflow protection
+- Auto fee token edge cases
+- Complex configuration scenarios
+- Token/chain removal and re-registration
+- Multiple simultaneous operations
 
 ### Performance
-- ✅ Gas usage optimization
-- ✅ Batch operation efficiency
-- ✅ Large-scale operation handling
-- ✅ Memory usage optimization
+- Gas usage optimization
+- Batch operation efficiency
+- Large-scale operation handling
+- Memory usage optimization
+- Message size reduction (72 bytes vs old 137 bytes)
 
 ### Integration
-- ✅ End-to-end cross-chain transfers
-- ✅ Multi-token scenarios
-- ✅ Error recovery and graceful degradation
-- ✅ Upgrade compatibility
+- End-to-end cross-chain transfers with shares
+- Multi-token scenarios
+- Error recovery and graceful degradation
+- Upgrade compatibility
 
 ## Running Tests
 
 ```bash
-# Run all unit tests (no forking required)
-npm run test:no-fork
-
-# Run integration tests (requires forking)
-npm run test:fork
-
 # Run all tests
 npm test
 
@@ -121,13 +135,14 @@ REPORT_GAS=true npm test
 
 ### By Test Type
 - **Unit Tests**: Isolated contract functionality
-- **Integration Tests**: Cross-chain scenarios with forking
+- **Integration Tests**: Cross-chain scenarios
 - **Performance Tests**: Gas optimization and efficiency
 - **Security Tests**: Access control and validation
 
 ### By Feature
-- **SVM Support**: New Solana destination functionality
-- **Auto Fee Tokens**: Multiplier-based rebasing tokens
+- **Shares Architecture**: Economic value preservation through shares
+- **SVM Support**: Solana destination functionality
+- **Token Interface**: Shares-based token requirements
 - **Chain Management**: Multi-chain configuration
 - **Token Management**: Registration and validation
 - **Message Processing**: CCIP message handling
@@ -144,14 +159,17 @@ The test suite aims for:
 ## Test Data
 
 Tests use realistic scenarios with:
-- Multiple token types (regular and auto fee)
+- Auto fee tokens with shares interface
+- Regular ERC20 tokens (for validation of rejection)
 - Various chain configurations (EVM and SVM)
-- Different transfer amounts and edge cases
+- Different transfer amounts (1 wei to MaxUint256 / 1e18)
 - Realistic gas limits and fee structures
 - Complex multiplier scenarios for auto fee tokens
 
 ## Notes
 
+- Tests use shares-based message format: [tokenReceiver, tokenId, sharesAmount]
+- All tokens must implement shares interface (getSharesByUnderlyingAmount, transferSharesFrom)
 - SVM integration tests simulate SVM behavior since actual SVM chains may not be available in test environment
 - Performance tests include gas usage reporting for optimization
 - Security tests cover both positive and negative test cases

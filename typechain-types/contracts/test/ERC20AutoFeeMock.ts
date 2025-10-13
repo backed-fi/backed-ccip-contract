@@ -47,6 +47,7 @@ export interface ERC20AutoFeeMockInterface extends Interface {
       | "transfer(address,address,uint256)"
       | "transferFrom"
       | "transferShares"
+      | "transferSharesFrom"
       | "updateMultiplierValue"
       | "updateMultiplierWithNonce"
   ): FunctionFragment;
@@ -129,6 +130,10 @@ export interface ERC20AutoFeeMockInterface extends Interface {
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "transferSharesFrom",
+    values: [AddressLike, AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "updateMultiplierValue",
     values: [BigNumberish]
   ): string;
@@ -189,6 +194,10 @@ export interface ERC20AutoFeeMockInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "transferShares",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferSharesFrom",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -376,6 +385,12 @@ export interface ERC20AutoFeeMock extends BaseContract {
     "nonpayable"
   >;
 
+  transferSharesFrom: TypedContractMethod<
+    [from: AddressLike, to: AddressLike, sharesAmount: BigNumberish],
+    [boolean],
+    "nonpayable"
+  >;
+
   updateMultiplierValue: TypedContractMethod<
     [newMultiplier: BigNumberish],
     [void],
@@ -498,6 +513,13 @@ export interface ERC20AutoFeeMock extends BaseContract {
     nameOrSignature: "transferShares"
   ): TypedContractMethod<
     [to: AddressLike, sharesAmount: BigNumberish],
+    [boolean],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "transferSharesFrom"
+  ): TypedContractMethod<
+    [from: AddressLike, to: AddressLike, sharesAmount: BigNumberish],
     [boolean],
     "nonpayable"
   >;

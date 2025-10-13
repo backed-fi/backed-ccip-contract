@@ -5,7 +5,6 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import {
   BackedCCIPReceiver,
   CustomFeeCCIPLocalSimulator,
-  ERC20Mock,
   ERC20AutoFeeMock,
 } from "../../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -13,8 +12,6 @@ import { Client } from "../../typechain-types/@chainlink/contracts-ccip/src/v0.8
 
 const EVM_CHAIN_VARIANT = 0n;
 const SVM_CHAIN_VARIANT = 1n;
-const REGULAR_TOKEN = 0n;
-const AUTO_FEE_TOKEN = 1n;
 
 describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
   async function deployFixture() {
@@ -35,9 +32,6 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
     const backedCCIPReceiver =
       await hre.upgrades.deployProxy(factory, [sourceRouter, systemWallet.address]) as unknown as BackedCCIPReceiver;
 
-    const tokenFactory = await hre.ethers.getContractFactory('ERC20Mock');
-    const erc20 = await tokenFactory.deploy("Test Token", "TEST");
-    
     const autoFeeTokenFactory = await hre.ethers.getContractFactory('ERC20AutoFeeMock');
     const erc20AutoFee = await autoFeeTokenFactory.deploy("Auto Fee Token", "AUTO");
 
@@ -48,7 +42,6 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       chainSelector,
       sourceRouter,
       backedCCIPReceiver,
-      erc20,
       erc20AutoFee
     };
   }
@@ -59,7 +52,6 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
   let chainSelector: bigint;
   let sourceRouter: string;
   let backedCCIPReceiver: BackedCCIPReceiver;
-  let erc20: ERC20Mock;
   let erc20AutoFee: ERC20AutoFeeMock;
 
   beforeEach(async () => {
@@ -70,7 +62,6 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       chainSelector,
       sourceRouter,
       backedCCIPReceiver,
-      erc20,
       erc20AutoFee
     } = await loadFixture(deployFixture));
   });
@@ -85,17 +76,17 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
         chainSelector, receiver, EVM_CHAIN_VARIANT, 200000n
       );
       await backedCCIPReceiver.connect(owner).registerToken(
-        await erc20.getAddress(), tokenId
+        await erc20AutoFee.getAddress(), tokenId
       );
-      await erc20.mint(client, 1000000n);
-      await erc20.connect(client).approve(await backedCCIPReceiver.getAddress(), 1000000n);
+      await erc20AutoFee.mint(client, 1000000n);
+      await erc20AutoFee.connect(client).approve(await backedCCIPReceiver.getAddress(), 1000000n);
     });
 
     it("should measure gas usage for EVM token send", async () => {
       const tx = await backedCCIPReceiver.connect(client).send(
         chainSelector,
         hre.ethers.zeroPadValue(client.address, 32),
-        await erc20.getAddress(),
+        await erc20AutoFee.getAddress(),
         amount,
         "0x", // EVM chains don't need chain-specific args
         { value: hre.ethers.parseEther("0.01") }
@@ -122,7 +113,7 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       const tx = await backedCCIPReceiver.connect(client).send(
         svmChainSelector,
         hre.ethers.zeroPadValue(client.address, 32),
-        await erc20.getAddress(),
+        await erc20AutoFee.getAddress(),
         amount,
         "0x", // Use empty args for EVM compatibility
         { value: hre.ethers.parseEther("0.01") }
@@ -137,28 +128,19 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       expect(gasUsed).to.be.lessThan(250000n);
     });
 
-    it("should compare gas usage between regular and auto fee tokens", async () => {
-      // Setup auto fee token
+    it("should compare gas usage between multiple auto fee token instances", async () => {
+      // Deploy a second auto fee token to compare gas usage consistency
+      const autoFeeTokenFactory = await hre.ethers.getContractFactory('ERC20AutoFeeMock');
+      const erc20AutoFee2 = await autoFeeTokenFactory.deploy("Auto Fee Token 2", "AUTO2");
+
       await backedCCIPReceiver.connect(owner).registerToken(
-        await erc20AutoFee.getAddress(), 1338n
+        await erc20AutoFee2.getAddress(), 1338n
       );
-      await erc20AutoFee.mint(client, 1000000n);
-      await erc20AutoFee.connect(client).approve(await backedCCIPReceiver.getAddress(), 1000000n);
+      await erc20AutoFee2.mint(client, 1000000n);
+      await erc20AutoFee2.connect(client).approve(await backedCCIPReceiver.getAddress(), 1000000n);
 
-      // Regular token send
-      const regularTx = await backedCCIPReceiver.connect(client).send(
-        chainSelector,
-        hre.ethers.zeroPadValue(client.address, 32),
-        await erc20.getAddress(),
-        amount,
-        "0x",
-        { value: hre.ethers.parseEther("0.01") }
-      );
-      const regularReceipt = await regularTx.wait();
-      const regularGas = regularReceipt!.gasUsed;
-
-      // Auto fee token send
-      const autoFeeTx = await backedCCIPReceiver.connect(client).send(
+      // First token send (tokenId 1337)
+      const firstTx = await backedCCIPReceiver.connect(client).send(
         chainSelector,
         hre.ethers.zeroPadValue(client.address, 32),
         await erc20AutoFee.getAddress(),
@@ -166,17 +148,30 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
         "0x",
         { value: hre.ethers.parseEther("0.01") }
       );
-      const autoFeeReceipt = await autoFeeTx.wait();
-      const autoFeeGas = autoFeeReceipt!.gasUsed;
+      const firstReceipt = await firstTx.wait();
+      const firstGas = firstReceipt!.gasUsed;
 
-      console.log(`Regular token gas: ${regularGas.toString()}`);
-      console.log(`Auto fee token gas: ${autoFeeGas.toString()}`);
+      // Second token send (tokenId 1338)
+      const secondTx = await backedCCIPReceiver.connect(client).send(
+        chainSelector,
+        hre.ethers.zeroPadValue(client.address, 32),
+        await erc20AutoFee2.getAddress(),
+        amount,
+        "0x",
+        { value: hre.ethers.parseEther("0.01") }
+      );
+      const secondReceipt = await secondTx.wait();
+      const secondGas = secondReceipt!.gasUsed;
 
-      // Auto fee tokens should use more gas due to multiplier operations
-      expect(autoFeeGas).to.be.greaterThan(regularGas);
-      
-      const gasDifference = autoFeeGas - regularGas;
-      console.log(`Auto fee token additional gas cost: ${gasDifference.toString()}`);
+      console.log(`First auto fee token gas: ${firstGas.toString()}`);
+      console.log(`Second auto fee token gas: ${secondGas.toString()}`);
+
+      // Both should use similar gas since they're both auto fee tokens
+      const gasDifference = firstGas > secondGas ? firstGas - secondGas : secondGas - firstGas;
+      console.log(`Gas difference: ${gasDifference.toString()}`);
+
+      // Expect similar gas usage (within 10% variance)
+      expect(gasDifference).to.be.lessThan(firstGas / 10n);
     });
 
     it("should measure gas usage for fee calculation", async () => {
@@ -185,7 +180,7 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
         data: backedCCIPReceiver.interface.encodeFunctionData("getDeliveryFeeCost", [
           chainSelector,
           hre.ethers.zeroPadValue(client.address, 32),
-          await erc20.getAddress(),
+          await erc20AutoFee.getAddress(),
           amount,
           "0x"
         ])
@@ -234,7 +229,7 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
 
       // Create tokens
       for (let i = 1; i <= numTokens; i++) {
-        const token = await (await hre.ethers.getContractFactory('ERC20Mock')).deploy(`Token${i}`, `TK${i}`);
+        const token = await (await hre.ethers.getContractFactory('ERC20AutoFeeMock')).deploy(`Token${i}`, `TK${i}`);
         tokens.push(token);
       }
 
@@ -272,12 +267,12 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       });
       
       await backedCCIPReceiver.connect(owner).registerSourceChain(chainSelector, receiver);
-      await backedCCIPReceiver.connect(owner).registerToken(await erc20.getAddress(), tokenId);
-      await erc20.mint(systemWallet, 10000000n);
-      await erc20.connect(systemWallet).approve(await backedCCIPReceiver.getAddress(), 10000000n);
+      await backedCCIPReceiver.connect(owner).registerToken(await erc20AutoFee.getAddress(), tokenId);
+      await erc20AutoFee.mint(systemWallet, 10000000n);
+      await erc20AutoFee.connect(systemWallet).approve(await backedCCIPReceiver.getAddress(), 10000000n);
     });
 
-    it("should measure gas usage for regular token ccipReceive", async () => {
+    it("should measure gas usage for auto fee token ccipReceive", async () => {
       const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
       const amount = 100000n;
 
@@ -286,48 +281,8 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
         sourceChainSelector: chainSelector,
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
-          ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, "0x"]
-        ),
-        destTokenAmounts: [],
-      };
-
-      const tx = await backedCCIPReceiver.connect(router).ccipReceive(ccipMessage);
-      const receipt = await tx.wait();
-      const gasUsed = receipt!.gasUsed;
-
-      console.log(`Regular token ccipReceive gas usage: ${gasUsed.toString()}`);
-      
-      // Should be reasonably efficient
-      expect(gasUsed).to.be.lessThan(150000n);
-    });
-
-    it("should measure gas usage for auto fee token ccipReceive", async () => {
-      // Setup auto fee token
-      await backedCCIPReceiver.connect(owner).registerToken(await erc20AutoFee.getAddress(), 1338n);
-      await erc20AutoFee.mint(systemWallet, 10000000n);
-      await erc20AutoFee.connect(systemWallet).approve(await backedCCIPReceiver.getAddress(), 10000000n);
-
-      const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
-      const amount = 100000n;
-      const multiplier = hre.ethers.parseEther("0.5");
-      const nonce = 1;
-
-      // Set matching multiplier on destination token
-      await erc20AutoFee.updateMultiplierWithNonce(multiplier, nonce);
-
-      const payload = defaultAbiCoder.encode(
-        ["uint256", "uint256"],
-        [multiplier, nonce]
-      );
-
-      const ccipMessage: Client.Any2EVMMessageStruct = {
-        messageId: "0x92a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
-        sourceChainSelector: chainSelector,
-        sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
-        data: hre.ethers.solidityPacked(
-          ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), 1338n, amount, payload]
+          ["bytes32", "uint64", "uint256"],
+          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount]
         ),
         destTokenAmounts: [],
       };
@@ -337,8 +292,38 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       const gasUsed = receipt!.gasUsed;
 
       console.log(`Auto fee token ccipReceive gas usage: ${gasUsed.toString()}`);
-      
-      // Should use more gas than regular tokens but still be reasonable
+
+      // Should be reasonably efficient
+      expect(gasUsed).to.be.lessThan(150000n);
+    });
+
+    it("should measure gas usage for auto fee token ccipReceive with custom multiplier", async () => {
+      const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
+      const amount = 100000n;
+      const multiplier = hre.ethers.parseEther("0.5");
+      const nonce = 1;
+
+      // Set custom multiplier on the token
+      await erc20AutoFee.updateMultiplierWithNonce(multiplier, nonce);
+
+      const ccipMessage: Client.Any2EVMMessageStruct = {
+        messageId: "0x92a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
+        sourceChainSelector: chainSelector,
+        sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
+        data: hre.ethers.solidityPacked(
+          ["bytes32", "uint64", "uint256"],
+          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount]
+        ),
+        destTokenAmounts: [],
+      };
+
+      const tx = await backedCCIPReceiver.connect(router).ccipReceive(ccipMessage);
+      const receipt = await tx.wait();
+      const gasUsed = receipt!.gasUsed;
+
+      console.log(`Auto fee token with custom multiplier ccipReceive gas usage: ${gasUsed.toString()}`);
+
+      // Should still be reasonably efficient even with custom multiplier
       expect(gasUsed).to.be.lessThan(200000n);
     });
 
@@ -346,16 +331,15 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
       const amount = 100000n;
       
-      // Create large payload (1KB)
-      const largePayload = "0x" + "aa".repeat(512);
-
+      // Note: The shares-based architecture no longer includes payload data, so this test
+      // now measures the base case performance (reduced from 137 bytes to 72 bytes per message)
       const ccipMessage: Client.Any2EVMMessageStruct = {
         messageId: "0x93a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
         sourceChainSelector: chainSelector,
         sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
         data: hre.ethers.solidityPacked(
-          ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, largePayload]
+          ["bytes32", "uint64", "uint256"],
+          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount]
         ),
         destTokenAmounts: [],
       };
@@ -414,13 +398,13 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       await backedCCIPReceiver.connect(owner).registerDestinationChain(
         2n, "0x2222222222222222222222222222222222222222222222222222222222222222", SVM_CHAIN_VARIANT, 300000n
       );
-      await backedCCIPReceiver.connect(owner).registerToken(await erc20.getAddress(), 1337n);
+      await backedCCIPReceiver.connect(owner).registerToken(await erc20AutoFee.getAddress(), 1337n);
 
       // EVM fee calculation
       const evmFeeGas = await hre.ethers.provider.estimateGas({
         to: await backedCCIPReceiver.getAddress(),
         data: backedCCIPReceiver.interface.encodeFunctionData("getDeliveryFeeCost", [
-          1n, hre.ethers.zeroPadValue(tokenReceiver, 32), await erc20.getAddress(), amount, "0x"
+          1n, hre.ethers.zeroPadValue(tokenReceiver, 32), await erc20AutoFee.getAddress(), amount, "0x"
         ])
       });
 
@@ -433,7 +417,7 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       const svmFeeGas = await hre.ethers.provider.estimateGas({
         to: await backedCCIPReceiver.getAddress(),
         data: backedCCIPReceiver.interface.encodeFunctionData("getDeliveryFeeCost", [
-          2n, tokenReceiver, await erc20.getAddress(), amount, svmChainSpecificArgs
+          2n, tokenReceiver, await erc20AutoFee.getAddress(), amount, svmChainSpecificArgs
         ])
       });
 
@@ -482,7 +466,7 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
         for (let i = batch; i < Math.min(batch + batchSize, maxTokens); i++) {
           tokenPromises.push(
             (async () => {
-              const token = await (await hre.ethers.getContractFactory('ERC20Mock')).deploy(`Token${i + 1}`, `TK${i + 1}`);
+              const token = await (await hre.ethers.getContractFactory('ERC20AutoFeeMock')).deploy(`Token${i + 1}`, `TK${i + 1}`);
               return { token, index: i + 1 };
             })()
           );
@@ -529,7 +513,7 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       );
       
       for (let i = 0; i < numOperations; i++) {
-        const token = await (await hre.ethers.getContractFactory('ERC20Mock')).deploy(`Token${i}`, `TK${i}`);
+        const token = await (await hre.ethers.getContractFactory('ERC20AutoFeeMock')).deploy(`Token${i}`, `TK${i}`);
         await backedCCIPReceiver.connect(owner).registerToken(await token.getAddress(), BigInt(i + 1));
         
         await token.mint(client, 1000000n);

@@ -6,12 +6,12 @@ import {
   BackedCCIPReceiver,
   CustomFeeCCIPLocalSimulator,
   ERC20Mock,
+  ERC20AutoFeeMock,
 } from "../../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 const EVM_CHAIN_VARIANT = 0n;
 const SVM_CHAIN_VARIANT = 1n;
-const REGULAR_TOKEN = 0n;
 
 describe("Backed CCIP Receiver - SVM Support Tests", () => {
   async function deployFixture() {
@@ -34,9 +34,9 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
     const backedCCIPReceiver =
       await hre.upgrades.deployProxy(factory, [sourceRouter, systemWallet.address]) as unknown as BackedCCIPReceiver;
 
-    const tokenFactory = await hre.ethers.getContractFactory('ERC20Mock');
-    const erc20 = await tokenFactory.deploy("Test Token", "TEST");
-    const erc20Address = await erc20.getAddress();
+    const tokenFactory = await hre.ethers.getContractFactory('ERC20AutoFeeMock');
+    const erc20AutoFee = await tokenFactory.deploy("Test Token", "TEST");
+    const erc20Address = await erc20AutoFee.getAddress();
 
     return {
       client,
@@ -45,7 +45,7 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
       chainSelector,
       sourceRouter,
       backedCCIPReceiver,
-      erc20,
+      erc20AutoFee,
       erc20Address
     };
   }
@@ -56,7 +56,7 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
   let chainSelector: bigint;
   let sourceRouter: string;
   let backedCCIPReceiver: BackedCCIPReceiver;
-  let erc20: ERC20Mock;
+  let erc20AutoFee: ERC20AutoFeeMock;
   let erc20Address: string;
 
   beforeEach(async () => {
@@ -67,11 +67,11 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
       chainSelector,
       sourceRouter,
       backedCCIPReceiver,
-      erc20,
+      erc20AutoFee,
       erc20Address
     } = await loadFixture(deployFixture));
 
-    await erc20.mint(client, 1000000n);
+    await erc20AutoFee.mint(client, 1000000n);
   });
 
   describe("SVM Chain Registration", () => {
@@ -234,7 +234,7 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
         defaultGasLimit
       );
       await backedCCIPReceiver.registerToken(erc20Address, tokenId);
-      await erc20.connect(client).approve(await backedCCIPReceiver.getAddress(), transferAmount);
+      await erc20AutoFee.connect(client).approve(await backedCCIPReceiver.getAddress(), transferAmount);
     });
 
     it("should successfully send tokens to SVM destination", async () => {
@@ -247,8 +247,8 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
         defaultGasLimit
       );
 
-      const initialClientBalance = await erc20.balanceOf(client.address);
-      const initialCustodyBalance = await erc20.balanceOf(systemWallet.address);
+      const initialClientBalance = await erc20AutoFee.balanceOf(client.address);
+      const initialCustodyBalance = await erc20AutoFee.balanceOf(systemWallet.address);
 
       await expect(
         backedCCIPReceiver.connect(client).send(
@@ -261,8 +261,8 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
         )
       ).to.emit(backedCCIPReceiver, "MessageSent");
 
-      const finalClientBalance = await erc20.balanceOf(client.address);
-      const finalCustodyBalance = await erc20.balanceOf(systemWallet.address);
+      const finalClientBalance = await erc20AutoFee.balanceOf(client.address);
+      const finalCustodyBalance = await erc20AutoFee.balanceOf(systemWallet.address);
 
       expect(finalClientBalance).to.equal(initialClientBalance - transferAmount);
       expect(finalCustodyBalance).to.equal(initialCustodyBalance + transferAmount);
@@ -381,7 +381,7 @@ describe("Backed CCIP Receiver - SVM Support Tests", () => {
 
     it("should reject invalid chain-specific args format", async () => {
       await backedCCIPReceiver.registerToken(erc20Address, 1337n);
-      await erc20.connect(client).approve(await backedCCIPReceiver.getAddress(), 100000n);
+      await erc20AutoFee.connect(client).approve(await backedCCIPReceiver.getAddress(), 100000n);
 
       // Invalid chain-specific args (missing required fields)
       const invalidChainSpecificArgs = hre.ethers.AbiCoder.defaultAbiCoder().encode(

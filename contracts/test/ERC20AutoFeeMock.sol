@@ -149,6 +149,27 @@ contract ERC20AutoFeeMock is ERC20 {
     }
 
     /**
+     * @dev Transfers underlying shares from one account to another
+     *
+     * Requirements:
+     *
+     * - `from` and `to` cannot be the zero address.
+     * - `from` must have a balance of at least `sharesAmount`.
+     * - the caller must have allowance for `from`'s tokens of at least the underlying amount.
+     */
+    function transferSharesFrom(
+        address from,
+        address to,
+        uint256 sharesAmount
+    ) external virtual returns (bool) {
+        address spender = _msgSender();
+        uint256 amount = _getUnderlyingAmountByShares(sharesAmount, multiplier);
+        _spendAllowance(from, spender, amount);
+        transfer(from, to, amount);
+        return true;
+    }
+
+    /**
      * @dev Function to change the contract multiplier updater. Allowed only for owner
      *
      * Emits a { NewMultiplierUpdater } event

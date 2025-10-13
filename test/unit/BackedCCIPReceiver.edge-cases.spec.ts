@@ -13,8 +13,6 @@ import { Client } from "../../typechain-types/@chainlink/contracts-ccip/src/v0.8
 
 const EVM_CHAIN_VARIANT = 0n;
 const SVM_CHAIN_VARIANT = 1n;
-const REGULAR_TOKEN = 0n;
-const AUTO_FEE_TOKEN = 1n;
 
 describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
   async function deployFixture() {
@@ -84,37 +82,51 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
         chainSelector, receiver, EVM_CHAIN_VARIANT, 200000n
       );
       await backedCCIPReceiver.connect(owner).registerToken(
-        await erc20.getAddress(), tokenId
+        await erc20AutoFee.getAddress(), tokenId
       );
     });
 
-    it("should handle maximum uint256 token amounts", async () => {
-      const maxAmount = hre.ethers.MaxUint256;
-      await erc20.mint(client, maxAmount);
-      await erc20.connect(client).approve(await backedCCIPReceiver.getAddress(), maxAmount);
+    it("should handle maximum safe token amounts", async () => {
+      // Maximum safe amount = MaxUint256 / 1e18 to avoid overflow
+      // Shares calculation: (_amount * 1e18) / _multiplier would overflow with MaxUint256
+      // Safe limit ≈ 1.15e59 tokens (astronomically large, practical upper bound)
+      const largeAmount = hre.ethers.MaxUint256 / hre.ethers.WeiPerEther;
+      await erc20AutoFee.mint(client, largeAmount);
+      await erc20AutoFee.connect(client).approve(await backedCCIPReceiver.getAddress(), largeAmount);
 
       // This should not revert due to overflow
       const feeCost = await backedCCIPReceiver.getDeliveryFeeCost(
         chainSelector,
         hre.ethers.zeroPadValue(client.address, 32),
-        await erc20.getAddress(),
-        maxAmount,
+        await erc20AutoFee.getAddress(),
+        largeAmount,
         "0x"
       );
 
       expect(feeCost).to.be.greaterThan(0);
     });
 
+    it("should fail predictably with amounts exceeding safe limits", async () => {
+      // Amounts larger than MaxUint256 / 1e18 should fail with arithmetic overflow
+      // Using MaxUint256 / 1e17 (10x larger) to trigger overflow protection
+      const unsafeAmount = hre.ethers.MaxUint256 / (hre.ethers.WeiPerEther / 10n);
+
+      // Minting should fail with arithmetic overflow (panic code 0x11)
+      await expect(
+        erc20AutoFee.mint(client, unsafeAmount)
+      ).to.be.revertedWithPanic(0x11); // Arithmetic overflow
+    });
+
     it("should handle minimum token amounts (1 wei)", async () => {
       const minAmount = 1n;
-      await erc20.mint(client, minAmount);
-      await erc20.connect(client).approve(await backedCCIPReceiver.getAddress(), minAmount);
+      await erc20AutoFee.mint(client, minAmount);
+      await erc20AutoFee.connect(client).approve(await backedCCIPReceiver.getAddress(), minAmount);
 
       await expect(
         backedCCIPReceiver.connect(client).send(
           chainSelector,
           hre.ethers.zeroPadValue(client.address, 32),
-          await erc20.getAddress(),
+          await erc20AutoFee.getAddress(),
           minAmount,
           "0x",
           { value: hre.ethers.parseEther("0.01") }
@@ -135,7 +147,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
 
     it("should handle maximum token ID values", async () => {
       const maxTokenId = hre.ethers.MaxUint256 & ((1n << 64n) - 1n); // Max uint64
-      const newToken = await (await hre.ethers.getContractFactory('ERC20Mock')).deploy("Max Token", "MAX");
+      const newToken = await (await hre.ethers.getContractFactory('ERC20AutoFeeMock')).deploy("Max Token", "MAX");
 
       await backedCCIPReceiver.connect(owner).registerToken(
         await newToken.getAddress(), maxTokenId
@@ -182,155 +194,6 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       await erc20AutoFee.mint(systemWallet, 1000000n);
       await erc20AutoFee.connect(client).approve(await backedCCIPReceiver.getAddress(), 1000000n);
       await erc20AutoFee.connect(systemWallet).approve(await backedCCIPReceiver.getAddress(), 1000000n);
-    });
-
-    it("should handle multiplier nonce synchronization across multiple messages", async () => {
-      const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
-      const amount = 100000n;
-
-      // Set initial multiplier
-      await erc20AutoFee.updateMultiplierWithNonce(hre.ethers.parseEther("1.0"), 1);
-
-      // Process message with nonce 1
-      let payload = defaultAbiCoder.encode(
-        ["uint256", "uint256"],
-        [hre.ethers.parseEther("1.0"), 1]
-      );
-
-      let ccipMessage: Client.Any2EVMMessageStruct = {
-        messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
-        sourceChainSelector: chainSelector,
-        sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
-        data: hre.ethers.solidityPacked(
-          ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
-        ),
-        destTokenAmounts: [],
-      };
-
-      await backedCCIPReceiver.connect(router).ccipReceive(ccipMessage);
-
-      // Update multiplier to nonce 2
-      await erc20AutoFee.updateMultiplierWithNonce(hre.ethers.parseEther("1.1"), 2);
-
-      // Process older message with nonce 1 (should adjust amount)
-      payload = defaultAbiCoder.encode(
-        ["uint256", "uint256"],
-        [hre.ethers.parseEther("1.0"), 1] // Old multiplier
-      );
-
-      ccipMessage.messageId = "0x92a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf";
-      ccipMessage.data = hre.ethers.solidityPacked(
-        ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-        [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
-      );
-
-      await expect(
-        backedCCIPReceiver.connect(router).ccipReceive(ccipMessage)
-      ).to.emit(backedCCIPReceiver, "MessageReceived");
-
-      // The amount should be adjusted based on multiplier difference
-      const clientBalance = await erc20AutoFee.balanceOf(client.address);
-      expect(clientBalance).to.be.greaterThan(1000000n); // Original + received amounts
-    });
-
-    it("should handle extreme multiplier values", async () => {
-      const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
-      const amount = 1000n;
-
-      // Set very small multiplier
-      const smallMultiplier = hre.ethers.parseUnits("0.000001", 18); // 0.000001
-      await erc20AutoFee.updateMultiplierWithNonce(smallMultiplier, 1);
-
-      const payload = defaultAbiCoder.encode(
-        ["uint256", "uint256"],
-        [smallMultiplier, 1]
-      );
-
-      const ccipMessage: Client.Any2EVMMessageStruct = {
-        messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
-        sourceChainSelector: chainSelector,
-        sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
-        data: hre.ethers.solidityPacked(
-          ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
-        ),
-        destTokenAmounts: [],
-      };
-
-      await expect(
-        backedCCIPReceiver.connect(router).ccipReceive(ccipMessage)
-      ).to.emit(backedCCIPReceiver, "MessageReceived");
-    });
-
-    it("should handle zero multiplier edge case", async () => {
-      const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
-      const amount = 100000n;
-
-      // Set zero multiplier (edge case)
-      await erc20AutoFee.updateMultiplierWithNonce(0n, 1);
-
-      const payload = defaultAbiCoder.encode(
-        ["uint256", "uint256"],
-        [0n, 1]
-      );
-
-      const ccipMessage: Client.Any2EVMMessageStruct = {
-        messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
-        sourceChainSelector: chainSelector,
-        sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
-        data: hre.ethers.solidityPacked(
-          ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
-        ),
-        destTokenAmounts: [],
-      };
-
-      // Zero multiplier causes division by zero in the auto fee token contract
-      await expect(
-        backedCCIPReceiver.connect(router).ccipReceive(ccipMessage)
-      ).to.be.reverted;
-    });
-
-    it("should calculate correct amounts with large multiplier differences", async () => {
-      const defaultAbiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
-      const amount = 100000n;
-
-      // Source multiplier: 1.0
-      const sourceMultiplier = hre.ethers.parseEther("1.0");
-      // Destination multiplier: 2.0 (doubled)
-      const destMultiplier = hre.ethers.parseEther("2.0");
-
-      // Set up destination chain state
-      await erc20AutoFee.updateMultiplierWithNonce(destMultiplier, 2);
-
-      // Process message from chain with older, smaller multiplier
-      const payload = defaultAbiCoder.encode(
-        ["uint256", "uint256"],
-        [sourceMultiplier, 1] // Source nonce is 1, dest nonce is 2
-      );
-
-      const initialBalance = await erc20AutoFee.balanceOf(client.address);
-
-      const ccipMessage: Client.Any2EVMMessageStruct = {
-        messageId: "0x91a2d259e3fa0be5050528a6770a0726d22c7a876d5ec3cbf38841cf4a5e35cf",
-        sourceChainSelector: chainSelector,
-        sender: defaultAbiCoder.encode(["bytes32"], [receiver]),
-        data: hre.ethers.solidityPacked(
-          ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-          [hre.ethers.zeroPadValue(client.address, 32), tokenId, amount, payload]
-        ),
-        destTokenAmounts: [],
-      };
-
-      await backedCCIPReceiver.connect(router).ccipReceive(ccipMessage);
-
-      const finalBalance = await erc20AutoFee.balanceOf(client.address);
-
-      // Expected: amount * destMultiplier / sourceMultiplier = 100000 * 2 / 1 = 200000
-      // But this is in terms of token balance, so we need to account for the multiplier effect
-      const expectedIncrease = amount * 2n; // 200000 underlying, but balance calculation includes multiplier
-      expect(finalBalance).to.be.greaterThan(initialBalance);
     });
 
     it("should handle sending auto fee tokens with current multiplier", async () => {
@@ -380,11 +243,11 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       );
 
       await backedCCIPReceiver.connect(owner).registerToken(
-        await erc20.getAddress(), tokenId
+        await erc20AutoFee.getAddress(), tokenId
       );
 
-      await erc20.mint(client, 1000000n);
-      await erc20.connect(client).approve(await backedCCIPReceiver.getAddress(), 1000000n);
+      await erc20AutoFee.mint(client, 1000000n);
+      await erc20AutoFee.connect(client).approve(await backedCCIPReceiver.getAddress(), 1000000n);
     });
 
     it("should handle different gas limits for different chain variants", async () => {
@@ -413,7 +276,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       const evmFee = await backedCCIPReceiver.getDeliveryFeeCost(
         evmChainSelector,
         tokenReceiver, // tokenReceiver is already bytes32
-        await erc20.getAddress(),
+        await erc20AutoFee.getAddress(),
         amount,
         "0x"
       );
@@ -427,7 +290,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       const svmFee = await backedCCIPReceiver.getDeliveryFeeCost(
         svmChainSelector,
         tokenReceiver,
-        await erc20.getAddress(),
+        await erc20AutoFee.getAddress(),
         amount,
         svmChainSpecificArgs
       );
@@ -466,7 +329,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
 
   describe("Token Management Edge Cases", () => {
     it("should handle token removal and re-registration", async () => {
-      const tokenAddress = await erc20.getAddress();
+      const tokenAddress = await erc20AutoFee.getAddress();
       const tokenId1 = 100n;
       const tokenId2 = 200n;
 
@@ -583,14 +446,12 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       const receiver = hre.ethers.zeroPadValue("0x1234567890abcdef1234567890abcdef12345678", 32);
 
       await backedCCIPReceiver.connect(owner).registerSourceChain(chainSelector, receiver);
-      await backedCCIPReceiver.connect(owner).registerToken(await erc20.getAddress(), 1337n);
+      await backedCCIPReceiver.connect(owner).registerToken(await erc20AutoFee.getAddress(), 1337n);
 
-      // Create very long payload
-      const longPayload = "0x" + "ff".repeat(10000); // 10KB of data
-
+      // Note: The shares-based architecture no longer includes payload data
       const longData = hre.ethers.solidityPacked(
-        ["bytes32", "uint64", "uint256", "uint8", "bytes"],
-        [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n, longPayload]
+        ["bytes32", "uint64", "uint256"],
+        [hre.ethers.zeroPadValue(client.address, 32), 1337n, 100000n]
       );
 
       const ccipMessage: Client.Any2EVMMessageStruct = {
@@ -602,8 +463,8 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       };
 
       // Setup custody wallet with tokens
-      await erc20.mint(systemWallet, 1000000n);
-      await erc20.connect(systemWallet).approve(await backedCCIPReceiver.getAddress(), 1000000n);
+      await erc20AutoFee.mint(systemWallet, 1000000n);
+      await erc20AutoFee.connect(systemWallet).approve(await backedCCIPReceiver.getAddress(), 1000000n);
 
       await expect(
         backedCCIPReceiver.connect(router).ccipReceive(ccipMessage)
@@ -614,7 +475,7 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
   describe("Upgrade Compatibility Tests", () => {
     it("should maintain state after potential upgrade", async () => {
       // Register some data
-      const tokenAddress = await erc20.getAddress();
+      const tokenAddress = await erc20AutoFee.getAddress();
       const receiver = hre.ethers.zeroPadValue("0x1234567890abcdef1234567890abcdef12345678", 32);
 
       await backedCCIPReceiver.connect(owner).registerDestinationChain(

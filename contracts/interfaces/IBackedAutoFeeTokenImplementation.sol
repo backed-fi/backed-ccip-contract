@@ -97,6 +97,16 @@ interface IBackedAutoFeeTokenImplementation {
      */
     function transferShares(address to, uint256 sharesAmount) external returns (bool);
     /**
+     * @dev Transfers underlying shares from one account to another
+     *
+     * Requirements:
+     *
+     * - `from` and `to` cannot be the zero address.
+     * - `from` must have a balance of at least `sharesAmount`.
+     * - the caller must have allowance for `from`'s tokens of at least `sharesAmount`.
+     */
+    function transferSharesFrom(address from, address to, uint256 sharesAmount) external returns (bool);
+    /**
      * @dev Function to set the new fee. Allowed only for owner
      *
      * @param newFeePerPeriod The new fee per period value
