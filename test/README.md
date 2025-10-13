@@ -63,9 +63,9 @@ Fork-based integration test for basic cross-chain functionality.
 #### `/test/no-fork/BackedCCIPReceiver.spec.ts`
 Unit tests covering basic contract functionality and message flow.
 
-## Known Issues
+## Test Tolerance
 
-**3 integration tests currently fail** due to a message encoding bug in the contract (line 356 sends both `_amount` and `_sharesAmount`, but receiver reads the wrong position). A bug documentation test is included. Contract fix is pending.
+Integration tests use a tolerance of 0.0001% (1 part per million) for assertions involving shares calculations to account for rounding errors in integer division.
 
 ## Key Features Tested
 

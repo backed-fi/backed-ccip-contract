@@ -241,9 +241,9 @@ describe("Backed CCIP Receiver tests", () => {
 
       await backedCCIPReceiver.removeSourceChain(chainSelector);
 
-      sourceChainSender = await backedCCIPReceiver.allowlistedDestinationChains(chainSelector);
+      sourceChainSender = await backedCCIPReceiver.allowlistedSourceChains(chainSelector);
 
-      expect(sourceChainSender).to.deep.equal(hre.ethers.ZeroAddress);
+      expect(sourceChainSender).to.deep.equal(hre.ethers.ZeroHash);
     });
   });
   describe('#updateCustodyWallet', () => {
