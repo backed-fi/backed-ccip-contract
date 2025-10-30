@@ -31,7 +31,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         SOURCE_SENDER_NOT_ALLOWLISTED,
         TOKEN_NOT_REGISTERED,
         TOKEN_RECEIVER_INVALID,
-        MULTIPLIER_MISMATCH,
         TRANSFER_FAILED
     }
 
