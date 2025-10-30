@@ -493,10 +493,10 @@ describe("Backed CCIP Receiver - Performance & Gas Optimization Tests", () => {
       const randomToken = tokens[randomTokenIndex];
 
       const gasLimit = await backedCCIPReceiver.gasLimit(randomChain);
-      const tokenInfo = await backedCCIPReceiver.tokenInfos(await randomToken.token.getAddress());
+      const tokenId = await backedCCIPReceiver.tokenIds(await randomToken.token.getAddress());
 
       expect(gasLimit).to.be.greaterThan(0);
-      expect(tokenInfo).to.equal(BigInt(randomToken.index));
+      expect(tokenId).to.equal(BigInt(randomToken.index));
 
       console.log(`Random access test completed successfully`);
     });

@@ -153,8 +153,8 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
         await newToken.getAddress(), maxTokenId
       );
 
-      const tokenInfo = await backedCCIPReceiver.tokenInfos(await newToken.getAddress());
-      expect(tokenInfo).to.equal(maxTokenId);
+      const tokenId = await backedCCIPReceiver.tokenIds(await newToken.getAddress());
+      expect(tokenId).to.equal(maxTokenId);
     });
 
     it("should handle maximum gas limit values", async () => {
@@ -337,9 +337,9 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, tokenId1);
 
       // Verify registration
-      const tokenInfo1 = await backedCCIPReceiver.tokenInfos(tokenAddress);
-      expect(tokenInfo1).to.equal(tokenId1);
-      expect(await backedCCIPReceiver.tokens(tokenId1)).to.equal(tokenAddress);
+      const tokenId1Returned = await backedCCIPReceiver.tokenIds(tokenAddress);
+      expect(tokenId1Returned).to.equal(tokenId1);
+      expect(await backedCCIPReceiver.tokens(tokenId1Returned)).to.equal(tokenAddress);
 
       // Remove token
       await expect(
@@ -347,16 +347,16 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       ).to.emit(backedCCIPReceiver, "TokenRemoved");
 
       // Verify removal
-      const removedTokenInfo = await backedCCIPReceiver.tokenInfos(tokenAddress);
-      expect(removedTokenInfo).to.equal(0n);
+      const removedtokenId = await backedCCIPReceiver.tokenIds(tokenAddress);
+      expect(removedtokenId).to.equal(0n);
       expect(await backedCCIPReceiver.tokens(tokenId1)).to.equal(hre.ethers.ZeroAddress);
 
       // Re-register with different ID and variant
       await backedCCIPReceiver.connect(owner).registerToken(tokenAddress, tokenId2);
 
-      const tokenInfo2 = await backedCCIPReceiver.tokenInfos(tokenAddress);
-      expect(tokenInfo2).to.equal(tokenId2);
-      expect(await backedCCIPReceiver.tokens(tokenId2)).to.equal(tokenAddress);
+      const tokenId2Returned = await backedCCIPReceiver.tokenIds(tokenAddress);
+      expect(tokenId2Returned).to.equal(tokenId2);
+      expect(await backedCCIPReceiver.tokens(tokenId2Returned)).to.equal(tokenAddress);
     });
 
     it("should handle multiple tokens with sequential IDs", async () => {
@@ -379,8 +379,8 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
 
       // Verify all registrations
       for (let i = 0; i < tokens.length; i++) {
-        const tokenInfo = await backedCCIPReceiver.tokenInfos(await tokens[i].getAddress());
-        expect(tokenInfo).to.equal(tokenIds[i]);
+        const tokenId = await backedCCIPReceiver.tokenIds(await tokens[i].getAddress());
+        expect(tokenId).to.equal(tokenIds[i]);
         expect(await backedCCIPReceiver.tokens(tokenIds[i])).to.equal(await tokens[i].getAddress());
       }
 
@@ -391,11 +391,11 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
 
       // Verify removals and that others remain
       for (let i = 0; i < tokens.length; i++) {
-        const tokenInfo = await backedCCIPReceiver.tokenInfos(await tokens[i].getAddress());
+        const tokenId = await backedCCIPReceiver.tokenIds(await tokens[i].getAddress());
         if (i % 2 === 0) {
-          expect(tokenInfo).to.equal(0n); // Removed
+          expect(tokenId).to.equal(0n); // Removed
         } else {
-          expect(tokenInfo).to.equal(tokenIds[i]); // Still registered
+          expect(tokenId).to.equal(tokenIds[i]); // Still registered
         }
       }
     });
@@ -488,8 +488,8 @@ describe("Backed CCIP Receiver - Edge Cases & Auto Fee Tests", () => {
       expect(await backedCCIPReceiver.allowlistedDestinationChains(chainSelector)).to.equal(receiver);
       expect(await backedCCIPReceiver.allowlistedSourceChains(chainSelector)).to.equal(receiver);
 
-      const tokenInfo = await backedCCIPReceiver.tokenInfos(tokenAddress);
-      expect(tokenInfo).to.equal(1337n);
+      const tokenId = await backedCCIPReceiver.tokenIds(tokenAddress);
+      expect(tokenId).to.equal(1337n);
 
       const chainInfo = await backedCCIPReceiver.chainInfos(chainSelector);
       expect(chainInfo.variant).to.equal(EVM_CHAIN_VARIANT);
