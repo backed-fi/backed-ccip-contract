@@ -116,10 +116,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         uint64 tokenId
     );
 
-    struct TokenInfo {
-        uint64 id;
-    }
-
     struct ChainInfo {
         ChainVariant variant;
         uint256 defaultGasLimit;
