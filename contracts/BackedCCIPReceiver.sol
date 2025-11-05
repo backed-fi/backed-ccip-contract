@@ -30,8 +30,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         SOURCE_CHAIN_SELECTOR_NOT_ALLOWLISTED,
         SOURCE_SENDER_NOT_ALLOWLISTED,
         TOKEN_NOT_REGISTERED,
-        TOKEN_RECEIVER_INVALID,
-        TRANSFER_FAILED
+        TOKEN_RECEIVER_INVALID
     }
 
     /// Variants of chains that are supported by this bridge.
@@ -485,12 +484,10 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             return;
         }
 
-        if(!IBackedAutoFeeTokenImplementation(token).transferSharesFrom(
+        // Transfer shares from custody wallet to the token receiver, reverting on failure
+        IBackedAutoFeeTokenImplementation(token).transferSharesFrom(
             _custodyWallet, tokenReceiver, sharesAmount
-        )) {
-            emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.TRANSFER_FAILED);
-            return;
-        }
+        );
 
         emit MessageReceived(
             any2EvmMessage.messageId,
