@@ -345,17 +345,17 @@ describe("CCIP Integration - Cross-Chain Tests", function () {
     );
 
     // Verify initial state
-    const initialTokenInfo = await receiver.tokenInfos(await token.getAddress());
+    const initialTokenId = await receiver.tokenIds(await token.getAddress());
     const initialChainInfo = await receiver.chainInfos(chainSelector + 1n);
 
     // Simulate "upgrade" by creating new instance (in real scenario would use upgradeProxy)
     receiver = factory.attach(await receiver.getAddress()) as BackedCCIPReceiver;
 
     // Verify state persisted after "upgrade"
-    const postUpgradeTokenInfo = await receiver.tokenInfos(await token.getAddress());
+    const postUpgradeTokenId = await receiver.tokenIds(await token.getAddress());
     const postUpgradeChainInfo = await receiver.chainInfos(chainSelector + 1n);
 
-    expect(postUpgradeTokenInfo).to.equal(initialTokenInfo);
+    expect(postUpgradeTokenId).to.equal(initialTokenId);
     expect(postUpgradeChainInfo.variant).to.equal(initialChainInfo.variant);
     expect(postUpgradeChainInfo.defaultGasLimit).to.equal(initialChainInfo.defaultGasLimit);
   });

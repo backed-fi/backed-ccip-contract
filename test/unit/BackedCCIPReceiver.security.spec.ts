@@ -828,8 +828,8 @@ describe("Backed CCIP Receiver - Security Tests", () => {
         backedCCIPReceiver.connect(owner).registerToken(regularTokenAddress, tokenId)
       ).to.not.be.reverted;
 
-      const registeredTokenInfo = await backedCCIPReceiver.tokenInfos(regularTokenAddress);
-      expect(registeredTokenInfo).to.equal(tokenId);
+      const registeredTokenId = await backedCCIPReceiver.tokenIds(regularTokenAddress);
+      expect(registeredTokenId).to.equal(tokenId);
     });
 
     it("should fail when trying to send regular ERC20 token (missing getSharesByUnderlyingAmount)", async () => {
