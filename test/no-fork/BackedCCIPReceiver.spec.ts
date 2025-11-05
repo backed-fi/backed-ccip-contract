@@ -316,9 +316,9 @@ describe("Backed CCIP Receiver tests", () => {
         ).to.be.revertedWithCustomError(backedCCIPReceiver, 'InvalidTokenAddress');
       });
     });
-    it('should set mapping from `_tokenId` to `_token` and from `_token` to `tokenInfo`', async () => {
+    it('should set mapping from `_tokenId` to `_token` and from `_token` to `tokenId`', async () => {
       await backedCCIPReceiver.registerToken(erc20AutoFeeAddress, PRODUCT_ID);
-      const tokenId = await backedCCIPReceiver.tokenInfos(erc20AutoFeeAddress)
+      const tokenId = await backedCCIPReceiver.tokenIds(erc20AutoFeeAddress)
 
       expect(tokenId).to.eq(PRODUCT_ID);
       expect(await backedCCIPReceiver.tokens(PRODUCT_ID)).to.be.equal(erc20AutoFeeAddress);
@@ -344,12 +344,12 @@ describe("Backed CCIP Receiver tests", () => {
     });
 
     it('should remove token', async () => {
-      let tokenId = await backedCCIPReceiver.tokenInfos(erc20AutoFeeAddress);
+      let tokenId = await backedCCIPReceiver.tokenIds(erc20AutoFeeAddress);
 
       expect(tokenId).to.deep.equal(PRODUCT_ID);
 
       await backedCCIPReceiver.removeToken(erc20AutoFeeAddress);
-      tokenId = await backedCCIPReceiver.tokenInfos(erc20AutoFeeAddress);
+      tokenId = await backedCCIPReceiver.tokenIds(erc20AutoFeeAddress);
 
       expect(tokenId).to.deep.equal(0);
     });

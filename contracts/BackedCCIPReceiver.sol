@@ -116,10 +116,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         uint64 tokenId
     );
 
-    struct TokenInfo {
-        uint64 id;
-    }
-
     struct ChainInfo {
         ChainVariant variant;
         uint256 defaultGasLimit;
@@ -137,7 +133,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     mapping(uint64 => ChainInfo) public chainInfos;
 
     // Mapping from token address to token information.
-    mapping(address => TokenInfo) public tokenInfos;
+    mapping(address => uint64) public tokenIds;
     // Mapping from tokenId to token address
     mapping(uint64 => address) public tokens;
 
@@ -181,7 +177,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         if (_token == address(0))
             revert InvalidTokenAddress();
 
-        if (tokenInfos[_token].id == 0)
+        if (tokenIds[_token] == 0)
             revert TokenNotRegistered(_token);
         _;
     }
@@ -196,7 +192,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     /// @dev Modifier that checks the token address is not zero address or is not registered.
     /// @param _token The token address.
     modifier validateToken(address _token) {
-        if (_token == address(0) || tokenInfos[_token].id != 0) 
+        if (_token == address(0) || tokenIds[_token] != 0) 
             revert InvalidTokenAddress();
         _;
     }
@@ -282,7 +278,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         validateToken(_token)
         validateTokenId(_tokenId)
     {
-        tokenInfos[_token] = TokenInfo(_tokenId);
+        tokenIds[_token] = _tokenId;
         tokens[_tokenId] = _token;
 
         emit TokenRegistered(_token, _tokenId);
@@ -295,12 +291,12 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         onlyOwner
         onlyAllowRegisteredTokens(_token)
     {
-        TokenInfo memory tokenInfo = tokenInfos[_token];
+        uint64 tokenId = tokenIds[_token];
 
-        tokens[tokenInfo.id] = address(0);
-        delete tokenInfos[_token];
+        tokens[tokenId] = address(0);
+        delete tokenIds[_token];
 
-        emit TokenRemoved(_token, tokenInfo.id);
+        emit TokenRemoved(_token, tokenId);
     }
 
     /// @dev Updates the custody wallet.
@@ -344,7 +340,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             msg.sender, _custodyWallet, _amount
         );
 
-        TokenInfo memory tokenInfo = tokenInfos[_token];
+        uint64 tokenId = tokenIds[_token];
         bytes32 receiver = allowlistedDestinationChains[_destinationChainSelector];
         uint256 defaultGasLimit = chainInfos[_destinationChainSelector].defaultGasLimit;
 
@@ -353,7 +349,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         messageId = _sendMessagePayNative(
             _destinationChainSelector,
             receiver,
-            abi.encodePacked(_tokenReceiver, tokenInfo.id, _sharesAmount),
+            abi.encodePacked(_tokenReceiver, tokenId, _sharesAmount),
             defaultGasLimit, 
             _chainSpecificArgs
         );
@@ -364,7 +360,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             _destinationChainSelector,
             receiver,
             _tokenReceiver,
-            tokenInfo.id,
+            tokenId,
             _sharesAmount
         );
     }
@@ -377,14 +373,14 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     /// @return The calculated delivery fee cost
     function getDeliveryFeeCost(uint64 _destinationChainSelector, bytes32 _tokenReceiver, address _token, uint256 _amount, bytes calldata _chainSpecificArgs) external view returns (uint256) {
         bytes32 receiver = allowlistedDestinationChains[_destinationChainSelector];
-        TokenInfo memory tokenInfo = tokenInfos[_token];
+        uint64 tokenId = tokenIds[_token];
         ChainInfo memory chainInfo = chainInfos[_destinationChainSelector];
         
         bytes memory data;
 
         uint256 sharesAmount = IBackedAutoFeeTokenImplementation(_token).getSharesByUnderlyingAmount(_amount);
 
-        data = abi.encodePacked(_tokenReceiver, tokenInfo.id, sharesAmount);
+        data = abi.encodePacked(_tokenReceiver, tokenId, sharesAmount);
 
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             receiver,
