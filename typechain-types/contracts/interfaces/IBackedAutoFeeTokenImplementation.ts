@@ -35,6 +35,7 @@ export interface IBackedAutoFeeTokenImplementationInterface extends Interface {
       | "sharesOf"
       | "totalSupply"
       | "transferShares"
+      | "transferSharesFrom"
       | "updateFeePerPeriod"
       | "updateMultiplierValue"
   ): FunctionFragment;
@@ -92,6 +93,10 @@ export interface IBackedAutoFeeTokenImplementationInterface extends Interface {
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "transferSharesFrom",
+    values: [AddressLike, AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "updateFeePerPeriod",
     values: [BigNumberish]
   ): string;
@@ -136,6 +141,10 @@ export interface IBackedAutoFeeTokenImplementationInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "transferShares",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferSharesFrom",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -259,6 +268,12 @@ export interface IBackedAutoFeeTokenImplementation extends BaseContract {
     "nonpayable"
   >;
 
+  transferSharesFrom: TypedContractMethod<
+    [from: AddressLike, to: AddressLike, sharesAmount: BigNumberish],
+    [boolean],
+    "nonpayable"
+  >;
+
   updateFeePerPeriod: TypedContractMethod<
     [newFeePerPeriod: BigNumberish],
     [void],
@@ -339,6 +354,13 @@ export interface IBackedAutoFeeTokenImplementation extends BaseContract {
     nameOrSignature: "transferShares"
   ): TypedContractMethod<
     [to: AddressLike, sharesAmount: BigNumberish],
+    [boolean],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "transferSharesFrom"
+  ): TypedContractMethod<
+    [from: AddressLike, to: AddressLike, sharesAmount: BigNumberish],
     [boolean],
     "nonpayable"
   >;

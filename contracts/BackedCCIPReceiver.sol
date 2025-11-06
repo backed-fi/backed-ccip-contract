@@ -30,16 +30,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         SOURCE_CHAIN_SELECTOR_NOT_ALLOWLISTED,
         SOURCE_SENDER_NOT_ALLOWLISTED,
         TOKEN_NOT_REGISTERED,
-        TOKEN_RECEIVER_INVALID,
-        TOKEN_VARIANT_MISMATCH,
-        TOKEN_VARIANT_NOT_SUPPORTED,
-        MULTIPLIER_MISMATCH
-    }
-
-    /// Variants of tokens that are supported by this bridge.
-    enum TokenVariant {
-        REGULAR,
-        AUTO_FEE
+        TOKEN_RECEIVER_INVALID
     }
 
     /// Variants of chains that are supported by this bridge.
@@ -59,7 +50,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     error TokenNotRegistered(address token); // Used when the token has not been registered by the contract owner.
     error InvalidTokenId(); // Used when token id is zero address or already registered.
     error InvalidTokenAddress(); // Used when token address is zero address or already registered.
-    error TokenVariantNotSupported(); // Used when token variant is not recognized.
     error InvalidMultiplierNonce(); // Used when source chain multiplier nonce is ahead of current chain nonce.
 
     // Event emitted when a message is sent to another chain.
@@ -69,9 +59,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         bytes32 receiver, // The address of the CCIP message receiver on the destination chain. 
         bytes32 tokenReceiver, // The address of the token receiver on the destination chain
         uint64 tokenId, // The token being sent.
-        uint256 amount, // The amount being sent.
-        TokenVariant variant, // The token variant.
-        bytes payload // Token type specific payload
+        uint256 sharesAmount // The shares amount being sent.
     );
 
     // Event emitted when a message is received from another chain.
@@ -80,10 +68,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         uint64 indexed sourceChainSelector, // The chain selector of the source chain.
         bytes32 sender, // The address of the sender from the source chain.
         address token, // The token that was received.
-        uint256 amount, // The amount that was received.
-        TokenVariant variant, // The token variant.
-        address tokenReceiver, // The receiver of the tokens.
-        bytes payload // ABI-encoded CCIP message data payload
+        uint256 sharesAmount, // The shares amount that was received.
+        address tokenReceiver // The receiver of the tokens.
     );
 
     event InvalidMessageReceived(
@@ -128,11 +114,6 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         uint64 tokenId
     );
 
-    struct TokenInfo {
-        uint64 id;
-        TokenVariant variant; 
-    }
-
     struct ChainInfo {
         ChainVariant variant;
         uint256 defaultGasLimit;
@@ -150,7 +131,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     mapping(uint64 => ChainInfo) public chainInfos;
 
     // Mapping from token address to token information.
-    mapping(address => TokenInfo) public tokenInfos;
+    mapping(address => uint64) public tokenIds;
     // Mapping from tokenId to token address
     mapping(uint64 => address) public tokens;
 
@@ -194,7 +175,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         if (_token == address(0))
             revert InvalidTokenAddress();
 
-        if (tokenInfos[_token].id == 0)
+        if (tokenIds[_token] == 0)
             revert TokenNotRegistered(_token);
         _;
     }
@@ -209,7 +190,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     /// @dev Modifier that checks the token address is not zero address or is not registered.
     /// @param _token The token address.
     modifier validateToken(address _token) {
-        if (_token == address(0) || tokenInfos[_token].id != 0) 
+        if (_token == address(0) || tokenIds[_token] != 0) 
             revert InvalidTokenAddress();
         _;
     }
@@ -289,14 +270,13 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     /// @dev Updates the allowlist status of a _token under _tokenId.
     /// @param _token The address of the token.
     /// @param _tokenId The arbitrary id of the the token.
-    /// @param _variant The variant of token.
-    function registerToken(address _token, uint64 _tokenId, TokenVariant _variant) 
+    function registerToken(address _token, uint64 _tokenId) 
         external
         onlyOwner
         validateToken(_token)
         validateTokenId(_tokenId)
     {
-        tokenInfos[_token] = TokenInfo(_tokenId, _variant);
+        tokenIds[_token] = _tokenId;
         tokens[_tokenId] = _token;
 
         emit TokenRegistered(_token, _tokenId);
@@ -309,12 +289,12 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
         onlyOwner
         onlyAllowRegisteredTokens(_token)
     {
-        TokenInfo memory tokenInfo = tokenInfos[_token];
+        uint64 tokenId = tokenIds[_token];
 
-        tokens[tokenInfo.id] = address(0);
-        delete tokenInfos[_token];
+        tokens[tokenId] = address(0);
+        delete tokenIds[_token];
 
-        emit TokenRemoved(_token, tokenInfo.id);
+        emit TokenRemoved(_token, tokenId);
     }
 
     /// @dev Updates the custody wallet.
@@ -358,25 +338,16 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             msg.sender, _custodyWallet, _amount
         );
 
-        TokenInfo memory tokenInfo = tokenInfos[_token];
+        uint64 tokenId = tokenIds[_token];
         bytes32 receiver = allowlistedDestinationChains[_destinationChainSelector];
         uint256 defaultGasLimit = chainInfos[_destinationChainSelector].defaultGasLimit;
 
-        bytes memory payload;
+        uint256 _sharesAmount = IBackedAutoFeeTokenImplementation(_token).getSharesByUnderlyingAmount(_amount);
 
-        if (tokenInfo.variant == TokenVariant.REGULAR) {
-            payload = bytes("");
-        } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
-            (uint256 multiplier, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
-            payload = abi.encode(multiplier, multiplierNonce);
-        } else {
-            revert TokenVariantNotSupported();
-        }
-        
         messageId = _sendMessagePayNative(
-            _destinationChainSelector, 
-            receiver, 
-            abi.encodePacked(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, payload), 
+            _destinationChainSelector,
+            receiver,
+            abi.encodePacked(_tokenReceiver, tokenId, _sharesAmount),
             defaultGasLimit, 
             _chainSpecificArgs
         );
@@ -387,10 +358,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             _destinationChainSelector,
             receiver,
             _tokenReceiver,
-            tokenInfo.id,
-            _amount,
-            tokenInfo.variant,
-            payload
+            tokenId,
+            _sharesAmount
         );
     }
 
@@ -402,19 +371,14 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
     /// @return The calculated delivery fee cost
     function getDeliveryFeeCost(uint64 _destinationChainSelector, bytes32 _tokenReceiver, address _token, uint256 _amount, bytes calldata _chainSpecificArgs) external view returns (uint256) {
         bytes32 receiver = allowlistedDestinationChains[_destinationChainSelector];
-        TokenInfo memory tokenInfo = tokenInfos[_token];
+        uint64 tokenId = tokenIds[_token];
         ChainInfo memory chainInfo = chainInfos[_destinationChainSelector];
         
         bytes memory data;
-        bytes memory payload;
 
-        if (tokenInfo.variant == TokenVariant.REGULAR) {
-            payload = bytes("");
-        } else if (tokenInfo.variant == TokenVariant.AUTO_FEE) {
-            (uint256 multiplier, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(_token).getCurrentMultiplier();
-            payload = abi.encode(multiplier, multiplierNonce);
-        }
-        data = abi.encodePacked(_tokenReceiver, tokenInfo.id, _amount, tokenInfo.variant, payload);
+        uint256 sharesAmount = IBackedAutoFeeTokenImplementation(_token).getSharesByUnderlyingAmount(_amount);
+
+        data = abi.encodePacked(_tokenReceiver, tokenId, sharesAmount);
 
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             receiver,
@@ -496,9 +460,7 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
 
         bytes32 tokenReceiverBytes = bytes32(any2EvmMessage.data.slice(0, 32));
         uint64 tokenId = uint64(bytes8(any2EvmMessage.data.slice(32, 40)));
-        uint256 amount = uint256(bytes32(any2EvmMessage.data.slice(40, 72)));
-        TokenVariant variant = TokenVariant(uint8(bytes1(any2EvmMessage.data.slice(72, 73))));
-        bytes memory payload = any2EvmMessage.data.slice(73);
+        uint256 sharesAmount = uint256(bytes32(any2EvmMessage.data.slice(40, 72)));
 
         if (allowlistedSourceChains[any2EvmMessage.sourceChainSelector] != abi.decode(any2EvmMessage.sender, (bytes32))) {
             emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.SOURCE_SENDER_NOT_ALLOWLISTED);
@@ -522,42 +484,9 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             return;
         }
 
-        TokenInfo memory tokenInfo = tokenInfos[token];
-
-        if (variant != tokenInfo.variant) {
-            emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.TOKEN_VARIANT_MISMATCH);
-            
-            return;
-        }
-
-        uint256 underlyingAmount;
-        if (variant == TokenVariant.REGULAR) {
-            underlyingAmount = amount;
-        } else if (variant == TokenVariant.AUTO_FEE) {
-            (uint256 sourceMultiplier, uint256 sourceMultiplierNonce) = abi.decode(payload, (uint256, uint256)); 
-            (uint256 multiplier, , uint256 multiplierNonce) = IBackedAutoFeeTokenImplementation(token).getCurrentMultiplier();
-
-            if (sourceMultiplierNonce > multiplierNonce) {
-                // Revert to be able to re-try CCIP message once the nonce on the destination chain catches up.
-                revert InvalidMultiplierNonce();
-            } else if (sourceMultiplierNonce < multiplierNonce)
-                underlyingAmount = amount * multiplier / sourceMultiplier;
-            else {
-                if (multiplier != sourceMultiplier) {
-                    emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.MULTIPLIER_MISMATCH);
-            
-                    return;
-                }
-                underlyingAmount = amount;
-            }
-        } else {
-            emit InvalidMessageReceived(any2EvmMessage.messageId, InvalidMessageReason.TOKEN_VARIANT_NOT_SUPPORTED);
-            
-            return;
-        }
-
-        IERC20(token).safeTransferFrom(
-            _custodyWallet, tokenReceiver, underlyingAmount
+        // Transfer shares from custody wallet to the token receiver, reverting on failure
+        IBackedAutoFeeTokenImplementation(token).transferSharesFrom(
+            _custodyWallet, tokenReceiver, sharesAmount
         );
 
         emit MessageReceived(
@@ -565,10 +494,8 @@ contract BackedCCIPReceiver is CCIPReceiverUpgradeable, OwnableUpgradeable, Paus
             any2EvmMessage.sourceChainSelector, // fetch the source chain identifier (aka selector)
             abi.decode(any2EvmMessage.sender, (bytes32)), // abi-decoding of the sender address,
             token,
-            amount,
-            tokenInfo.variant,
-            tokenReceiver,
-            payload
+            sharesAmount,
+            tokenReceiver
         );
     }
 

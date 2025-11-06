@@ -1,17 +1,6 @@
-import { expect } from "chai";
+import {expect} from "chai";
 import hre from "hardhat";
-import {
-  getEvm2EvmMessage,
-  routeMessage,
-} from "@chainlink/local/scripts/CCIPLocalSimulatorFork";
-import {
-  BackedCCIPReceiver,
-} from "../../typechain-types";
-import {
-  getProviderRpcUrl,
-  getRouterConfig,
-} from "../../helpers/utils";
-import { BackedCCIPReceiver__factory } from "../../typechain-types/factories/contracts/BackedCCIPReceiver.sol";
+import {BackedCCIPReceiver} from "../../typechain-types";
 
 const token = {
   id: 1337,
@@ -49,21 +38,21 @@ describe("CCIP Integration", function () {
     console.log(`Deployed Backed CCIP receiver on ${sourceChainSelector}: ${backedCCIPSourceChainAddress}`);
 
     const tokenFactory = await hre.ethers.getContractFactory(
-      'ERC20Mock'
+      'ERC20AutoFeeMock'
     );
     const tokenOnSourceChain = await tokenFactory.deploy(token.name, token.symbol);
     const tokenOnSourceChainAddress = await tokenOnSourceChain.getAddress();
 
     console.log(`Deployed Backed IBTA on ${sourceChainSelector}: ${tokenOnSourceChainAddress}`);
 
-    await backedCCIPReceiverOnSourceChain.registerToken(tokenOnSourceChainAddress, token.id, token.variant);
+    await backedCCIPReceiverOnSourceChain.registerToken(tokenOnSourceChainAddress, token.id);
 
     await tokenOnSourceChain.mint(client, 10_000_000_000_000_000_000n);
 
     await tokenOnSourceChain.approve(backedCCIPReceiverOnSourceChain, 1_000_000_000_000_000_000n);
 
     await backedCCIPReceiverOnSourceChain.registerDestinationChain(
-      destinationChainSelector, 
+      destinationChainSelector,
       hre.ethers.zeroPadValue(backedCCIPSourceChainAddress, 32),
       0n, // EVM_CHAIN_VARIANT
       200_000n
@@ -75,9 +64,9 @@ describe("CCIP Integration", function () {
     expect(clientBalanceOnSourceChain).to.deep.equal(10_000_000_000_000_000_000n)
 
     const feeCosts = await backedCCIPReceiverOnSourceChain.connect(client).getDeliveryFeeCost(
-      destinationChainSelector, 
-      hre.ethers.zeroPadValue(client.address, 32), 
-      tokenOnSourceChainAddress, 
+      destinationChainSelector,
+      hre.ethers.zeroPadValue(client.address, 32),
+      tokenOnSourceChainAddress,
       1_000_000_000_000_000_000n,
       "0x"
     )
@@ -85,9 +74,9 @@ describe("CCIP Integration", function () {
     console.log(`Custody balance on source chain: ${custodyBalanceOnSourceChain}`);
     console.log(`Client balance on source chain: ${clientBalanceOnSourceChain}`);
     const tx = await backedCCIPReceiverOnSourceChain.connect(client).send(
-      destinationChainSelector, 
-      hre.ethers.zeroPadValue(client.address, 32), 
-      tokenOnSourceChainAddress, 
+      destinationChainSelector,
+      hre.ethers.zeroPadValue(client.address, 32),
+      tokenOnSourceChainAddress,
       1_000_000_000_000_000_000n,
       "0x",
       { value: feeCosts }
@@ -129,14 +118,14 @@ describe("CCIP Integration", function () {
     console.log(`Deployed Backed CCIP receiver on ${destinationChainSelector}: ${backedCCIPReceiverAddressOnDestinationChain}`);
 
     const tokenFactoryOnDestinationChain = await hre.ethers.getContractFactory(
-      'ERC20Mock'
+      'ERC20AutoFeeMock'
     );
     const tokenOnDestinationChain = await tokenFactoryOnDestinationChain.deploy('Backed IBTA', 'bIBTA');
     const tokenAddressOnDestinationChain = await tokenOnDestinationChain.getAddress();
 
     console.log(`Deployed Backed IBTA on ${destinationChainSelector}: ${tokenAddressOnDestinationChain}`);
 
-    await backedCCIPReceiverOnDestinationChain.registerToken(tokenAddressOnDestinationChain, token.id, token.variant);
+    await backedCCIPReceiverOnDestinationChain.registerToken(tokenAddressOnDestinationChain, token.id);
     await backedCCIPReceiverOnDestinationChain.registerSourceChain(sourceChainSelector, hre.ethers.zeroPadValue(backedCCIPSourceChainAddress, 32));
 
     await tokenOnDestinationChain.mint(systemWallet, 10_000_000_000_000_000_000n);
@@ -155,7 +144,7 @@ describe("CCIP Integration", function () {
 
     // Simulate CCIP message processing directly
     const router = await hre.ethers.getImpersonatedSigner(destinationRouterAddress);
-    
+
     // Fund the router for gas
     await client.sendTransaction({
       to: destinationRouterAddress,
