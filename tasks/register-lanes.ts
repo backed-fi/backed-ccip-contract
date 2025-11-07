@@ -52,15 +52,7 @@ task(
         console.log(
           `ℹ️  Attempting to register receiver and sender at ${backedReceiverAddress} address in BackedCCIPReceiver on the ${hre.network.name} blockchain using destination chain ${network} with selector: ${chainSelector}`
         );
-        console.log(JSON.stringify(await Promise.all([
-          contract.interface.encodeFunctionData('registerDestinationChain',[chainSelector, backedReceiverAddress, chainVariant, defaultGas]),
-          contract.interface.encodeFunctionData('registerSourceChain',[chainSelector, backedReceiverAddress])
-        ].map(async data => ({
-          to: await contract.getAddress(),
-          value: '0',
-          data: data
-        }))), null, 2))
-        await (await contract.registerDestinationChain(chainSelector, '0x92b9865c8a6fea71902f8347014fecfbfd41f6d0fdb0f2310e3265cfc36ea5e8', chainVariant, defaultGas)).wait(2); //Allow for different address for source and destination
+        await (await contract.registerDestinationChain(chainSelector, backedReceiverAddress)).wait(2);
         await (await contract.registerSourceChain(chainSelector, backedReceiverAddress)).wait(2);
         console.log(
           `✅ Receiver and sender at ${backedReceiverAddress} address registered in BackedReceiverCCIP at destination chain selector: ${chainSelector} on ${hre.network.name} blockchain`

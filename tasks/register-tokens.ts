@@ -31,6 +31,12 @@ task(
           console.log(`🚨 Skipping deployment ${token.name} on ${hre.network.name} as it is not deployed on this network.`);
           continue;
         }
+
+        console.log(
+          `ℹ️  Attempting to register token ${token.name} (variant: ${token.variant}) in BackedCCIPReceiver on the ${hre.network.name} blockchain using tokenId: ${token.productId}`
+        );
+        spinner.start();
+
         const factory: BackedCCIPReceiver__factory =
           (await hre.ethers.getContractFactory(
             "BackedCCIPReceiver",

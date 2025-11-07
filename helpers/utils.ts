@@ -96,7 +96,7 @@ export const getPrivateKey = () => {
 export const getRouterConfig = (network: string) => {
   switch (network) {
     case "localhost":
-      return routerConfig.sonic;
+      return routerConfig.polygon;
 
     case "mainnet":
       return routerConfig.mainnet;
