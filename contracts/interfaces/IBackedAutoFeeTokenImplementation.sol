@@ -34,7 +34,7 @@
  * For more information and restrictions please refer to the issuer's [Website](https://www.backedassets.fi/legal-documentation)
  */
 
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.24;
 
 /**
  * @dev
@@ -96,6 +96,16 @@ interface IBackedAutoFeeTokenImplementation {
      * - the caller must have a balance of at least `sharesAmount`.
      */
     function transferShares(address to, uint256 sharesAmount) external returns (bool);
+    /**
+     * @dev Transfers underlying shares from one account to another
+     *
+     * Requirements:
+     *
+     * - `from` and `to` cannot be the zero address.
+     * - `from` must have a balance of at least `sharesAmount`.
+     * - the caller must have allowance for `from`'s tokens of at least `sharesAmount`.
+     */
+    function transferSharesFrom(address from, address to, uint256 sharesAmount) external returns (bool);
     /**
      * @dev Function to set the new fee. Allowed only for owner
      *

@@ -44,8 +44,18 @@ task(
           )) as BackedCCIPReceiver__factory;
 
         const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
+        if ((await contract.tokenIds(deployment.address)) !== 0n) {
+          console.log(`🚨 Skipping deployment ${token.name} on ${hre.network.name} as it was already deployed on this network`);
+          continue;
+        }
 
-        await (await contract.registerToken(deployment!.address, token.productId, token.variant)).wait(2);
+        console.log(
+          `ℹ️  Attempting to register token ${token.name} (variant: ${token.variant}) in BackedCCIPReceiver on the ${hre.network.name} blockchain using tokenId: ${token.productId}`
+        );
+        spinner.start();
+
+
+        await (await contract.registerToken(deployment!.address, token.productId)).wait(1);
 
         console.log(
           `✅ Token ${token.name} registered in BackedReceiverCCIP at tokenId: ${token.productId} on ${hre.network.name} blockchain`

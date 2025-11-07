@@ -2,4 +2,3 @@
 /* tslint:disable */
 /* eslint-disable */
 export { BurnMintERC677Helper__factory } from "./BurnMintERC677Helper__factory";
-export { CCIPLocalSimulator__factory } from "./CCIPLocalSimulator__factory";

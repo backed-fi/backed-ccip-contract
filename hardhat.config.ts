@@ -14,6 +14,9 @@ const ETHEREUM_MAINNET_RPC_URL = process.env.ETHEREUM_MAINNET_RPC_URL;
 const POLYGON_MAINNET_RPC_URL = process.env.POLYGON_MAINNET_RPC_URL;
 const AVALANCHE_C_CHAIN_RPC_URL = process.env.AVALANCHE_C_CHAIN_RPC_URL;
 const GNOSIS_MAINNET_RPC_URL = process.env.GNOSIS_MAINNET_RPC_URL;
+const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL;
+const BASE_MAINNET_RPC_URL = process.env.BASE_MAINNET_RPC_URL;
+const SONIC_MAINNET_RPC_URL = process.env.SONIC_MAINNET_RPC_URL;
 
 const ETHEREUM_SEPOLIA_RPC_URL = process.env.ETHEREUM_SEPOLIA_RPC_URL;
 const OPTIMISM_SEPOLIA_RPC_URL = process.env.OPTIMISM_SEPOLIA_RPC_URL;
@@ -33,13 +36,18 @@ const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.23",
+  solidity: {
+    version: "0.8.25",
+    settings: {
+      evmVersion: "cancun",
+    },
+  },
   networks: {
     hardhat: {
       chainId: 31337,
       mining: {
         auto: true,
-        interval: 1
+        interval: 1000
       }
     },
 
@@ -74,6 +82,27 @@ const config: HardhatUserConfig = {
         GNOSIS_MAINNET_RPC_URL !== undefined ? GNOSIS_MAINNET_RPC_URL : "",
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
       chainId: 100
+    },
+
+    arbitrum: {
+      url:
+        ARBITRUM_MAINNET_RPC_URL !== undefined ? ARBITRUM_MAINNET_RPC_URL : "",
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+      chainId: 42161
+    },
+
+    base: {
+      url:
+        BASE_MAINNET_RPC_URL !== undefined ? BASE_MAINNET_RPC_URL : "",
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+      chainId: 8453
+    },
+
+    sonic: {
+      url:
+        SONIC_MAINNET_RPC_URL !== undefined ? SONIC_MAINNET_RPC_URL : "",
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+      chainId: 146
     },
 
     ethereumSepolia: {
@@ -161,10 +190,14 @@ const config: HardhatUserConfig = {
       xdai: process.env.GNOSISSCAN_API_KEY || "",
       sepolia: process.env.ETHERSCAN_API_KEY || "",
       arbSepolia: process.env.ARBSCAN_API_KEY || "",
+      arbitrum: process.env.ARBSCAN_API_KEY || "",
+      base: process.env.BASESCAN_API_KEY || "",
+      sonic: process.env.SONICSCAN_API_KEY || "",
       polygon: process.env.POLYGONSCAN_API_KEY || "",
       polygonMumbai: process.env.POLYGONSCAN_API_KEY || "",
       polygonAmoy: process.env.POLYGONSCAN_API_KEY || "",
       baseSepolia: process.env.BASESCAN_API_KEY || "",
+      bnbChainTestnet: process.env.ETHERSCAN_API_KEY || "",
       bartio: 'bartio',
       liskSepolia: 'liskSepolia',
       etherlinkTestnet: 'etherlinkTestnet',
@@ -180,6 +213,14 @@ const config: HardhatUserConfig = {
         }
       },
       {
+        network: "arbitrum",
+        chainId: 42161,
+        urls: {
+          apiURL: "https://api.arbiscan.io/api",
+          browserURL: "https://arbiscan.io/"
+        }
+      },
+      {
         network: "arbSepolia",
         chainId: 421614,
         urls: {
@@ -188,11 +229,27 @@ const config: HardhatUserConfig = {
         }
       },
       {
+        network: "sonic",
+        chainId: 146,
+        urls: {
+          apiURL: "https://api.sonicscan.org/api",
+          browserURL: "https://sonicscan.org/"
+        }
+      },
+      {
         network: "polygonAmoy",
         chainId: 80002,
         urls: {
           apiURL: "https://api-amoy.polygonscan.com/api",
           browserURL: "https://amoy.polygonscan.com/"
+        },
+      },
+      {
+        network: "bnbChainTestnet",
+        chainId: 97,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=97",
+          browserURL: "https://testnet.bscscan.com/",
         },
       },
       {

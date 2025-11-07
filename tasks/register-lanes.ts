@@ -7,7 +7,7 @@ import {
   BackedCCIPReceiver,
 } from "../typechain-types";
 import { Spinner } from "../helpers/spinner";
-import { BACKED_CCIP_RECEIVER } from "../helpers/constants";
+import { BACKED_CCIP_RECEIVER, CHAIN_DEFAULT_GAS, CHAIN_VARIANT, lanesConfig } from "../helpers/constants";
 
 
 task(
@@ -23,7 +23,6 @@ task(
       const provider = new JsonRpcProvider(rpcProviderUrl);
       const wallet = new Wallet(privateKey);
       const deployer = wallet.connect(provider);
-
       const spinner: Spinner = new Spinner();
       const factory: BackedCCIPReceiver__factory =
         (await hre.ethers.getContractFactory(
@@ -33,7 +32,7 @@ task(
 
       const contract = factory.attach(BACKED_CCIP_RECEIVER[hre.network.name]) as BackedCCIPReceiver;
       spinner.start();
-      const networks: string[] = ['mainnet', 'polygon', 'gnosis', 'avalanche'].filter(x => x !== hre.network.name);
+      const networks: string[] = lanesConfig[hre.network.name];
 
       console.log(
         `ℹ️ Attempting to register lanes for ${networks.join(' ')} in BackedCCIPReceiver on the ${hre.network.name}`
@@ -42,6 +41,13 @@ task(
       for (let network of networks) {
         const chainSelector = getRouterConfig(network).chainSelector;
         const backedReceiverAddress = BACKED_CCIP_RECEIVER[network];
+        const chainVariant = CHAIN_VARIANT[network];
+        const defaultGas = CHAIN_DEFAULT_GAS[network];
+        
+        if((await contract.allowlistedSourceChains(chainSelector)).toLowerCase() === backedReceiverAddress.toLowerCase()) {
+          console.log(`🚨 Skipping registering network ${network} as it was already registered on this bridge`);
+          continue;
+        }
 
         console.log(
           `ℹ️  Attempting to register receiver and sender at ${backedReceiverAddress} address in BackedCCIPReceiver on the ${hre.network.name} blockchain using destination chain ${network} with selector: ${chainSelector}`

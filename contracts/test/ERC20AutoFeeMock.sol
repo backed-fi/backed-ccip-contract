@@ -34,7 +34,7 @@
  * For more information and restrictions please refer to the issuer's [Website](https://www.backedassets.fi/legal-documentation)
  */
 
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -145,6 +145,27 @@ contract ERC20AutoFeeMock is ERC20 {
         address owner = _msgSender();
         uint256 amount = _getUnderlyingAmountByShares(sharesAmount, multiplier);
         transfer(owner, to, amount);
+        return true;
+    }
+
+    /**
+     * @dev Transfers underlying shares from one account to another
+     *
+     * Requirements:
+     *
+     * - `from` and `to` cannot be the zero address.
+     * - `from` must have a balance of at least `sharesAmount`.
+     * - the caller must have allowance for `from`'s tokens of at least the underlying amount.
+     */
+    function transferSharesFrom(
+        address from,
+        address to,
+        uint256 sharesAmount
+    ) external virtual returns (bool) {
+        address spender = _msgSender();
+        uint256 amount = _getUnderlyingAmountByShares(sharesAmount, multiplier);
+        _spendAllowance(from, spender, amount);
+        transfer(from, to, amount);
         return true;
     }
 
